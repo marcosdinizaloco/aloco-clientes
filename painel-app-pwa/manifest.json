@@ -1,6 +1,6 @@
 {
-  "name": "__APP_NOME__",
-  "short_name": "__APP_CURTO__",
+  "name": "ALOCO Soluções Digitais",
+  "short_name": "ALOCO",
   "description": "Painel de gestão — agendamentos, clientes e financeiro.",
   "start_url": "./?b=__SLUG__",
   "scope": "./",
