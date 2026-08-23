@@ -4769,28 +4769,70 @@ window.onload = function(){
     }catch(e){ console.warn('[ALOCO] OneSignal init falhou:', e); }
   });
 </script>
-<style id="aloco-nav-fix">
+<!-- ═══ ALOCO · MENU ☰ DO PAINEL v2 (acha o menu sozinho — cole antes de </body>) ═══ -->
+<style id="aloco-nav-fix2">
 #alocoBurger{display:none}
 @media (max-width:768px){
-  #alocoBurger{display:flex;position:fixed;top:11px;left:11px;z-index:1002;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(15,18,24,.94);color:#fff;align-items:center;justify-content:center;font-size:22px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-  .nav{display:flex !important;position:fixed !important;top:0;left:0;bottom:0;z-index:1001;width:250px !important;max-width:82vw;transform:translateX(-103%);transition:transform .28s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 0 44px rgba(0,0,0,.6)}
-  body.navopen .nav{transform:translateX(0)}
-  #alocoNavMask{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55)}
+  #alocoBurger{display:flex;position:fixed;top:11px;left:11px;z-index:100050;width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.96);color:#fff;align-items:center;justify-content:center;font-size:23px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+  #alocoNavMask{display:none;position:fixed;inset:0;z-index:100040;background:rgba(0,0,0,.55)}
   body.navopen #alocoNavMask{display:block}
-  .ct{margin-left:0 !important}
 }
 </style>
-<button id="alocoBurger" aria-label="Abrir menu" onclick="document.body.classList.toggle('navopen')">&#9776;</button>
-<div id="alocoNavMask" onclick="document.body.classList.remove('navopen')"></div>
+<button id="alocoBurger" aria-label="Abrir menu">&#9776;</button>
+<div id="alocoNavMask"></div>
 <script>
 (function(){
-  document.addEventListener('click',function(e){
-    if(!e.target.closest)return;
-    var dentroNav=e.target.closest('.nav');
-    if(dentroNav && e.target.closest('a,button,li,[onclick],[data-nav],.nav-item')){
-      setTimeout(function(){document.body.classList.remove('navopen');},80);
+  var LABELS=['Central de Controle','Profissionais','Serviços','Servicos','Horários','Horarios','Agenda','Fila','Pacotes','Clientes','Caixa','Financeiro'];
+  var barra=null;
+  function achaBarra(){
+    if(barra && document.body.contains(barra)) return barra;
+    var alvo=null, els=document.querySelectorAll('a,button,li,span,div');
+    for(var i=0;i<els.length;i++){
+      var t=(els[i].textContent||'').trim();
+      if(t && t.length<24 && LABELS.indexOf(t)>=0){ alvo=els[i]; break; }
     }
+    if(!alvo) return null;
+    var node=alvo, achou=null;
+    for(var d=0; d<8 && node; d++){
+      node=node.parentElement; if(!node || node===document.body) break;
+      var c=0; for(var j=0;j<LABELS.length;j++){ if((node.textContent||'').indexOf(LABELS[j])>=0) c++; }
+      if(c>=3){ achou=node; break; }
+    }
+    barra=achou||alvo.parentElement;
+    return barra;
+  }
+  var ABRE=['display','flex-direction','position','top','left','bottom','height','width','max-width','z-index','overflow-y','transform','box-shadow','margin'];
+  function abre(){
+    var b=achaBarra(); if(!b) return;
+    b.style.setProperty('display','flex','important');
+    b.style.setProperty('flex-direction','column','important');
+    b.style.setProperty('position','fixed','important');
+    b.style.setProperty('top','0','important');
+    b.style.setProperty('left','0','important');
+    b.style.setProperty('bottom','0','important');
+    b.style.setProperty('height','100%','important');
+    b.style.setProperty('width','258px','important');
+    b.style.setProperty('max-width','84vw','important');
+    b.style.setProperty('z-index','100045','important');
+    b.style.setProperty('overflow-y','auto','important');
+    b.style.setProperty('margin','0','important');
+    b.style.setProperty('transform','translateX(0)','important');
+    b.style.setProperty('box-shadow','0 0 44px rgba(0,0,0,.65)','important');
+    document.body.classList.add('navopen');
+  }
+  function fecha(){
+    document.body.classList.remove('navopen');
+    if(barra){ ABRE.forEach(function(p){ barra.style.removeProperty(p); }); }
+  }
+  var burger=document.getElementById('alocoBurger'),
+      mask=document.getElementById('alocoNavMask');
+  burger.addEventListener('click',function(){ document.body.classList.contains('navopen')?fecha():abre(); });
+  mask.addEventListener('click',fecha);
+  document.addEventListener('click',function(e){
+    if(!document.body.classList.contains('navopen')||!e.target.closest) return;
+    if(barra && barra.contains(e.target) && e.target.closest('a,button,li,[onclick]')) setTimeout(fecha,140);
   });
 })();
-</script></body>
+</script>
+</body>
 </html>
