@@ -4769,11 +4769,12 @@ window.onload = function(){
     }catch(e){ console.warn('[ALOCO] OneSignal init falhou:', e); }
   });
 </script>
-<!-- ═══ ALOCO · MENU ☰ DO PAINEL v2 (acha o menu sozinho — cole antes de </body>) ═══ -->
-<style id="aloco-nav-fix2">
+<!-- ═══ ALOCO · PAINEL (menu ☰ + sincronizando + ✨ Barber IA) — BLOCO ÚNICO, cole antes de </body> ═══ -->
+<!-- ═══ ALOCO · PAINEL v3 — menu ☰ + conserta "sincronizando..." (cole antes de </body>) ═══ -->
+<style id="aloco-nav-fix3">
 #alocoBurger{display:none}
 @media (max-width:768px){
-  #alocoBurger{display:flex;position:fixed;top:11px;left:11px;z-index:100050;width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.96);color:#fff;align-items:center;justify-content:center;font-size:23px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+  #alocoBurger{display:flex;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:11px;z-index:100050;width:46px;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.96);color:#fff;align-items:center;justify-content:center;font-size:23px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
   #alocoNavMask{display:none;position:fixed;inset:0;z-index:100040;background:rgba(0,0,0,.55)}
   body.navopen #alocoNavMask{display:block}
 }
@@ -4782,20 +4783,29 @@ window.onload = function(){
 <div id="alocoNavMask"></div>
 <script>
 (function(){
-  var LABELS=['Central de Controle','Profissionais','Serviços','Servicos','Horários','Horarios','Agenda','Fila','Pacotes','Clientes','Caixa','Financeiro'];
+  /* ---------- MENU ☰ (mira o <nav> direto) ---------- */
+  var LABELS=['Central de Controle','Profissionais','Serviços','Servicos','Horários','Horarios','Agenda','Fila','Pacotes','Clientes','Caixa','Financeiro','Reativar'];
   var barra=null;
   function achaBarra(){
     if(barra && document.body.contains(barra)) return barra;
+    // 1) o jeito certo: a barra lateral é um <nav> com vários itens
+    var navs=document.querySelectorAll('nav');
+    for(var i=0;i<navs.length;i++){
+      if(navs[i].querySelectorAll('a,button,li').length>=3){ barra=navs[i]; return barra; }
+    }
+    // 2) reserva: acha um item pelo texto e sobe até o container com >=3 itens
     var alvo=null, els=document.querySelectorAll('a,button,li,span,div');
-    for(var i=0;i<els.length;i++){
-      var t=(els[i].textContent||'').trim();
-      if(t && t.length<24 && LABELS.indexOf(t)>=0){ alvo=els[i]; break; }
+    for(var k=0;k<els.length;k++){
+      var t=(els[k].textContent||'').replace(/\s+/g,' ').trim();
+      if(!t||t.length>26) continue;
+      for(var j=0;j<LABELS.length;j++){ if(t===LABELS[j]||t.indexOf(LABELS[j])>=0){ alvo=els[k]; break; } }
+      if(alvo) break;
     }
     if(!alvo) return null;
     var node=alvo, achou=null;
     for(var d=0; d<8 && node; d++){
-      node=node.parentElement; if(!node || node===document.body) break;
-      var c=0; for(var j=0;j<LABELS.length;j++){ if((node.textContent||'').indexOf(LABELS[j])>=0) c++; }
+      node=node.parentElement; if(!node||node===document.body) break;
+      var c=0; for(var m=0;m<LABELS.length;m++){ if((node.textContent||'').indexOf(LABELS[m])>=0) c++; }
       if(c>=3){ achou=node; break; }
     }
     barra=achou||alvo.parentElement;
@@ -4811,8 +4821,8 @@ window.onload = function(){
     b.style.setProperty('left','0','important');
     b.style.setProperty('bottom','0','important');
     b.style.setProperty('height','100%','important');
-    b.style.setProperty('width','258px','important');
-    b.style.setProperty('max-width','84vw','important');
+    b.style.setProperty('width','262px','important');
+    b.style.setProperty('max-width','86vw','important');
     b.style.setProperty('z-index','100045','important');
     b.style.setProperty('overflow-y','auto','important');
     b.style.setProperty('margin','0','important');
@@ -4824,15 +4834,167 @@ window.onload = function(){
     document.body.classList.remove('navopen');
     if(barra){ ABRE.forEach(function(p){ barra.style.removeProperty(p); }); }
   }
-  var burger=document.getElementById('alocoBurger'),
-      mask=document.getElementById('alocoNavMask');
+  var burger=document.getElementById('alocoBurger'), mask=document.getElementById('alocoNavMask');
   burger.addEventListener('click',function(){ document.body.classList.contains('navopen')?fecha():abre(); });
   mask.addEventListener('click',fecha);
   document.addEventListener('click',function(e){
     if(!document.body.classList.contains('navopen')||!e.target.closest) return;
     if(barra && barra.contains(e.target) && e.target.closest('a,button,li,[onclick]')) setTimeout(fecha,140);
   });
+
+  /* ---------- conserta o "sincronizando..." preso ---------- */
+  var t0=null;
+  setInterval(function(){
+    var el=document.getElementById('H-ts-label'); if(!el) return;
+    var txt=el.textContent||'';
+    if(txt.indexOf('sincronizando')>=0){ t0=Date.now(); } // painel re-renderizou: reinicia a contagem (sem return!)
+    if(t0===null) t0=Date.now();
+    var sec=Math.floor((Date.now()-t0)/1000);
+    el.textContent = sec<10 ? 'sincronizado agora' : sec<60 ? 'atualizado há '+sec+'s' : 'atualizado há '+Math.floor(sec/60)+'min';
+  },1000);
 })();
+</script>
+
+<style id="barberia-css">
+#biaFab{position:fixed;right:14px;top:12px;z-index:100060;display:flex;align-items:center;gap:8px;padding:10px 15px;border:none;border-radius:30px;cursor:pointer;
+  background:linear-gradient(135deg,#7c5cff,#4f7bff);color:#fff;font:600 13.5px/1 system-ui,Arial;box-shadow:0 8px 26px rgba(79,123,255,.45)}
+@media(max-width:768px){#biaFab{top:calc(env(safe-area-inset-top,0px) + 8px);right:12px;padding:9px 13px;font-size:13px}}
+#biaFab:active{transform:scale(.97)}
+#biaFab .sp{font-size:17px}
+#biaWrap{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-end;justify-content:flex-end;background:rgba(0,0,0,.5);backdrop-filter:blur(3px)}
+#biaWrap.on{display:flex}
+#biaBox{display:flex;flex-direction:column;width:420px;max-width:100%;height:min(680px,92vh);background:#0e1119;border:1px solid rgba(255,255,255,.1);border-radius:20px;margin:14px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+@media(max-width:520px){#biaBox{width:100%;height:88vh;margin:0;border-radius:20px 20px 0 0}#biaWrap{align-items:flex-end;justify-content:center}}
+.bia-hd{display:flex;align-items:center;gap:11px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.08);background:#12friendly}
+.bia-hd{background:#121623}
+.bia-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#4f7bff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.bia-hd .t{flex:1;min-width:0}
+.bia-hd .t b{color:#fff;font:700 15px/1.2 system-ui;display:block}
+.bia-hd .t span{color:rgba(255,255,255,.5);font-size:11.5px}
+.bia-x{background:none;border:none;color:rgba(255,255,255,.55);font-size:22px;cursor:pointer;padding:4px 8px}
+.bia-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
+.bia-m{max-width:86%;padding:11px 14px;border-radius:15px;font:400 14px/1.5 system-ui;white-space:pre-wrap;word-break:break-word}
+.bia-u{align-self:flex-end;background:linear-gradient(135deg,#7c5cff,#4f7bff);color:#fff;border-bottom-right-radius:5px}
+.bia-a{align-self:flex-start;background:#1b2130;color:#e8edf7;border-bottom-left-radius:5px}
+.bia-a b{color:#fff}
+.bia-tip{align-self:center;color:rgba(255,255,255,.4);font-size:12px;text-align:center;padding:2px 12px;line-height:1.5}
+.bia-sug{display:flex;flex-wrap:wrap;gap:7px;padding:0 16px 10px}
+.bia-sug button{background:#1b2130;border:1px solid rgba(255,255,255,.1);color:#c7d0e2;border-radius:16px;padding:8px 12px;font-size:12.5px;cursor:pointer}
+.bia-sug button:active{background:#232b3d}
+.bia-in{display:flex;align-items:flex-end;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.08);background:#0e1119}
+.bia-in textarea{flex:1;resize:none;max-height:120px;background:#1b2130;border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#fff;padding:11px 13px;font:400 14px/1.4 system-ui;outline:none}
+.bia-mic,.bia-send{flex-shrink:0;width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px}
+.bia-mic{background:#1b2130;color:#c7d0e2}
+.bia-mic.rec{background:#e0484a;color:#fff;animation:biaPulse 1.2s infinite}
+@keyframes biaPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,72,74,.5)}60%{box-shadow:0 0 0 10px rgba(224,72,74,0)}}
+.bia-send{background:linear-gradient(135deg,#7c5cff,#4f7bff);color:#fff}
+.bia-typing{display:inline-flex;gap:4px}.bia-typing i{width:6px;height:6px;border-radius:50%;background:#8a93a8;animation:biaBlink 1s infinite}
+.bia-typing i:nth-child(2){animation-delay:.2s}.bia-typing i:nth-child(3){animation-delay:.4s}
+@keyframes biaBlink{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+
+<button id="biaFab" onclick="biaOpen()"><span class="sp">✨</span> Barber IA</button>
+<div id="biaWrap" onclick="if(event.target===this)biaClose()">
+  <div id="biaBox">
+    <div class="bia-hd">
+      <div class="bia-av">✨</div>
+      <div class="t"><b>Barber IA</b><span>seu consultor de barbearia</span></div>
+      <button class="bia-x" onclick="biaClose()">&times;</button>
+    </div>
+    <div class="bia-msgs" id="biaMsgs">
+      <div class="bia-tip">Pergunte qualquer coisa sobre a sua barbearia — faturamento, agenda, estratégias pra vender mais. Pode falar ou digitar.</div>
+    </div>
+    <div class="bia-sug" id="biaSug">
+      <button onclick="biaAsk('Como posso aumentar meu faturamento este mês?')">💰 Aumentar faturamento</button>
+      <button onclick="biaAsk('Quais clientes eu deveria chamar de volta?')">🔁 Reativar clientes</button>
+      <button onclick="biaAsk('Me dê uma estratégia pra encher os horários vagos de hoje.')">📅 Encher a agenda</button>
+    </div>
+    <div class="bia-in">
+      <textarea id="biaIn" rows="1" placeholder="Pergunte ao Barber IA…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();biaSend()}"></textarea>
+      <button class="bia-mic" id="biaMic" onclick="biaVoice()" title="Falar">🎤</button>
+      <button class="bia-send" onclick="biaSend()" title="Enviar">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ►►► COLE AQUI a URL do webhook do seu n8n (o "cérebro" que responde) ◄◄◄ */
+var BARBERIA_WEBHOOK = "https://marcosprdiniz.app.n8n.cloud/webhook/barber-ia";
+
+var biaHist=[];
+function biaOpen(){document.getElementById('biaWrap').classList.add('on');setTimeout(function(){var i=document.getElementById('biaIn');if(i)i.focus();},100);}
+function biaClose(){document.getElementById('biaWrap').classList.remove('on');}
+function biaEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function biaAddMsg(txt,who){
+  var m=document.getElementById('biaMsgs');
+  var d=document.createElement('div');d.className='bia-m '+(who==='u'?'bia-u':'bia-a');
+  d.innerHTML=biaEsc(txt).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  m.appendChild(d);m.scrollTop=m.scrollHeight;return d;
+}
+function biaCtx(){ // tira uma foto dos números atuais do painel pra IA responder com base neles
+  try{var c=document.querySelector('.ct');var t=c?c.innerText.replace(/\s+\n/g,'\n').trim():'';return t.slice(0,1800);}catch(e){return '';}
+}
+/* slug da barbearia = vem da URL do painel (ex.: /painel/sintonia-barbearia) */
+function biaSlug(){
+  try{
+    if(window.ALOCO && ALOCO.BARBEARIA) return String(ALOCO.BARBEARIA).toLowerCase();
+    var m=location.pathname.match(/painel\/([^\/?#]+)/i); if(m) return decodeURIComponent(m[1]).toLowerCase();
+    var seg=location.pathname.split('/').filter(Boolean); if(seg.length) return decodeURIComponent(seg[seg.length-1]).toLowerCase();
+  }catch(e){}
+  return (window.SLUG||window.slug||'')+'';
+}
+/* senha da barbearia = a MESMA que o painel ja usa pra buscar os dados.
+   >>> Se o painel guarda a senha em outra variavel/chave, me avise que eu ajusto aqui. <<< */
+function biaSenha(){
+  try{
+    if(window.ALOCO && (ALOCO.SENHA||ALOCO.senha)) return ALOCO.SENHA||ALOCO.senha;
+    if(window.SENHA) return window.SENHA;
+    if(window.senha) return window.senha;
+    if(window.PAINEL_SENHA) return window.PAINEL_SENHA;
+    var chaves=['senha','aloco_senha','painel_senha','pw','pass'];
+    for(var i=0;i<chaves.length;i++){ var v=localStorage.getItem(chaves[i]); if(v) return v; }
+  }catch(e){}
+  return '';
+}
+function biaAsk(q){document.getElementById('biaIn').value=q;biaSend();}
+function biaSend(){
+  var i=document.getElementById('biaIn');var q=(i.value||'').trim();if(!q)return;
+  i.value='';var sug=document.getElementById('biaSug');if(sug)sug.style.display='none';
+  biaAddMsg(q,'u');biaHist.push({role:'user',content:q});
+  var typ=biaAddMsg('','a');typ.innerHTML='<span class="bia-typing"><i></i><i></i><i></i></span>';
+  var m=document.getElementById('biaMsgs');m.scrollTop=m.scrollHeight;
+  if(!BARBERIA_WEBHOOK||BARBERIA_WEBHOOK.indexOf('http')!==0){
+    typ.innerHTML='⚙️ O Barber IA ainda não está conectado. Configure a URL do n8n no código (BARBERIA_WEBHOOK).';return;
+  }
+  var barbearia=(document.querySelector('.bia-hd')&&document.title)||'';
+  fetch(BARBERIA_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({pergunta:q,slug:biaSlug(),senha:biaSenha(),contexto:biaCtx(),historico:biaHist.slice(-8),barbearia:barbearia,url:location.href})})
+  .then(function(r){return r.text();})
+  .then(function(t){
+    var resp=t;try{var j=JSON.parse(t);resp=j.resposta||j.reply||j.text||j.output||j.message||t;}catch(e){}
+    typ.innerHTML=biaEsc(resp).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+    biaHist.push({role:'assistant',content:resp});
+    document.getElementById('biaMsgs').scrollTop=999999;
+  })
+  .catch(function(){typ.innerHTML='😕 Não consegui responder agora. Confira a conexão do n8n e tente de novo.';});
+}
+/* ---- voz (fala -> texto) ---- */
+var biaRec=null;
+function biaVoice(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var mic=document.getElementById('biaMic');
+  if(!SR){mic.style.display='none';return;}
+  if(biaRec){try{biaRec.stop();}catch(e){}biaRec=null;mic.classList.remove('rec');return;}
+  biaRec=new SR();biaRec.lang='pt-BR';biaRec.interimResults=true;biaRec.continuous=false;
+  mic.classList.add('rec');
+  var fin='';
+  biaRec.onresult=function(ev){var s='';for(var k=0;k<ev.results.length;k++){s+=ev.results[k][0].transcript;}document.getElementById('biaIn').value=s;fin=s;};
+  biaRec.onerror=function(){mic.classList.remove('rec');biaRec=null;};
+  biaRec.onend=function(){mic.classList.remove('rec');biaRec=null;if((document.getElementById('biaIn').value||'').trim())biaSend();};
+  try{biaRec.start();}catch(e){mic.classList.remove('rec');}
+}
+/* esconde o mic se o navegador não suportar voz */
+(function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){var m=document.getElementById('biaMic');if(m)m.style.display='none';}})();
 </script>
 </body>
 </html>
