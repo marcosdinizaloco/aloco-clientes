@@ -4769,5 +4769,28 @@ window.onload = function(){
     }catch(e){ console.warn('[ALOCO] OneSignal init falhou:', e); }
   });
 </script>
-</body>
+<style id="aloco-nav-fix">
+#alocoBurger{display:none}
+@media (max-width:768px){
+  #alocoBurger{display:flex;position:fixed;top:11px;left:11px;z-index:1002;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(15,18,24,.94);color:#fff;align-items:center;justify-content:center;font-size:22px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .nav{display:flex !important;position:fixed !important;top:0;left:0;bottom:0;z-index:1001;width:250px !important;max-width:82vw;transform:translateX(-103%);transition:transform .28s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 0 44px rgba(0,0,0,.6)}
+  body.navopen .nav{transform:translateX(0)}
+  #alocoNavMask{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55)}
+  body.navopen #alocoNavMask{display:block}
+  .ct{margin-left:0 !important}
+}
+</style>
+<button id="alocoBurger" aria-label="Abrir menu" onclick="document.body.classList.toggle('navopen')">&#9776;</button>
+<div id="alocoNavMask" onclick="document.body.classList.remove('navopen')"></div>
+<script>
+(function(){
+  document.addEventListener('click',function(e){
+    if(!e.target.closest)return;
+    var dentroNav=e.target.closest('.nav');
+    if(dentroNav && e.target.closest('a,button,li,[onclick],[data-nav],.nav-item')){
+      setTimeout(function(){document.body.classList.remove('navopen');},80);
+    }
+  });
+})();
+</script></body>
 </html>
