@@ -4961,18 +4961,25 @@ var biaSending = false;
 var biaLastQuestion = '';
 var biaLastQuestionAt = 0;
 
-function biaSend(){
-  var i = document.getElementById('biaIn');
-  var q = (i.value || '').trim();
 
+function biaSend(){
+
+  var i = document.getElementById('biaIn');
+  if(!i) return;
+
+  var q = (i.value || '').trim();
   if(!q) return;
 
-  // Impede dois envios simultâneos
+  // 🔒 BLOQUEIO: não permite dois envios ao mesmo tempo
   if(biaSending) return;
 
-  // Impede a mesma pergunta sendo enviada novamente em poucos segundos
+  // 🔒 BLOQUEIO: mesma pergunta novamente em até 5 segundos
   var agora = Date.now();
-  if(q === biaLastQuestion && (agora - biaLastQuestionAt) < 5000){
+
+  if(
+    q === biaLastQuestion &&
+    (agora - biaLastQuestionAt) < 5000
+  ){
     i.value = '';
     return;
   }
@@ -4981,69 +4988,141 @@ function biaSend(){
   biaLastQuestionAt = agora;
   biaSending = true;
 
+  // limpa o campo imediatamente
   i.value = '';
 
   var sug = document.getElementById('biaSug');
   if(sug) sug.style.display = 'none';
 
+  // mostra a pergunta UMA vez
   biaAddMsg(q,'u');
-  biaHist.push({role:'user',content:q});
+  biaHist.push({
+    role:'user',
+    content:q
+  });
 
+  // cria UMA bolha de resposta
   var typ = biaAddMsg('','a');
-  typ.innerHTML = '<span class="bia-typing"><i></i><i></i><i></i></span>';
+
+  typ.innerHTML =
+    '<span class="bia-typing">' +
+      '<i></i><i></i><i></i>' +
+    '</span>';
 
   var m = document.getElementById('biaMsgs');
   if(m) m.scrollTop = m.scrollHeight;
 
-  if(!BARBERIA_WEBHOOK || BARBERIA_WEBHOOK.indexOf('http') !== 0){
-    typ.innerHTML = '⚙️ O Barber IA ainda não está conectado. Configure a URL do n8n no código (BARBERIA_WEBHOOK).';
+  // verifica webhook
+  if(
+    !BARBERIA_WEBHOOK ||
+    BARBERIA_WEBHOOK.indexOf('http') !== 0
+  ){
+    typ.innerHTML =
+      '⚙️ O Barber IA ainda não está conectado.';
+
     biaSending = false;
     return;
   }
 
-  var barbearia = (document.querySelector('.bia-hd') && document.title) || '';
+  // ID ÚNICO DA PERGUNTA
+  var requestId =
+    'bia-' +
+    Date.now() +
+    '-' +
+    Math.random().toString(36).slice(2,10);
+
+  var barbearia =
+    (document.querySelector('.bia-hd') && document.title) || '';
+
+  var payload = {
+    pergunta: q,
+    requestId: requestId,
+    slug: biaSlug(),
+    senha: biaSenha(),
+    contexto: biaCtx(),
+    historico: biaHist.slice(-8),
+    barbearia: barbearia,
+    url: location.href
+  };
 
   fetch(BARBERIA_WEBHOOK,{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      pergunta:q,
-      requestId:'bia-' + Date.now() + '-' + Math.random().toString(36).slice(2,10),
-      slug:biaSlug(),
-      senha:biaSenha(),
-      contexto:biaCtx(),
-      historico:biaHist.slice(-8),
-      barbearia:barbearia,
-      url:location.href
-    })
+    headers:{
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify(payload)
   })
+
   .then(function(r){
+
+    if(!r.ok){
+      throw new Error('HTTP ' + r.status);
+    }
+
     return r.text();
   })
+
   .then(function(t){
-    var resp = t;
+
+    var resp = '';
 
     try{
       var j = JSON.parse(t);
-      resp = j.resposta || j.reply || j.text || j.output || j.message || t;
-    }catch(e){}
 
-    typ.innerHTML = biaEsc(resp)
-      .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-      .replace(/\n/g,'<br>');
+      resp =
+        j.resposta ||
+        j.reply ||
+        j.text ||
+        j.output ||
+        j.message ||
+        '';
+
+    }catch(e){
+
+      resp = t || '';
+    }
+
+    resp = String(resp || '').trim();
+
+    // 🚫 NUNCA deixa uma resposta vazia aparecer
+    if(!resp){
+
+      typ.innerHTML =
+        '⚠️ O Barber IA recebeu uma resposta vazia.';
+
+      return;
+    }
+
+    typ.innerHTML =
+      biaEsc(resp)
+        .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+        .replace(/\n/g,'<br>');
 
     biaHist.push({
       role:'assistant',
       content:resp
     });
 
-    var msgs = document.getElementById('biaMsgs');
-    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+    var msgs =
+      document.getElementById('biaMsgs');
+
+    if(msgs){
+      msgs.scrollTop = msgs.scrollHeight;
+    }
   })
-  .catch(function(){
-    typ.innerHTML = '😕 Não consegui responder agora. Confira a conexão do n8n e tente de novo.';
+
+  .catch(function(err){
+
+    console.error('[Barber IA]',err);
+
+    typ.innerHTML =
+      '😕 Não consegui responder agora. ' +
+      'Tente novamente em alguns segundos.';
   })
+
   .finally(function(){
+
+    // 🔓 libera novo envio
     biaSending = false;
   });
 }
