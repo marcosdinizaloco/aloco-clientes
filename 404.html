@@ -4962,6 +4962,10 @@ var biaLastQuestion = '';
 var biaLastQuestionAt = 0;
 
 
+var biaSending = false;
+var biaLastQuestion = '';
+var biaLastQuestionAt = 0;
+
 function biaSend(){
 
   var i = document.getElementById('biaIn');
@@ -4970,10 +4974,10 @@ function biaSend(){
   var q = (i.value || '').trim();
   if(!q) return;
 
-  // 🔒 BLOQUEIO: não permite dois envios ao mesmo tempo
+  // Bloqueia envios simultâneos
   if(biaSending) return;
 
-  // 🔒 BLOQUEIO: mesma pergunta novamente em até 5 segundos
+  // Bloqueia a mesma pergunta repetida em até 5 segundos
   var agora = Date.now();
 
   if(
@@ -4988,20 +4992,20 @@ function biaSend(){
   biaLastQuestionAt = agora;
   biaSending = true;
 
-  // limpa o campo imediatamente
   i.value = '';
 
   var sug = document.getElementById('biaSug');
   if(sug) sug.style.display = 'none';
 
-  // mostra a pergunta UMA vez
+  // Mostra a pergunta uma única vez
   biaAddMsg(q,'u');
+
   biaHist.push({
     role:'user',
     content:q
   });
 
-  // cria UMA bolha de resposta
+  // Cria uma única bolha de resposta
   var typ = biaAddMsg('','a');
 
   typ.innerHTML =
@@ -5012,19 +5016,17 @@ function biaSend(){
   var m = document.getElementById('biaMsgs');
   if(m) m.scrollTop = m.scrollHeight;
 
-  // verifica webhook
+  // Verifica webhook
   if(
     !BARBERIA_WEBHOOK ||
     BARBERIA_WEBHOOK.indexOf('http') !== 0
   ){
-    typ.innerHTML =
-      '⚙️ O Barber IA ainda não está conectado.';
-
+    typ.innerHTML = '⚙️ O Barber IA ainda não está conectado.';
     biaSending = false;
     return;
   }
 
-  // ID ÚNICO DA PERGUNTA
+  // ID único da pergunta
   var requestId =
     'bia-' +
     Date.now() +
@@ -5035,23 +5037,37 @@ function biaSend(){
     (document.querySelector('.bia-hd') && document.title) || '';
 
   var payload = {
-    pergunta: q,
-    requestId: requestId,
-    slug: biaSlug(),
-    senha: biaSenha(),
-    contexto: biaCtx(),
-    historico: biaHist.slice(-8),
-    barbearia: barbearia,
-    url: location.href
+    pergunta:q,
+    requestId:requestId,
+    slug:biaSlug(),
+    senha:biaSenha(),
+    contexto:biaCtx(),
+    historico:biaHist.slice(-8),
+    barbearia:barbearia,
+    url:location.href
   };
 
-  fetch(BARBERIA_WEBHOOK,{
+  var controller =
+    window.AbortController ? new AbortController() : null;
+
+  // Timeout de 30 segundos
+  var timeout = setTimeout(function(){
+    if(controller) controller.abort();
+  },30000);
+
+  var opcoes = {
     method:'POST',
     headers:{
       'Content-Type':'application/json'
     },
     body:JSON.stringify(payload)
-  })
+  };
+
+  if(controller){
+    opcoes.signal = controller.signal;
+  }
+
+  fetch(BARBERIA_WEBHOOK,opcoes)
 
   .then(function(r){
 
@@ -5067,14 +5083,28 @@ function biaSend(){
     var resp = '';
 
     try{
+
       var j = JSON.parse(t);
+
+      if(Array.isArray(j)){
+        j = j[0] || {};
+      }
 
       resp =
         j.resposta ||
+        j.response ||
         j.reply ||
         j.text ||
         j.output ||
         j.message ||
+        (j.data && (
+          j.data.resposta ||
+          j.data.response ||
+          j.data.reply ||
+          j.data.text ||
+          j.data.output ||
+          j.data.message
+        )) ||
         '';
 
     }catch(e){
@@ -5084,12 +5114,9 @@ function biaSend(){
 
     resp = String(resp || '').trim();
 
-    // 🚫 NUNCA deixa uma resposta vazia aparecer
     if(!resp){
-
       typ.innerHTML =
-        '⚠️ O Barber IA recebeu uma resposta vazia.';
-
+        '⚠️ O Barber IA não recebeu uma resposta válida.';
       return;
     }
 
@@ -5109,21 +5136,31 @@ function biaSend(){
     if(msgs){
       msgs.scrollTop = msgs.scrollHeight;
     }
+
   })
 
   .catch(function(err){
 
     console.error('[Barber IA]',err);
 
-    typ.innerHTML =
-      '😕 Não consegui responder agora. ' +
-      'Tente novamente em alguns segundos.';
+    if(err && err.name === 'AbortError'){
+
+      typ.innerHTML =
+        '⏱️ O Barber IA demorou mais de 30 segundos para responder.';
+
+    }else{
+
+      typ.innerHTML =
+        '😕 Não consegui responder agora. Tente novamente.';
+    }
+
   })
 
   .finally(function(){
 
-    // 🔓 libera novo envio
+    clearTimeout(timeout);
     biaSending = false;
+
   });
 }
 /* ---- voz (fala -> texto) ---- */
