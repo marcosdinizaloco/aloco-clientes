@@ -4957,41 +4957,182 @@ function biaSenha(){
   return '';
 }
 function biaAsk(q){document.getElementById('biaIn').value=q;biaSend();}
+var biaSending = false;
+var biaLastQuestion = '';
+var biaLastQuestionAt = 0;
+
 function biaSend(){
-  var i=document.getElementById('biaIn');var q=(i.value||'').trim();if(!q)return;
-  i.value='';var sug=document.getElementById('biaSug');if(sug)sug.style.display='none';
-  biaAddMsg(q,'u');biaHist.push({role:'user',content:q});
-  var typ=biaAddMsg('','a');typ.innerHTML='<span class="bia-typing"><i></i><i></i><i></i></span>';
-  var m=document.getElementById('biaMsgs');m.scrollTop=m.scrollHeight;
-  if(!BARBERIA_WEBHOOK||BARBERIA_WEBHOOK.indexOf('http')!==0){
-    typ.innerHTML='⚙️ O Barber IA ainda não está conectado. Configure a URL do n8n no código (BARBERIA_WEBHOOK).';return;
+  var i = document.getElementById('biaIn');
+  var q = (i.value || '').trim();
+
+  if(!q) return;
+
+  // Impede dois envios simultâneos
+  if(biaSending) return;
+
+  // Impede a mesma pergunta sendo enviada novamente em poucos segundos
+  var agora = Date.now();
+  if(q === biaLastQuestion && (agora - biaLastQuestionAt) < 5000){
+    i.value = '';
+    return;
   }
-  var barbearia=(document.querySelector('.bia-hd')&&document.title)||'';
-  fetch(BARBERIA_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({pergunta:q,slug:biaSlug(),senha:biaSenha(),contexto:biaCtx(),historico:biaHist.slice(-8),barbearia:barbearia,url:location.href})})
-  .then(function(r){return r.text();})
-  .then(function(t){
-    var resp=t;try{var j=JSON.parse(t);resp=j.resposta||j.reply||j.text||j.output||j.message||t;}catch(e){}
-    typ.innerHTML=biaEsc(resp).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
-    biaHist.push({role:'assistant',content:resp});
-    document.getElementById('biaMsgs').scrollTop=999999;
+
+  biaLastQuestion = q;
+  biaLastQuestionAt = agora;
+  biaSending = true;
+
+  i.value = '';
+
+  var sug = document.getElementById('biaSug');
+  if(sug) sug.style.display = 'none';
+
+  biaAddMsg(q,'u');
+  biaHist.push({role:'user',content:q});
+
+  var typ = biaAddMsg('','a');
+  typ.innerHTML = '<span class="bia-typing"><i></i><i></i><i></i></span>';
+
+  var m = document.getElementById('biaMsgs');
+  if(m) m.scrollTop = m.scrollHeight;
+
+  if(!BARBERIA_WEBHOOK || BARBERIA_WEBHOOK.indexOf('http') !== 0){
+    typ.innerHTML = '⚙️ O Barber IA ainda não está conectado. Configure a URL do n8n no código (BARBERIA_WEBHOOK).';
+    biaSending = false;
+    return;
+  }
+
+  var barbearia = (document.querySelector('.bia-hd') && document.title) || '';
+
+  fetch(BARBERIA_WEBHOOK,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      pergunta:q,
+      requestId:'bia-' + Date.now() + '-' + Math.random().toString(36).slice(2,10),
+      slug:biaSlug(),
+      senha:biaSenha(),
+      contexto:biaCtx(),
+      historico:biaHist.slice(-8),
+      barbearia:barbearia,
+      url:location.href
+    })
   })
-  .catch(function(){typ.innerHTML='😕 Não consegui responder agora. Confira a conexão do n8n e tente de novo.';});
+  .then(function(r){
+    return r.text();
+  })
+  .then(function(t){
+    var resp = t;
+
+    try{
+      var j = JSON.parse(t);
+      resp = j.resposta || j.reply || j.text || j.output || j.message || t;
+    }catch(e){}
+
+    typ.innerHTML = biaEsc(resp)
+      .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+      .replace(/\n/g,'<br>');
+
+    biaHist.push({
+      role:'assistant',
+      content:resp
+    });
+
+    var msgs = document.getElementById('biaMsgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  })
+  .catch(function(){
+    typ.innerHTML = '😕 Não consegui responder agora. Confira a conexão do n8n e tente de novo.';
+  })
+  .finally(function(){
+    biaSending = false;
+  });
 }
 /* ---- voz (fala -> texto) ---- */
-var biaRec=null;
+var biaRec = null;
+var biaVoiceSending = false;
+
 function biaVoice(){
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  var mic=document.getElementById('biaMic');
-  if(!SR){mic.style.display='none';return;}
-  if(biaRec){try{biaRec.stop();}catch(e){}biaRec=null;mic.classList.remove('rec');return;}
-  biaRec=new SR();biaRec.lang='pt-BR';biaRec.interimResults=true;biaRec.continuous=false;
-  mic.classList.add('rec');
-  var fin='';
-  biaRec.onresult=function(ev){var s='';for(var k=0;k<ev.results.length;k++){s+=ev.results[k][0].transcript;}document.getElementById('biaIn').value=s;fin=s;};
-  biaRec.onerror=function(){mic.classList.remove('rec');biaRec=null;};
-  biaRec.onend=function(){mic.classList.remove('rec');biaRec=null;if((document.getElementById('biaIn').value||'').trim())biaSend();};
-  try{biaRec.start();}catch(e){mic.classList.remove('rec');}
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var mic = document.getElementById('biaMic');
+
+  if(!SR){
+    if(mic) mic.style.display = 'none';
+    return;
+  }
+
+  // Se já estiver gravando, encerra
+  if(biaRec){
+    try{ biaRec.stop(); }catch(e){}
+    biaRec = null;
+    if(mic) mic.classList.remove('rec');
+    return;
+  }
+
+  // Não inicia outra gravação enquanto uma anterior ainda está enviando
+  if(biaVoiceSending || biaSending) return;
+
+  biaRec = new SR();
+  biaRec.lang = 'pt-BR';
+  biaRec.interimResults = true;
+  biaRec.continuous = false;
+
+  if(mic) mic.classList.add('rec');
+
+  var finalText = '';
+  var terminou = false;
+
+  biaRec.onresult = function(ev){
+    var s = '';
+
+    for(var k = 0; k < ev.results.length; k++){
+      s += ev.results[k][0].transcript;
+    }
+
+    var input = document.getElementById('biaIn');
+    if(input) input.value = s;
+
+    finalText = s;
+  };
+
+  biaRec.onerror = function(){
+    terminou = true;
+
+    if(mic) mic.classList.remove('rec');
+
+    biaRec = null;
+    biaVoiceSending = false;
+  };
+
+  biaRec.onend = function(){
+    if(terminou) return;
+    terminou = true;
+
+    if(mic) mic.classList.remove('rec');
+
+    biaRec = null;
+
+    var input = document.getElementById('biaIn');
+    var texto = input ? (input.value || '').trim() : '';
+
+    if(!texto || biaVoiceSending || biaSending) return;
+
+    biaVoiceSending = true;
+
+    try{
+      biaSend();
+    }finally{
+      biaVoiceSending = false;
+    }
+  };
+
+  try{
+    biaRec.start();
+  }catch(e){
+    biaRec = null;
+    biaVoiceSending = false;
+
+    if(mic) mic.classList.remove('rec');
+  }
 }
 /* esconde o mic se o navegador não suportar voz */
 (function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){var m=document.getElementById('biaMic');if(m)m.style.display='none';}})();
