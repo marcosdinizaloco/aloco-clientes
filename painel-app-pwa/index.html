@@ -3064,6 +3064,7 @@ function _drawEquipe(){
       h+='<div class="EQ-CFOOTER">';
       h+='<button class="btn btn-ghost" onclick="edBarb(\''+b.id+'\')">Editar</button>';
       h+='<button class="btn btn-ghost" onclick="ir(\'agd\',document.getElementById(\'nb-agd\'))">Ver agenda</button>';
+      h+='<button class="btn btn-danger" onclick="pdDel(\'barb\',\''+b.id+'\',\''+esc(b.nome)+'\')">✕ Excluir</button>';
       h+='</div>';
       h+='</div>';
     });
@@ -3556,7 +3557,7 @@ function rmBlq(id){_gas().withSuccessHandler(function(r){if(r.ok){toast('Removid
 //  EXCLUSÃO
 // ═══════════════════════════════════════════════════════
 function pdDel(tipo,id,nome){_delTipo=tipo;_delId=id;document.getElementById('del-txt').textContent='Excluir "'+nome+'"? Nao pode ser desfeito.';oModal('del');}
-function svDel(){if(!_delId)return;var btn=document.getElementById('bsv-del');btn.disabled=true;btn.textContent='Excluindo...';function ok(r){btn.disabled=false;btn.textContent='Excluir';fModal('del');if(r.ok){toast(r.mensagem,'ok');if(_delTipo==='barb')ldBarb();else ldSvc();}else toast('Erro: '+r.erro,'er');_delId=null;_delTipo=null;}if(_delTipo==='barb')_gas().withSuccessHandler(ok).excluirBarbeiro(_delId);else if(_delTipo==='svc')_gas().withSuccessHandler(ok).excluirServico(_delId);else toast('Exclusao de clientes nao disponivel.','er');}
+function svDel(){if(!_delId)return;var btn=document.getElementById('bsv-del');btn.disabled=true;btn.textContent='Excluindo...';function ok(r){btn.disabled=false;btn.textContent='Excluir';fModal('del');if(r.ok){toast(r.mensagem,'ok');if(_delTipo==='barb')ldBarb();else ldSvc();}else toast('Erro: '+r.erro,'er');_delId=null;_delTipo=null;}if(_delTipo==='barb')_gas().withSuccessHandler(ok).excluirBarbeiro({id:_delId});else if(_delTipo==='svc')_gas().withSuccessHandler(ok).excluirServico({id:_delId});else toast('Exclusao de clientes nao disponivel.','er');}
 
 // ═══════════════════════════════════════════════════════
 //  CLIENTES
