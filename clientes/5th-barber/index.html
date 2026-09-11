@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0b0806">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="5TH Barber">
+<meta name="apple-mobile-web-app-title" content="5TH">
 <link id="aloco-manifest" rel="manifest">
 <link id="aloco-apple-icon" rel="apple-touch-icon" href="http://143.95.163.162:3300/saidas/5th-barber_logo.png">
 <link id="aloco-favicon" rel="icon" href="http://143.95.163.162:3300/saidas/5th-barber_logo.png">
@@ -1177,7 +1177,7 @@ body::after {
 <div class="screen" id="screen-fila">
   <div class="sb">
     <span class="sb-time" id="lt-fila">09:41</span>
-    <span class="sb-brand">5TH Barber</span>
+    <span class="sb-brand">5TH</span>
   </div>
 
   <!-- notificação (estrutura pronta p/ push futuro) -->
@@ -1252,7 +1252,7 @@ body::after {
 
 <!-- ═══ TELA PACOTES ═══ -->
 <div class="screen" id="screen-pacotes">
-  <div class="sb"><span class="sb-time">09:41</span><span class="sb-brand">5TH Barber</span></div>
+  <div class="sb"><span class="sb-time">09:41</span><span class="sb-brand">5TH</span></div>
   <div class="fila-hd fu">
     <div class="hd-eyebrow">Pacotes</div>
     <h1 class="hd-title">Economize<em>fechando pacote.</em></h1>
@@ -2151,7 +2151,7 @@ function alocoGerarIcone(cb){
 function alocoSetupPWA(){
   alocoGerarIcone(function(icon){
     var nome = "5TH Barber" || 'Barbearia';
-    var curto = "5TH Barber" || nome;
+    var curto = "5TH" || nome;
     var bg = alocoCorCss('--s1','#0b0806');
     var theme = alocoCorCss('--b1','#d6a481');
     var man = {
@@ -2180,7 +2180,7 @@ function alocoSetupPWA(){
 function _alocoTxt(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
 function alocoNeutralizarDemo(){
   var nome = "5TH Barber" || '';
-  var curto = "5TH Barber" || nome;
+  var curto = "5TH" || nome;
   // marca "BRABOS" no topo -> nome da barbearia
   document.querySelectorAll('.sb-brand').forEach(function(el){ el.textContent = (curto||'').toUpperCase(); });
   // home: card "próximo horário" sem reserva ainda
