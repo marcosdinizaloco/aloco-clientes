@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Acessos da equipe</title>
+<style>
+:root{--fundo:#0B0D10;--sup:#14181D;--linha:#232A33;--txt:#EDEAE4;--txt2:#9AA3AD;--azul:#0097FD;--azul2:#5CBBFF;--verde:#25D366;
+--ff:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--fundo);color:var(--txt);font-family:var(--ff);-webkit-font-smoothing:antialiased}
+body{padding:0 16px calc(30px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto}
+:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:8px}
+.login{min-height:100svh;display:grid;place-content:center;gap:14px;text-align:center}
+h1{font-size:24px;margin:0}
+p.sub{color:var(--txt2);margin:0 0 6px;font-size:15px}
+input{width:100%;max-width:300px;margin-inline:auto;background:var(--sup);border:1px solid var(--linha);color:var(--txt);
+  border-radius:14px;padding:16px;font-size:20px;letter-spacing:3px;text-align:center;text-transform:uppercase}
+.btn{background:var(--azul);color:#04121F;border:0;border-radius:14px;padding:16px 22px;font-size:17px;font-weight:700;cursor:pointer;width:100%;max-width:300px;margin-inline:auto}
+.erro{color:#FF8A90;font-size:14px;min-height:18px}
+header{padding:20px 0 6px}
+header b{font-size:20px;display:block}
+header span{font-size:13px;color:var(--txt2)}
+.card{background:var(--sup);border:1px solid var(--linha);border-radius:16px;padding:16px;margin-bottom:12px;display:grid;gap:12px}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.nome{font-size:18px;font-weight:700}
+.cod{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;letter-spacing:4px;color:var(--azul2);font-weight:700}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+.acoes button,.acoes a{flex:1 1 40%;text-align:center;text-decoration:none;border-radius:12px;padding:12px 8px;font-size:14px;font-weight:700;
+  border:1px solid var(--linha);background:transparent;color:var(--txt);cursor:pointer}
+.acoes .wa{background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.45);color:#9BEFC0}
+.vazio{text-align:center;color:var(--txt2);padding:40px 10px;font-size:15px;line-height:1.5}
+.dica{font-size:13px;color:var(--txt2);text-align:center;margin-top:18px;line-height:1.5}
+.link{background:var(--sup);border:1px dashed var(--linha);border-radius:12px;padding:12px;font-size:13px;color:var(--txt2);word-break:break-all;text-align:center}
+.ok{color:#7BE6A6;font-size:13px;text-align:center;min-height:16px}
+</style>
+</head>
+<body>
+
+<div id="tela-login" class="login">
+  <h1>Acessos da equipe</h1>
+  <p class="sub">Digite a senha do painel da barbearia</p>
+  <input id="senha" type="password" placeholder="senha" autocomplete="current-password">
+  <button class="btn" id="entrar">Ver códigos</button>
+  <div class="erro" id="erro"></div>
+</div>
+
+<div id="tela-lista" hidden>
+  <header>
+    <b>Acessos da equipe</b>
+    <span id="quem">—</span>
+  </header>
+  <div id="lista"></div>
+  <div class="link" id="linkapp"></div>
+  <div class="ok" id="ok"></div>
+  <p class="dica">Cada barbeiro abre o endereço acima e digita o código dele. Ele vê só a própria agenda e só mexe nos próprios horários.</p>
+</div>
+
+<script>
+(function(){
+  var API = 'https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec';
+  function q(id){ return document.getElementById(id); }
+  var SLUG = (new URLSearchParams(location.search).get('b') || '').toLowerCase();
+  var KEY = 'aloco_senha_' + SLUG;
+  var SENHA = '';
+  var APP = location.origin + '/barbeiro.html?b=' + SLUG;
+
+  try { SENHA = sessionStorage.getItem(KEY) || ''; } catch(e) {}
+
+  function buscar(s){
+    return fetch(API + '?action=barb_codigos&b=' + encodeURIComponent(SLUG) + '&senha=' + encodeURIComponent(s))
+      .then(function(r){ return r.json(); });
+  }
+  function pintar(lista){
+    q('tela-login').hidden = true; q('tela-lista').hidden = false;
+    q('quem').textContent = SLUG;
+    q('linkapp').textContent = APP;
+    if (!lista.length){
+      q('lista').innerHTML = '<div class="vazio">Nenhum barbeiro cadastrado ainda.<br>Cadastre a equipe no painel e volte aqui.</div>';
+      return;
+    }
+    var h = '';
+    lista.forEach(function(b, i){
+      h += '<div class="card">' +
+             '<div class="topo"><span class="nome">' + (b.nome || 'Barbeiro') + '</span><span class="cod">' + b.codigo + '</span></div>' +
+             '<div class="acoes">' +
+               '<button data-copia="' + i + '">Copiar acesso</button>' +
+               '<a class="wa" target="_blank" rel="noopener" data-wa="' + i + '" href="#">Enviar no WhatsApp</a>' +
+             '</div>' +
+           '</div>';
+    });
+    q('lista').innerHTML = h;
+    var texto = function(b){
+      return 'Oi ' + (b.nome || '') + '! Esse é o seu acesso à agenda:\n' + APP + '\nSeu código: ' + b.codigo;
+    };
+    q('lista').querySelectorAll('[data-wa]').forEach(function(a){
+      a.href = 'https://wa.me/?text=' + encodeURIComponent(texto(lista[+a.getAttribute('data-wa')]));
+    });
+    q('lista').addEventListener('click', function(e){
+      var bt = e.target.closest('[data-copia]'); if (!bt) return;
+      var t = texto(lista[+bt.getAttribute('data-copia')]);
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+        .then(function(){ q('ok').textContent = 'Acesso copiado. É só colar no WhatsApp.'; })
+        .catch(function(){ prompt('Copie o texto:', t); });
+    });
+  }
+  function entrar(s){
+    q('erro').textContent = 'Verificando…';
+    buscar(s).then(function(j){
+      if (j && j.ok){ SENHA = s; try { sessionStorage.setItem(KEY, s); } catch(e) {} pintar(j.dados || []); }
+      else q('erro').textContent = 'Senha não confere.';
+    }).catch(function(){ q('erro').textContent = 'Sem conexão.'; });
+  }
+  q('entrar').addEventListener('click', function(){
+    var s = q('senha').value.trim(); if (!s) { q('erro').textContent = 'Digite a senha.'; return; }
+    entrar(s);
+  });
+  q('senha').addEventListener('keydown', function(e){ if (e.key === 'Enter') q('entrar').click(); });
+
+  if (!SLUG){ q('erro').textContent = 'Endereço sem a barbearia.'; return; }
+  if (SENHA) entrar(SENHA);
+})();
+</script>
+</body>
+</html>
