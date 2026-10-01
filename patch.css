@@ -138,3 +138,87 @@ body{
 .nav-btn { padding: 8px 14px !important; }
 .nav-lbl { letter-spacing: 0.08em !important; }
 .nav-btn.active { color: #E3BE70 !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   O gerador chumbou a cor da barbearia como valor literal em dezenas
+   de seletores (nao usou variavel). Entao cada um precisa ser dito
+   aqui, senao o azul antigo sobrevive no meio do dourado.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* cartao do proximo horario */
+.nc-lbl  { color: rgba(255,255,255,0.42) !important; }
+.nc-svc  { color: #FFFFFF !important; }
+.nc-sub  { color: rgba(255,255,255,0.58) !important; }
+.nc-dy   { color: rgba(255,255,255,0.42) !important; }
+.nc-div  { background: rgba(255,255,255,0.07) !important; }
+.nc-bloom{ background: radial-gradient(circle, rgba(227,190,112,0.10) 0%, transparent 70%) !important; }
+.nc-gloss{ background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%) !important; }
+
+/* pecas que aparecem nas outras abas */
+.chip            { border-color: rgba(227,190,112,0.22) !important; }
+.bk              { border-color: rgba(227,190,112,0.20) !important; }
+.bk::before      { background: rgba(227,190,112,0.10) !important; }
+.bk-wm           { color: rgba(227,190,112,0.05) !important; }
+.bk-badge        { border-color: rgba(227,190,112,0.30) !important; color: #E3BE70 !important; }
+.ia              { border-color: rgba(227,190,112,0.16) !important; }
+.slot-cs         { border-color: rgba(227,190,112,0.22) !important; }
+.card.warm,
+.card.actionable { border-color: rgba(227,190,112,0.18) !important; }
+.next-benefit    { border-color: rgba(227,190,112,0.20) !important; }
+.tl-dot.mark     { background: #E3BE70 !important; box-shadow: 0 0 10px rgba(227,190,112,.5) !important; }
+.step-dot.done   { background: rgba(227,190,112,0.30) !important; }
+.confirm-icon    { border-color: rgba(227,190,112,0.30) !important; color: #E3BE70 !important; }
+.ritual-pulse    { background: radial-gradient(circle, rgba(227,190,112,0.28) 0%, transparent 70%) !important; }
+.p-ava{
+  background: linear-gradient(135deg, #C9992F 0%, #F6E3B0 100%) !important;
+  color: #16100A !important;
+}
+.cta::after, .cta2::after, .ag-cta:not(:disabled)::after{
+  background: rgba(246,227,176,0.18) !important;
+}
+
+/* ═══ DETALHES GRAFICOS ═══ */
+
+/* um terceiro tracinho, mais fino, cruzando a esquerda */
+body::before{
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: none;
+  border-left: 1px solid rgba(246,227,176,0.16);
+  border-radius: 0 0 0 60vw;
+  transform: translateX(26vw) rotate(-7deg);
+}
+
+/* granulado de cinema + vinheta: tira o "liso de tela" */
+body::after{
+  content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(130% 92% at 50% 44%, transparent 52%, rgba(0,0,0,0.55) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: cover, 160px 160px;
+  mix-blend-mode: soft-light;
+}
+
+/* brilho que atravessa o botao de tempos em tempos */
+.cta{ position: relative !important; overflow: hidden !important; }
+.cta > *{ position: relative; z-index: 2; }
+.cta::before{
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.55) 50%, transparent 62%);
+  transform: translateX(-120%);
+  animation: alcoBrilho 5.5s ease-in-out 1.4s infinite;
+}
+@keyframes alcoBrilho{
+  0%, 68%   { transform: translateX(-120%); }
+  86%, 100% { transform: translateX(120%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .cta::before{ animation: none; }
+}
+
+/* fio dourado acima da barra de baixo */
+.nav{ position: fixed !important; }
+.nav::before{
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(227,190,112,0.42), transparent);
+}
