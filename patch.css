@@ -160,6 +160,13 @@ body{
   align-items: center; justify-content: center; gap: 10px;
 }
 .cta svg { width: 17px; height: 17px; flex: none; }
+/* O app esconde alguns botoes por JS (style.display='none'). O !important
+   acima ressuscitava esses botoes — entre eles o "Confirmar no WhatsApp",
+   que ja foi desativado e levava a lugar nenhum. */
+#cd-wa{ display: none !important; }
+.cta[style*="display:none"], .cta[style*="display: none"],
+.cta2[style*="display:none"], .cta2[style*="display: none"],
+.ag-cta[style*="display:none"], .ag-cta[style*="display: none"]{ display: none !important; }
 .cta2{
   border-radius: 14px !important; padding: 13px !important;
   border-color: rgba(255,255,255,0.12) !important;
