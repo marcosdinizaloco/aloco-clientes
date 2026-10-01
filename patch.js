@@ -1,3 +1,214 @@
+/* ALOCO SEGMENTO */
+/* ─────────────────────────────────────────────────────────────────────
+   ALOCO — segmento: barber (padrao) ou beauty.
+   Nada de cor, layout ou estrutura muda. So o texto.
+   O dicionario vai do masculino (como esta escrito hoje) para o feminino.
+   ───────────────────────────────────────────────────────────────────── */
+(function(){
+  if(window.__alocoSegMotor) return;
+  window.__alocoSegMotor = 1;
+  function qualSegmento(){
+    try {
+      var u = new URLSearchParams(location.search).get('seg');
+      if(u){ try{ localStorage.setItem('aloco_seg', u); }catch(e){} return String(u).toLowerCase(); }
+    } catch(e){}
+    try { if(window.ALOCO_SEG) return String(window.ALOCO_SEG).toLowerCase(); } catch(e){}
+    try {
+      var mt = document.querySelector('meta[name="aloco-seg"]');
+      if(mt && mt.content) return String(mt.content).toLowerCase();
+    } catch(e){}
+    try { var g = localStorage.getItem('aloco_seg'); if(g) return String(g).toLowerCase(); } catch(e){}
+    return 'barber';
+  }
+  var SEG = qualSegmento();
+  window.__alocoSeg = SEG;
+  // O app pode definir ALOCO_SEG depois que este arquivo carrega. Em vez de
+  // desistir na primeira leitura, espiamos mais algumas vezes antes de sair.
+  if(SEG !== 'beauty'){
+    var espiadas = 0;
+    var relogio = setInterval(function(){
+      if(++espiadas > 20){ clearInterval(relogio); return; }
+      if(qualSegmento() === 'beauty'){ clearInterval(relogio); window.__alocoSeg = 'beauty'; comecar(); }
+    }, 250);
+    return;
+  }
+
+  // ── frases inteiras primeiro (as mais longas antes) ──────────────────
+  var FRASES = [
+    // app do cliente
+    ['Seu horário está garantido. A barbearia já foi avisada.', 'Seu horário está garantido. O salão já foi avisado.'],
+    ['barbearia ja foi avisada', 'salão já foi avisado'],
+    ['barbearia já foi avisada', 'salão já foi avisado'],
+    ['barbearia foi avisada', 'salão foi avisado'],
+    ['barbearia sera avisada', 'salão será avisado'],
+    ['barbearia será avisada', 'salão será avisado'],
+    ['barbearia avisada', 'salão avisado'],
+    ['barbeiro foi avisado', 'profissional foi avisada'],
+    ['barbeiro é avisado', 'profissional é avisada'],
+    ['seja atendido', 'seja atendida'],
+    ['BEM-VINDO À', 'BEM-VINDA AO'], ['BEM-VINDO AO', 'BEM-VINDA AO'], ['BEM-VINDO', 'BEM-VINDA'],
+    ['Bem-vindo à', 'Bem-vinda ao'], ['Bem-vindo ao', 'Bem-vinda ao'], ['Bem-vindo', 'Bem-vinda'],
+    ['bem-vindo', 'bem-vinda'],
+    ['João', 'Maria'], ['Joao', 'Maria'], ['Silva', 'Souza'],
+    ['Lucas Mendes', 'Juliana Prado'], ['Rafael Costa', 'Camila Ribeiro'], ['Diego Alves', 'Beatriz Nunes'],
+    ['Pra quem trabalha sozinho', 'Pra quem trabalha sozinha'],
+    ['clientes atendidos', 'clientes atendidas'],
+    ['CLIENTES ATENDIDOS', 'CLIENTES ATENDIDAS'],
+    ['cliente atendido', 'cliente atendida'],
+    ['atendidos hoje', 'atendidas hoje'],
+    ['Planos de corte e barba com preço fechado. Toque num pacote pra falar com a barbearia.',
+     'Pacotes com preço fechado. Toque num pacote pra falar com o salão.'],
+    ['Entre na fila e seja atendido por ordem de chegada — o barbeiro é avisado na hora.',
+     'Entre na fila e seja atendida por ordem de chegada — a profissional é avisada na hora.'],
+    ['Pronto! A barbearia foi avisada do seu interesse.', 'Pronto! O salão foi avisado do seu interesse.'],
+    ['A barbearia ainda não cadastrou pacotes.', 'O salão ainda não cadastrou pacotes.'],
+    ['Fale com a barbearia para fechar o pacote.', 'Fale com o salão para fechar o pacote.'],
+    ['identificar sua conta na barbearia.', 'identificar sua conta no salão.'],
+    ['É a sua vez! Dirija-se à barbearia', 'É a sua vez! Dirija-se ao salão'],
+    ['Dirija-se à barbearia.', 'Dirija-se ao salão.'],
+    ['Fale com a barbearia.', 'Fale com o salão.'],
+    ['O barbeiro chamou você.', 'A profissional chamou você.'],
+    ['Seu visual fala antes de você.', 'Seu momento de cuidar de você.'],
+    ['Padrão elevado, mantido.', 'Beleza que começa no seu tempo.'],
+    ['Seu barbeiro habitual', 'Sua profissional habitual'],
+    ['45 minutos · degradê, tesoura ou navalhado', '45 minutos · corte e finalização'],
+    ['30 minutos · navalha e finalização', '60 minutos · lavagem e escova'],
+    ['Degradê · Barba · Pigmentação', 'Corte · Coloração · Escova'],
+    ['Tesoura · Cortes clássicos', 'Mechas · Luzes'],
+    ['Navalhado · Barba longa', 'Unhas · Design de sobrancelha'],
+    ['Degradê • Barba', 'Corte • Coloração'],
+    ['Tesoura • Clássico', 'Mechas • Luzes'],
+    ['Navalhado • Barba longa', 'Unhas • Sobrancelha'],
+    ['Reserve seu primeiro corte', 'Reserve seu primeiro horário'],
+    ['Planos de corte e barba', 'Pacotes de beleza'],
+    ['corte e barba', 'beleza e cuidado'],
+    ['Corte + Barba', 'Corte + Escova'],
+
+    // painel
+    ['Cadastre os barbeiros e a recepção. Cada um recebe a própria senha e você escolhe o que ele enxerga.',
+     'Cadastre as profissionais e a recepção. Cada uma recebe a própria senha e você escolhe o que ela enxerga.'],
+    ['Pra quem quer parar de largar a tesoura pra responder cliente.',
+     'Pra quem quer parar de largar a cliente na cadeira pra responder mensagem.'],
+    ['Pra barbearia com varios barbeiros na cadeira.', 'Pra salão com várias profissionais na cadeira.'],
+    ['Pra barbearia com vários barbeiros na cadeira.', 'Pra salão com várias profissionais na cadeira.'],
+    ['Precisamos de alguns meses de movimento da sua barbearia', 'Precisamos de alguns meses de movimento do seu salão'],
+    ['histórico suficiente da sua barbearia', 'histórico suficiente do seu salão'],
+    ['Comissao do Barbeiro (R$)', 'Comissao da Profissional (R$)'],
+    ['Comissão do Barbeiro (R$)', 'Comissão da Profissional (R$)'],
+    ['Ex: Barbeiro, Recepção', 'Ex: Cabeleireira, Recepção'],
+    ['Ex: Corte Social', 'Ex: Escova'],
+    ['Barbeiro (opcional)...', 'Profissional (opcional)...'],
+    ['Selecione o barbeiro.', 'Selecione a profissional.'],
+    ['Receita por barbeiro', 'Receita por profissional'],
+    ['Editar Barbeiro', 'Editar Profissional'],
+    ['Novo Barbeiro', 'Nova Profissional'],
+    ['Barbeiro pref.', 'Profissional pref.'],
+    ['Barber IA', 'Beauty IA'],
+
+    // artigos: o portugues muda o genero junto
+    ['da sua barbearia', 'do seu salão'], ['na sua barbearia', 'no seu salão'],
+    ['a sua barbearia', 'o seu salão'],   ['A sua barbearia', 'O seu salão'],
+    ['pela barbearia', 'pelo salão'],     ['Pela barbearia', 'Pelo salão'],
+    ['da barbearia', 'do salão'],         ['Da barbearia', 'Do salão'],
+    ['na barbearia', 'no salão'],         ['Na barbearia', 'No salão'],
+    ['à barbearia', 'ao salão'],          ['À barbearia', 'Ao salão'],
+    ['a barbearia', 'o salão'],           ['A barbearia', 'O salão'],
+    ['seu barbeiro', 'sua profissional'], ['Seu barbeiro', 'Sua profissional'],
+    ['dos barbeiros', 'das profissionais'], ['Dos barbeiros', 'Das profissionais'],
+    ['os barbeiros', 'as profissionais'], ['Os barbeiros', 'As profissionais'],
+    ['do barbeiro', 'da profissional'],   ['Do barbeiro', 'Da profissional'],
+    ['ao barbeiro', 'à profissional'],    ['Ao barbeiro', 'À profissional'],
+    ['o barbeiro', 'a profissional'],     ['O barbeiro', 'A profissional']
+  ];
+  FRASES.sort(function(a,b){ return b[0].length - a[0].length; });
+
+  // ── palavras soltas, preservando maiuscula ──────────────────────────
+  var PALAVRAS = [
+    [/\bbarbearias\b/g, 'salões'], [/\bBarbearias\b/g, 'Salões'], [/\bBARBEARIAS\b/g, 'SALÕES'],
+    [/\bbarbearia\b/g, 'salão'],   [/\bBarbearia\b/g, 'Salão'],   [/\bBARBEARIA\b/g, 'SALÃO'],
+    [/\bbarbeiros\b/g, 'profissionais'], [/\bBarbeiros\b/g, 'Profissionais'], [/\bBARBEIROS\b/g, 'PROFISSIONAIS'],
+    [/\bbarbeiro\b/g, 'profissional'],   [/\bBarbeiro\b/g, 'Profissional'],   [/\bBARBEIRO\b/g, 'PROFISSIONAL'],
+    [/\bBarber IA\b/g, 'Beauty IA'], [/\bBARBER IA\b/g, 'BEAUTY IA'],
+    [/\bBARBER\b/g, 'BEAUTY'], [/\bBarber\b/g, 'Beauty'], [/\bbarber\b/g, 'beauty'],
+    [/\u{1F488}/gu, '\u{1F485}']   // poste de barbearia -> esmalte
+  ];
+
+  function traduzir(t){
+    if(!t || t.indexOf('') === 0) return t;
+    var s = t, i;
+    for(i = 0; i < FRASES.length; i++){
+      if(s.indexOf(FRASES[i][0]) >= 0) s = s.split(FRASES[i][0]).join(FRASES[i][1]);
+    }
+    for(i = 0; i < PALAVRAS.length; i++) s = s.replace(PALAVRAS[i][0], PALAVRAS[i][1]);
+    return s;
+  }
+  window.alocoTraduzir = traduzir;
+
+  var PULAR = { SCRIPT:1, STYLE:1, NOSCRIPT:1, TEXTAREA:1, SVG:1, CODE:1 };
+  function varrer(raiz){
+    try {
+      if(!raiz) return;
+      if(raiz.nodeType === 3){ var n = traduzir(raiz.nodeValue); if(n !== raiz.nodeValue) raiz.nodeValue = n; return; }
+      if(raiz.nodeType !== 1) return;
+      if(PULAR[raiz.nodeName]) return;
+      var it = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(no){
+          var p = no.parentNode;
+          return (p && PULAR[p.nodeName]) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      var lista = [], no;
+      while((no = it.nextNode())) lista.push(no);
+      lista.forEach(function(x){ var n = traduzir(x.nodeValue); if(n !== x.nodeValue) x.nodeValue = n; });
+      // placeholder, title e aria-label tambem sao texto que a pessoa le
+      var els = raiz.querySelectorAll ? raiz.querySelectorAll('[placeholder],[title],[aria-label]') : [];
+      for(var k = 0; k < els.length; k++){
+        ['placeholder','title','aria-label'].forEach(function(at){
+          var v = els[k].getAttribute(at);
+          if(v){ var n2 = traduzir(v); if(n2 !== v) els[k].setAttribute(at, n2); }
+        });
+      }
+      if(raiz.getAttribute){
+        ['placeholder','title','aria-label'].forEach(function(at){
+          var v = raiz.getAttribute(at);
+          if(v){ var n3 = traduzir(v); if(n3 !== v) raiz.setAttribute(at, n3); }
+        });
+      }
+      // <option> dentro de select tambem
+      if(raiz.querySelectorAll){
+        var ops = raiz.querySelectorAll('option');
+        for(var o = 0; o < ops.length; o++){
+          var tv = traduzir(ops[o].textContent);
+          if(tv !== ops[o].textContent) ops[o].textContent = tv;
+        }
+      }
+    } catch(e){}
+  }
+
+  function tudo(){ varrer(document.body); try{ document.title = traduzir(document.title); }catch(e){} }
+
+  function ligar(){
+    tudo();
+    try {
+      new MutationObserver(function(muts){
+        for(var i = 0; i < muts.length; i++){
+          var m = muts[i];
+          if(m.type === 'characterData'){ var n = traduzir(m.target.nodeValue); if(n !== m.target.nodeValue) m.target.nodeValue = n; }
+          else for(var j = 0; j < m.addedNodes.length; j++) varrer(m.addedNodes[j]);
+        }
+      }).observe(document.body, { childList:true, subtree:true, characterData:true });
+    } catch(e){}
+    [120, 600, 1500, 3000, 6000].forEach(function(ms){ setTimeout(tudo, ms); });
+  }
+  function comecar(){
+    if(window.__alocoSegLigado) return;
+    window.__alocoSegLigado = true;
+    if(document.body) ligar();
+    else document.addEventListener('DOMContentLoaded', ligar);
+  }
+  comecar();
+})();
+/* FIM SEGMENTO */
 // ALOCO - ajustes globais dos apps.
 
 // ── O VISUAL NUNCA MAIS FICA PARA TRAS ──────────────────────────
@@ -203,6 +414,24 @@
     var e = document.querySelector('.sb-time');
     return e ? String(e.textContent || '').trim() : '';
   }
+  // Rede de seguranca: se sobrar em algum app um atalho antigo para uma tela
+  // que nao existe mais, navTo apagava a tela atual e parava no erro — o
+  // cliente ficava com o aplicativo em branco. Agora o toque simplesmente
+  // nao faz nada.
+  function protegerNavTo(){
+    try {
+      if(typeof window.navTo !== 'function' || window.__alocoNavOk) return;
+      var original = window.navTo;
+      window.navTo = function(id){
+        try {
+          if(typeof SCREENS === 'undefined' || !SCREENS[id] || !document.getElementById(SCREENS[id])) return;
+        } catch(e){ return; }
+        return original.apply(this, arguments);
+      };
+      window.__alocoNavOk = 1;
+    } catch(e){}
+  }
+
   function tirarFila(){
     ['nav-fila','screen-fila','lt-fila'].forEach(function(id){
       var el = document.getElementById(id);
@@ -597,6 +826,7 @@
     // clarearTexto() nao e mais necessario: o patch.css trava a paleta
     corDoTopo();
     tirarFila();
+    protegerNavTo();
     trocarEmoji();
     arrumarConfirmacao();
     limparExemplos();
