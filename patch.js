@@ -443,7 +443,7 @@
 
   function ligarMeus(){
     if(!document.querySelector('.nav-items')) return false;
-    clarearTexto();
+    // clarearTexto() nao e mais necessario: o patch.css trava a paleta
     tirarFila();
     trocarEmoji();
     if(!montarMeus()) return false;
