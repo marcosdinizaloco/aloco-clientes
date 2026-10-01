@@ -235,8 +235,12 @@ body::after{
 
 
 /* ── as quatro abas comecam na mesma altura ──
-   medido no navegador: inicio 46px, agendar 40px, meus 18px, perfil 42px.
-   Agora todas em 46px. */
-.ag-hd                  { padding-top: 26px !important; }
-#screen-meus .fila-hd   { padding-top: 28px !important; }
-.p-hd                   { padding-top: 28px !important; }
+   O alinhamento e pela LINHA DO ROTULO (o texto pequeno em maiusculas),
+   nao pelo primeiro texto: no Agendar existe o "< inicio" acima dele.
+   Medido no navegador: rotulo do Agendar em 79px; as outras subiam para
+   46px e por isso o titulo ficava 33px mais alto. Agora todas em 79px,
+   com o titulo grande caindo em 134px nas quatro. */
+.ag-hd                  { padding-top: 26px !important; }   /* ja estava certo */
+#hd-home                { padding-top: 61px !important; }
+#screen-meus .fila-hd   { padding-top: 61px !important; }
+.p-hd                   { padding-top: 61px !important; }
