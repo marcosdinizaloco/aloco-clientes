@@ -321,3 +321,18 @@ body::after{
   box-shadow: 0 6px 18px -6px rgba(201,153,47,0.6) !important;
 }
 .agc-back{ color: rgba(255,255,255,0.58) !important; }
+
+/* ── restos de azul chumbado que o gerador deixou ── */
+.p-ava{ border-color: rgba(227,190,112,0.42) !important; }
+.bd-foto, .trk-foto, .bq-foto{
+  border-color: rgba(227,190,112,0.32) !important;
+  background: linear-gradient(135deg, #C9992F 0%, #D9A94A 100%) !important;
+}
+.bd-rating .stars{ color: #E3BE70 !important; }
+.bd-cta, .fila-hero-cta, .trk-fill{
+  background: linear-gradient(135deg, #C9992F 0%, #E3BE70 100%) !important;
+  color: #16100A !important;
+}
+.pressa-glow{ background: radial-gradient(circle, rgba(227,190,112,0.18) 0%, transparent 70%) !important; }
+.st-wait, .st-wait .fb-dot, .bq-status.wait, .bq-status.wait .bq-dot,
+.st-near .trk-eta b{ color: #E3BE70 !important; }
