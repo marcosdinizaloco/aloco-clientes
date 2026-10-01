@@ -13,11 +13,9 @@
   function lerLocal(){ try { return localStorage.getItem(K) || ''; } catch(e){ return ''; } }
   function gravarLocal(v){ try { localStorage.setItem(K, v); } catch(e){} }
 
-  // espelha os dois lados
   var atual = lerLocal() || lerCookie();
   if (atual && atual !== 'null'){ gravarLocal(atual); gravarCookie(atual); }
 
-  // toda gravacao futura vai para os dois
   if (typeof window.salvarSessao === 'function'){
     var _salvar = window.salvarSessao;
     window.salvarSessao = function(d){
@@ -30,7 +28,6 @@
     window.sairConta = function(){ apagarCookie(); return _sair.apply(this, arguments); };
   }
 
-  // se ja existe sessao mas a tela de cadastro apareceu, entra direto
   function restaurar(){
     var s = lerLocal() || lerCookie();
     if (!s || s === 'null') return;
@@ -45,4 +42,34 @@
   }
   restaurar();
   var n = 0, t = setInterval(function(){ restaurar(); if (++n > 40) clearInterval(t); }, 400);
+
+  // ── AGENDAMENTO: completa o que faltar com o que esta na tela de confirmacao
+  var _fetch = window.fetch;
+  window.fetch = function(url, opt){
+    try {
+      if (opt && String(opt.method||'').toUpperCase() === 'POST'
+          && typeof opt.body === 'string' && opt.body.indexOf('"agendar"') >= 0){
+        var o = JSON.parse(opt.body);
+        var g = function(id){ var e = document.getElementById(id); return e ? String(e.textContent||'').trim() : ''; };
+        var vazio = function(v){ return !v || v === 'undefined' || v === 'null'; };
+        if (vazio(o.servico))  o.servico  = g('cd-svc');
+        if (vazio(o.barbeiro)) o.barbeiro = g('cd-bar');
+        if (vazio(o.horario))  o.horario  = g('cd-hr');
+        if (vazio(o.cliente)){
+          var c = {}; try { c = JSON.parse(lerLocal() || lerCookie() || '{}') || {}; } catch(e){}
+          o.cliente = ((c.nome||'') + ' ' + (c.sobrenome||'')).trim() || 'Cliente';
+        }
+        if (vazio(o.telefone)){
+          var c2 = {}; try { c2 = JSON.parse(lerLocal() || lerCookie() || '{}') || {}; } catch(e){}
+          o.telefone = String(c2.telefone || '');
+        }
+        if (!o.valor){
+          var v = g('cd-vl').replace(/[^\d,]/g,'').replace(',','.');
+          o.valor = parseFloat(v) || 0;
+        }
+        opt = { method:'POST', body: JSON.stringify(o) };
+      }
+    } catch(e){}
+    return _fetch.call(this, url, opt);
+  };
 })();
