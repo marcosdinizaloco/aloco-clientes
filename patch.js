@@ -419,6 +419,24 @@
     } catch(e){}
   }
 
+  // ── a faixa preta atras do relogio do celular ──────────────────
+  // Em app instalado, a cor daquela faixa vem da meta theme-color.
+  // Deixando ela igual ao topo do degrade, a tela sobe ate o relogio
+  // sem risco preto no meio. Hora e bateria continuam aparecendo.
+  function corDoTopo(){
+    try {
+      var m = document.querySelector('meta[name="theme-color"]');
+      if(!m){
+        m = document.createElement('meta');
+        m.setAttribute('name', 'theme-color');
+        document.head.appendChild(m);
+      }
+      m.setAttribute('content', '#0C0905');
+      var s2 = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if(s2) s2.setAttribute('content', 'black-translucent');
+    } catch(e){}
+  }
+
   // a tesoura emoji vira icone de verdade, no tom do texto do botao
   var TESOURA =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
@@ -444,6 +462,7 @@
   function ligarMeus(){
     if(!document.querySelector('.nav-items')) return false;
     // clarearTexto() nao e mais necessario: o patch.css trava a paleta
+    corDoTopo();
     tirarFila();
     trocarEmoji();
     if(!montarMeus()) return false;
