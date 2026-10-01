@@ -326,6 +326,7 @@
         carregando = false;
         if(!j || !j.ok) throw new Error('sem dados');
         pintarMeus(j);
+        pintarHistorico(j);
         atualizarInicio(j);
       })
       .catch(function(){
@@ -342,6 +343,35 @@
       + '<div style="font-size:15px;color:var(--cr);font-weight:600">' + esc(t) + '</div>'
       + '<div style="font-size:13px;color:var(--c3);margin-top:6px;line-height:1.5">' + esc(s2) + '</div>'
       + '</div>';
+  }
+
+
+  // O Perfil tem um bloco "Historico de agendamentos" que nunca foi
+  // preenchido por ninguem: dizia "Voce ainda nao tem agendamentos por aqui"
+  // mesmo para quem tinha. Agora ele vem do mesmo retorno do servidor.
+  function pintarHistorico(j){
+    try {
+      var alvo = document.getElementById('aloco-hist');
+      if(!alvo) return;
+      var p = (j && j.passados) || [];
+      if(!p.length){
+        alvo.innerHTML = '<div class="style-row" style="justify-content:center">'
+          + '<span class="style-key" style="opacity:.6">Nenhum atendimento ainda.</span></div>';
+        return;
+      }
+      var h = '';
+      p.slice(0, 8).forEach(function(a){
+        var val = Number(a.valor) > 0 ? dinheiro(a.valor) : '';
+        h += '<div class="style-row"><span class="style-key">' + esc(diaBR(a.data))
+           + (a.servico ? ' \u00b7 ' + esc(a.servico) : '')
+           + '</span><span class="style-val">' + esc(val) + '</span></div>';
+      });
+      if(p.length > 8){
+        h += '<div class="style-row"><span class="style-key" style="opacity:.6">'
+           + '+ ' + (p.length - 8) + ' atendimentos anteriores</span><span class="style-val"></span></div>';
+      }
+      alvo.innerHTML = h;
+    } catch(e){}
   }
 
   function pintarMeus(j){
@@ -512,12 +542,64 @@
     } catch(e){}
   }
 
+
+  // ── Tela de confirmacao ─────────────────────────────────────────────
+  // Tres acertos que o modelo de cada app nao tem: a data saia crua
+  // (2026-10-02), a tesoura colorida destoava do preto e ouro, e o botao
+  // "Ver meu perfil" levava para o Inicio.
+  var MESES_C = ['janeiro','fevereiro','marco','abril','maio','junho',
+                 'julho','agosto','setembro','outubro','novembro','dezembro'];
+  var SEM_C = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
+  function dataBonita(t){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t||'').trim());
+    if(!m) return null;
+    var d = new Date(+m[1], +m[2]-1, +m[3]);
+    if(isNaN(d.getTime())) return null;
+    return SEM_C[d.getDay()] + ', ' + (+m[3]) + ' de ' + MESES_C[+m[2]-1];
+  }
+  function arrumarConfirmacao(){
+    try {
+      var dt = document.getElementById('cd-dt');
+      if(dt){ var b = dataBonita(dt.textContent); if(b) dt.textContent = b; }
+      var ic = document.querySelector('#ag-stage-3 .confirm-icon');
+      if(ic && !ic.getAttribute('data-aloco-ic') && String(ic.textContent||'').indexOf('\u2702') >= 0){
+        ic.setAttribute('data-aloco-ic','1');
+        ic.innerHTML = TESOURA;
+      }
+      var bs = document.querySelectorAll('#ag-stage-3 .cta2, #ag-stage-3 .cta');
+      for(var i=0;i<bs.length;i++){
+        var el = bs[i];
+        if(el.getAttribute('data-aloco-bt')) continue;
+        if(/perfil/i.test(el.textContent||'')){
+          el.setAttribute('data-aloco-bt','1');
+          el.setAttribute('onclick','');
+          el.onclick = function(){ irPara('perfil'); };
+        }
+      }
+    } catch(e){}
+  }
+
+  // Se o app ficar sem API, a etapa "Quando" mostrava horarios de exemplo
+  // com datas de junho. Melhor dizer a verdade do que oferecer horario falso.
+  function limparExemplos(){
+    try {
+      var c = document.getElementById('ag-dias');
+      if(!c || c.getAttribute('data-aloco-ex')) return;
+      if(temApi) return;                       // com API, o proprio app repinta
+      c.setAttribute('data-aloco-ex','1');
+      c.innerHTML = '<div style="color:var(--c3);font-size:13px;padding:12px 0;line-height:1.55">'
+        + 'Nao consegui carregar os horarios agora.<br>Tente de novo em instantes.</div>';
+    } catch(e){}
+  }
+
   function ligarMeus(){
     if(!document.querySelector('.nav-items')) return false;
     // clarearTexto() nao e mais necessario: o patch.css trava a paleta
     corDoTopo();
     tirarFila();
     trocarEmoji();
+    arrumarConfirmacao();
+    limparExemplos();
     if(!montarMeus()) return false;
     conferirPacotes();
     // a tela de Meus se atualiza sempre que o app volta pro primeiro plano
@@ -527,6 +609,16 @@
     carregarMeus();
     return true;
   }
+  // a confirmacao so existe depois que o cliente reserva: observa e arruma
+  try {
+    var alvoAg = document.getElementById('screen-agenda');
+    if(alvoAg && window.MutationObserver){
+      new MutationObserver(function(){ arrumarConfirmacao(); })
+        .observe(alvoAg, { childList:true, subtree:true, characterData:true });
+    }
+  } catch(e){}
+  document.addEventListener('click', function(){ setTimeout(arrumarConfirmacao, 60); }, true);
+
   var tentou = 0;
   var tMeus = setInterval(function(){
     if(ligarMeus() || ++tentou > 40) clearInterval(tMeus);
