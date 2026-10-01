@@ -1706,7 +1706,7 @@ function resetAgenda() {
 }
 
 // ── ALOCO: carrega SERVIÇOS e BARBEIROS reais da barbearia (do backend) ──
-var ALOCO_API = "";
+var ALOCO_API = "https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec";
 var ALOCO_SLUG = "marcos";
 function _alocoEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function _alocoQ(s){ return String(s||'').replace(/'/g,"\\'"); }
@@ -1892,7 +1892,7 @@ function confirmarAgendamento() {
   if(!selSvc || !selBar || !selSlot) return;
   // ── ALOCO: envia o agendamento para o PAINEL da barbearia (banco oculto) ──
   try {
-    var ALOCO_API = "";
+    var ALOCO_API = "https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec";
     var ALOCO_SLUG = "marcos";
     if (ALOCO_API && ALOCO_API.indexOf('http') === 0) {
       var _cli = {};
