@@ -1,1 +1,52 @@
-/* ALOCO - ajustes globais dos apps. Vale para todos os apps ja entregues. */
+/* ALOCO — ajustes globais dos apps. Vale para todos os apps ja entregues.
+   Tudo aqui sai das variaveis de cor do proprio app (--b1/--b2/--ba/--cr),
+   entao cada barbearia continua com a cor dela. */
+
+/* ── o relogio falso do topo sai: o celular ja mostra a hora ── */
+.sb-time { display: none !important; }
+.sb { justify-content: center !important; }
+.sb > img { margin: 0 auto !important; }
+
+/* ── fundo: preto chapado vira profundidade, com o brilho da marca ── */
+.screen {
+  background:
+    radial-gradient(120% 70% at 85% -10%,  var(--bb) 0%, transparent 55%),
+    radial-gradient(90%  60% at -10% 108%, var(--bc) 0%, transparent 60%),
+    linear-gradient(180deg, #06070A 0%, var(--ink) 42%, var(--ink) 100%)
+    !important;
+}
+
+/* ── saudacao: "Ola," em branco, o nome na cor da marca ── */
+.hd-n { color: rgba(255,255,255,0.94) !important; }
+.hd-n em {
+  background: linear-gradient(135deg, var(--b1) 0%, var(--b3) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* ── cartao do proximo horario: borda suave e um fundo com ar ── */
+.nc {
+  border-radius: 18px !important;
+  border: 1px solid var(--ba) !important;
+  background: linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.012) 45%, transparent 100%) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55) !important;
+}
+.nc-body { padding: 22px 20px 18px !important; }
+
+/* ── botao principal: degrade e mais respiro ── */
+.cta {
+  padding: 16px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  background: linear-gradient(135deg, var(--b1) 0%, var(--b2) 100%) !important;
+  box-shadow: 0 10px 26px -8px var(--ba) !important;
+  display: inline-flex !important;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.cta svg { width: 17px; height: 17px; flex: none; }
+.cta2 { border-radius: 14px !important; padding: 13px !important; }
+
+/* ── barra de baixo: um pouco mais de ar ── */
+.nav-btn { padding: 8px 14px !important; }
+.nav-lbl { letter-spacing: 0.08em !important; }
