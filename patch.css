@@ -37,26 +37,29 @@
   --c5:  rgba(255,255,255,0.09) !important;
 }
 
-/* ── o relogio falso sai; a logo fica centrada ── */
-.sb-time { display: none !important; }
-.sb { justify-content: center !important; background: transparent !important;
-      border-bottom: 0 !important; backdrop-filter: none !important; }
-.sb > img{
-  height: 46px !important; width: 46px !important;
-  object-fit: contain !important;
-  padding: 8px !important; box-sizing: border-box !important;
-  border-radius: 50% !important;
-  border: 1px solid rgba(227,190,112,0.45) !important;
-  box-shadow: 0 0 22px rgba(227,190,112,0.16), inset 0 0 14px rgba(227,190,112,0.07) !important;
-  margin: 0 auto !important;
+/* ── a barra do topo sai inteira: sem logo, sem relogio falso e sem
+      a faixa preta que cortava o degrade. O conteudo comeca no topo. ── */
+.sb { display: none !important; }
+.screen{
+  padding-top: calc(env(safe-area-inset-top, 0px) + 18px) !important;
+  box-sizing: border-box !important;
 }
 
 /* ── fundo: preto com brasa, nao preto chapado ── */
 .screen{
   background:
-    radial-gradient(128% 62% at 92% -8%,  rgba(201,153,47,0.16) 0%, transparent 56%),
-    radial-gradient(104% 52% at -14% 104%, rgba(201,153,47,0.13) 0%, transparent 60%),
-    linear-gradient(176deg, #0B0805 0%, #050403 34%, #000000 100%)
+    radial-gradient(132% 58% at 92% -14%, rgba(201,153,47,0.17) 0%, transparent 56%),
+    radial-gradient(106% 50% at -14% 106%, rgba(201,153,47,0.13) 0%, transparent 60%),
+    linear-gradient(176deg, #0C0905 0%, #070502 30%, #000000 78%)
+    !important;
+  background-attachment: local, local, local !important;
+}
+/* o corpo tambem recebe o fundo: assim nao aparece preto por tras
+   enquanto a tela anima a troca de aba */
+body{
+  background:
+    radial-gradient(132% 44% at 92% -8%, rgba(201,153,47,0.14) 0%, transparent 58%),
+    linear-gradient(176deg, #0C0905 0%, #000000 70%)
     !important;
 }
 
