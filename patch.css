@@ -297,3 +297,27 @@ body::after{
   background-attachment: fixed, scroll, scroll !important;
 }
 /* ═══ FIM DO FUNDO ═══ */
+
+/* ═══ CALENDARIO ═══
+   O app injeta o estilo do calendario em tempo de execucao, com azul
+   chumbado (#4d78f0, #2E9BFF) e com var(--c1), que nunca foi definida.
+   Como aquele <style> entra depois, so vence com !important. */
+:root{ --c1: #FFFFFF !important; }
+
+.agc-title{ color: #FFFFFF !important; font-weight: 700 !important; }
+.agc-nav button{
+  color: #E5C46A !important;
+  background: rgba(255,255,255,0.035) !important;
+  border: 1px solid rgba(227,190,112,0.22) !important;
+}
+.agc-wd { color: rgba(255,255,255,0.34) !important; }
+.agc-day{ color: rgba(255,255,255,0.90) !important; }
+.agc-day.off{ color: rgba(255,255,255,0.14) !important; }
+.agc-day.on{ background: rgba(255,255,255,0.045) !important; }
+.agc-day.on:hover{ background: rgba(255,255,255,0.10) !important; }
+.agc-day.sel{
+  background: linear-gradient(135deg, #C9992F 0%, #F6E3B0 52%, #D9A94A 100%) !important;
+  color: #16100A !important; font-weight: 700 !important;
+  box-shadow: 0 6px 18px -6px rgba(201,153,47,0.6) !important;
+}
+.agc-back{ color: rgba(255,255,255,0.58) !important; }
