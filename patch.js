@@ -383,9 +383,32 @@
       .catch(function(){});
   }
 
+  // a tesoura emoji vira icone de verdade, no tom do texto do botao
+  var TESOURA =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
+    + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>'
+    + '<line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>'
+    + '<line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>';
+
+  function trocarEmoji(){
+    try {
+      var bs = document.querySelectorAll('.cta');
+      for(var i = 0; i < bs.length; i++){
+        var b = bs[i];
+        if(b.getAttribute('data-aloco-ic')) continue;
+        var t = String(b.textContent || '');
+        if(t.indexOf('✂') < 0) continue;          // nao tem a tesoura
+        b.setAttribute('data-aloco-ic', '1');
+        b.innerHTML = TESOURA + '<span>' + esc(t.replace(/[✂️\s]+/, '').trim()) + '</span>';
+      }
+    } catch(e){}
+  }
+
   function ligarMeus(){
     if(!document.querySelector('.nav-items')) return false;
     tirarFila();
+    trocarEmoji();
     if(!montarMeus()) return false;
     conferirPacotes();
     // a tela de Meus se atualiza sempre que o app volta pro primeiro plano
