@@ -452,7 +452,7 @@
         m.setAttribute('name', 'theme-color');
         document.head.appendChild(m);
       }
-      m.setAttribute('content', '#0C0905');
+      m.setAttribute('content', '#000000');
       var s2 = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
       if(s2) s2.setAttribute('content', 'black-translucent');
     } catch(e){}
