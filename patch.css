@@ -10,26 +10,36 @@
 /* ── fundo: preto chapado vira profundidade, com o brilho da marca ── */
 .screen {
   background:
-    radial-gradient(120% 70% at 85% -10%,  var(--bb) 0%, transparent 55%),
-    radial-gradient(90%  60% at -10% 108%, var(--bc) 0%, transparent 60%),
-    linear-gradient(180deg, #06070A 0%, var(--ink) 42%, var(--ink) 100%)
+    radial-gradient(130% 68% at 88% -12%, var(--ba) 0%, transparent 58%),
+    radial-gradient(100% 55% at -12% 106%, var(--bb) 0%, transparent 62%),
+    linear-gradient(180deg, var(--s2) 0%, var(--s0) 38%, var(--ink) 100%)
     !important;
 }
 
-/* ── saudacao: "Ola," em branco, o nome na cor da marca ── */
-.hd-n { color: rgba(255,255,255,0.94) !important; }
+/* ── saudacao: "Ola," no branco da marca, o nome com degrade ── */
+.hd-n { color: var(--cr) !important; }
 .hd-n em {
-  background: linear-gradient(135deg, var(--b1) 0%, var(--b3) 100%);
+  background: linear-gradient(118deg, var(--b2) 0%, var(--b3) 52%, var(--b2) 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
+  filter: saturate(1.08);
 }
+.hd-lbl { color: var(--b3) !important; }
 
 /* ── cartao do proximo horario: borda suave e um fundo com ar ── */
 .nc {
   border-radius: 18px !important;
   border: 1px solid var(--ba) !important;
-  background: linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.012) 45%, transparent 100%) !important;
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--bb) 0%, transparent 62%),
+    linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 48%, transparent 100%)
+    !important;
   box-shadow: 0 24px 60px rgba(0,0,0,0.55) !important;
+}
+/* a bolinha com a inicial acompanha o degrade do botao */
+.nc-ava {
+  background: linear-gradient(135deg, var(--b1) 0%, var(--b3) 100%) !important;
+  color: #fff !important;
 }
 .nc-body { padding: 22px 20px 18px !important; }
 
@@ -39,8 +49,9 @@
   border-radius: 14px !important;
   font-weight: 600 !important;
   font-size: 15px !important;
-  background: linear-gradient(135deg, var(--b1) 0%, var(--b2) 100%) !important;
-  box-shadow: 0 10px 26px -8px var(--ba) !important;
+  background: linear-gradient(135deg, var(--b1) 0%, var(--b2) 46%, var(--b3) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 14px 34px -10px var(--b1), inset 0 1px 0 rgba(255,255,255,0.22) !important;
   display: inline-flex !important;
   align-items: center; justify-content: center; gap: 10px;
 }
