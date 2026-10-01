@@ -48,10 +48,11 @@
 /* ── fundo: preto com brasa, nao preto chapado ── */
 .screen{
   background:
-    /* faixa lisa no topo, exatamente a cor da barra de status:
-       e isso que apaga o risco preto onde fica o relogio */
-    linear-gradient(180deg, #0C0905 0px, #0C0905 76px, rgba(12,9,5,0) 190px),
-    radial-gradient(132% 58% at 92% 4%,  rgba(201,153,47,0.17) 0%, transparent 56%),
+    /* a barra de status do app instalado e preta e nao muda mais (a cor
+       dela ficou gravada no dia da instalacao). Entao a tela comeca no
+       mesmo preto e so depois esquenta: assim nao existe linha nenhuma. */
+    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    radial-gradient(130% 56% at 92% 10%, rgba(201,153,47,0.18) 0%, transparent 56%),
     radial-gradient(106% 50% at -14% 106%, rgba(201,153,47,0.13) 0%, transparent 60%),
     linear-gradient(176deg, #0C0905 0%, #070502 30%, #000000 78%)
     !important;
@@ -60,7 +61,7 @@
    enquanto a tela anima a troca de aba */
 body{
   background:
-    linear-gradient(180deg, #0C0905 0px, #0C0905 76px, rgba(12,9,5,0) 190px),
+    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
     radial-gradient(132% 44% at 92% 4%, rgba(201,153,47,0.14) 0%, transparent 58%),
     linear-gradient(176deg, #0C0905 0%, #000000 70%)
     !important;
