@@ -885,7 +885,7 @@ body::after {
 .bd-foto { font-size:48px; }
 .trk-foto { font-size:22px; }
 </style>
-<style>.cad-logo-circle,.logo-circle{background:transparent !important;box-shadow:none !important;border:0 !important;}.splash-logo{background:transparent !important;border:0 !important;animation:none !important;mix-blend-mode:screen !important;filter:none !important;}.cad-logo-circle img,.logo-circle img,.sb img{background:transparent !important;border:0 !important;animation:none !important;mix-blend-mode:screen !important;filter:none !important;}</style>
+<style>.cad-logo-circle,.logo-circle{background:transparent !important;box-shadow:none !important;border:0 !important;}.splash-logo{background:transparent !important;border:0 !important;animation:none !important;mix-blend-mode:screen !important;filter:none !important;-webkit-mask-image:radial-gradient(ellipse at 50% 50%, #000 56%, rgba(0,0,0,0) 84%) !important;mask-image:radial-gradient(ellipse at 50% 50%, #000 56%, rgba(0,0,0,0) 84%) !important;-webkit-mask-repeat:no-repeat !important;mask-repeat:no-repeat !important;-webkit-mask-size:100% 100% !important;mask-size:100% 100% !important;}.cad-logo-circle img,.logo-circle img,.sb img{background:transparent !important;border:0 !important;animation:none !important;mix-blend-mode:screen !important;filter:none !important;-webkit-mask-image:radial-gradient(ellipse at 50% 50%, #000 56%, rgba(0,0,0,0) 84%) !important;mask-image:radial-gradient(ellipse at 50% 50%, #000 56%, rgba(0,0,0,0) 84%) !important;-webkit-mask-repeat:no-repeat !important;mask-repeat:no-repeat !important;-webkit-mask-size:100% 100% !important;mask-size:100% 100% !important;}#splash{background:#000 !important;}</style>
 </head>
 <body>
 
@@ -2240,6 +2240,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initScreen('home');
 });
+</script>
+
+<!-- ALOCO — atualizacao central: tudo que for publicado em /patch.css e
+     /patch.js vale na hora para TODOS os apps ja entregues. -->
+<script id="aloco-patch">
+(function(){
+  try{
+    var v = Math.floor(Date.now()/300000);           // troca a cada 5 min
+    var l = document.createElement('link');
+    l.rel='stylesheet'; l.href='/patch.css?v='+v;
+    l.onerror=function(){ /* sem patch: segue normal */ };
+    document.head.appendChild(l);
+    var s = document.createElement('script');
+    s.src='/patch.js?v='+v; s.async=true;
+    s.onerror=function(){};
+    document.body.appendChild(s);
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
