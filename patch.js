@@ -444,6 +444,7 @@
   // Em app instalado, a cor daquela faixa vem da meta theme-color.
   // Deixando ela igual ao topo do degrade, a tela sobe ate o relogio
   // sem risco preto no meio. Hora e bateria continuam aparecendo.
+  var COR_TOPO = '#0C0905';
   function corDoTopo(){
     try {
       var m = document.querySelector('meta[name="theme-color"]');
@@ -452,11 +453,22 @@
         m.setAttribute('name', 'theme-color');
         document.head.appendChild(m);
       }
-      m.setAttribute('content', '#000000');
+      if(m.getAttribute('content') !== COR_TOPO) m.setAttribute('content', COR_TOPO);
       var s2 = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
       if(s2) s2.setAttribute('content', 'black-translucent');
+
+      // o proprio app reescreve essa meta depois de desenhar o icone.
+      // o observador devolve a nossa cor toda vez que isso acontecer.
+      if(!window._alocoObsTopo && window.MutationObserver){
+        window._alocoObsTopo = new MutationObserver(function(){
+          var mm = document.querySelector('meta[name="theme-color"]');
+          if(mm && mm.getAttribute('content') !== COR_TOPO) mm.setAttribute('content', COR_TOPO);
+        });
+        window._alocoObsTopo.observe(document.head, { subtree:true, attributes:true, childList:true });
+      }
     } catch(e){}
   }
+  [300, 1500, 4000, 8000].forEach(function(ms){ setTimeout(corDoTopo, ms); });
 
   // a tesoura emoji vira icone de verdade, no tom do texto do botao
   var TESOURA =
