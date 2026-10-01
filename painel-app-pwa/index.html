@@ -5385,5 +5385,317 @@ window.onload = function(){
 })();
 </script>
 
+<script>
+/* ════════════════════════════════════════════════════════════
+   ALOCO — Horário de funcionamento · Pacotes · Fila de espera
+   Bloco acrescentado. Não altera nada do que já existe.
+   ════════════════════════════════════════════════════════════ */
+(function(){
+  if (window._ALOCO_EXTRAS) return; window._ALOCO_EXTRAS = 1;
+
+  function _url(action, extra){
+    return ALOCO.API_URL + '?action=' + action
+         + '&b=' + encodeURIComponent(ALOCO.BARBEARIA)
+         + '&senha=' + encodeURIComponent(ALOCO.SENHA) + (extra || '');
+  }
+  function _get(action, extra){
+    return fetch(_url(action, extra)).then(function(r){ return r.json(); });
+  }
+  function _post(body){
+    return fetch(ALOCO.API_URL, { method:'POST', body: JSON.stringify(
+      Object.assign({ b:ALOCO.BARBEARIA, senha:ALOCO.SENHA }, body||{}) ) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ try{ window._alocoEsquecerPacote && window._alocoEsquecerPacote(); }catch(e){} return j; });
+  }
+  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _wa(tel){
+    var d = String(tel||'').replace(/\D/g,'');
+    if (!d) return '';
+    if (d.indexOf('55') === 0 && d.length >= 12) return 'https://wa.me/' + d;
+    if (d.length === 11 || d.length === 10) return 'https://wa.me/55' + d;
+    return 'https://wa.me/55' + d;
+  }
+  function _ok(m){ try{ toast(m,'ok'); }catch(e){} }
+  function _er(m){ try{ toast(m,'er'); }catch(e){} }
+
+  /* ── os três modais ─────────────────────────────────────── */
+  var html =
+  '<div class="ov" id="ov-hora" onclick="fModal(\'hora\',event)">'
+  + '<div class="md" style="max-width:480px">'
+  + '<div class="mdh"><div class="mdt">Horário de funcionamento</div><button class="mdc" onclick="fModal(\'hora\')">x</button></div>'
+  + '<div id="hora-corpo"><div class="lw"><div class="sp"></div>Carregando...</div></div>'
+  + '</div></div>'
+
+  + '<div class="ov" id="ov-pac" onclick="fModal(\'pac\',event)">'
+  + '<div class="md" style="max-width:640px">'
+  + '<div class="mdh"><div class="mdt">Pacotes</div><button class="mdc" onclick="fModal(\'pac\')">x</button></div>'
+  + '<div id="pac-corpo"><div class="lw"><div class="sp"></div>Carregando...</div></div>'
+  + '</div></div>'
+
+  + '<div class="ov" id="ov-fila" onclick="fModal(\'fila\',event)">'
+  + '<div class="md" style="max-width:560px">'
+  + '<div class="mdh"><div class="mdt">Fila de espera</div><button class="mdc" onclick="fModal(\'fila\')">x</button></div>'
+  + '<div id="fila-corpo"><div class="lw"><div class="sp"></div>Carregando...</div></div>'
+  + '</div></div>';
+
+  function montar(){
+    if (document.getElementById('ov-hora')) return;
+    var d = document.createElement('div'); d.innerHTML = html;
+    while (d.firstChild) document.body.appendChild(d.firstChild);
+  }
+  if (document.readyState !== 'loading') montar();
+  else document.addEventListener('DOMContentLoaded', montar);
+
+  /* ── 1. HORÁRIO DE FUNCIONAMENTO ────────────────────────── */
+  var DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  window.alocoHorario = function(){
+    montar(); oModal('hora');
+    var c = document.getElementById('hora-corpo');
+    c.innerHTML = '<div class="lw"><div class="sp"></div>Carregando...</div>';
+    _get('horario').then(function(j){
+      var d = (j && j.ok && j.dados) ? j.dados : { abre:9, fecha:19, intervalo:30, dias:[1,2,3,4,5,6] };
+      var dias = d.dias || [1,2,3,4,5,6];
+      var h = '';
+      h += '<div style="font-size:12px;color:var(--tx-4);margin-bottom:14px;line-height:1.5">Isto define quais horários o cliente consegue escolher no app. Fora disso, ninguém marca.</div>';
+      h += '<div class="fg"><label class="fl">Dias que abre</label><div id="hora-dias" style="display:flex;gap:6px;flex-wrap:wrap">';
+      for (var i=0;i<7;i++){
+        var on = dias.indexOf(i) >= 0;
+        h += '<button type="button" data-dia="'+i+'" class="btn '+(on?'bp':'bg')+' bsm" style="min-width:52px;padding:8px 10px;font-size:12px" onclick="_alocoTogDia(this)">'+DIAS[i]+'</button>';
+      }
+      h += '</div></div>';
+      h += '<div style="display:flex;gap:10px"><div class="fg" style="flex:1"><label class="fl">Abre às</label><select class="fs" id="hora-abre">'+_horas(d.abre,0,23)+'</select></div>';
+      h += '<div class="fg" style="flex:1"><label class="fl">Fecha às</label><select class="fs" id="hora-fecha">'+_horas(d.fecha,1,24)+'</select></div></div>';
+      h += '<div class="fg"><label class="fl">De quanto em quanto tempo começa um atendimento</label><select class="fs" id="hora-int">';
+      [15,20,30,45,60].forEach(function(v){ h += '<option value="'+v+'"'+(Number(d.intervalo)===v?' selected':'')+'>'+v+' minutos</option>'; });
+      h += '</select></div>';
+      h += '<div class="ma"><button class="btn bg" onclick="fModal(\'hora\')">Cancelar</button><button class="btn bp" id="hora-sv" onclick="_alocoSalvarHorario()">Salvar</button></div>';
+      c.innerHTML = h;
+    }).catch(function(){ c.innerHTML = '<div style="padding:24px;text-align:center;color:var(--tx-4)">Não consegui carregar. Tente de novo.</div>'; });
+  };
+  function _horas(sel, de, ate){
+    var s = '';
+    for (var i=de;i<=ate;i++) s += '<option value="'+i+'"'+(Number(sel)===i?' selected':'')+'>'+(i<10?'0'+i:i)+':00</option>';
+    return s;
+  }
+  window._alocoTogDia = function(btn){
+    var on = btn.classList.contains('bp');
+    btn.classList.toggle('bp', !on); btn.classList.toggle('bg', on);
+  };
+  window._alocoSalvarHorario = function(){
+    var dias = [];
+    document.querySelectorAll('#hora-dias button').forEach(function(b){
+      if (b.classList.contains('bp')) dias.push(Number(b.getAttribute('data-dia')));
+    });
+    var abre = Number(document.getElementById('hora-abre').value);
+    var fecha = Number(document.getElementById('hora-fecha').value);
+    if (!dias.length) { _er('Escolha pelo menos um dia.'); return; }
+    if (fecha <= abre) { _er('O horário de fechar tem que ser depois do de abrir.'); return; }
+    var btn = document.getElementById('hora-sv');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    _post({ action:'horario_save', abre:abre, fecha:fecha,
+            intervalo:Number(document.getElementById('hora-int').value), dias:dias })
+      .then(function(j){
+        btn.disabled = false; btn.textContent = 'Salvar';
+        if (j && j.ok){ fModal('hora'); _ok(j.mensagem || 'Horário salvo.'); }
+        else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = 'Salvar'; _er('Erro de conexão.'); });
+  };
+
+  /* ── 2. PACOTES ─────────────────────────────────────────── */
+  var _PACS = [], _INTS = [], _edPac = null;
+
+  window.alocoPacotes = function(){
+    montar(); oModal('pac');
+    var c = document.getElementById('pac-corpo');
+    c.innerHTML = '<div class="lw"><div class="sp"></div>Carregando...</div>';
+    Promise.all([ _get('pacotes_admin'), _get('interesses').catch(function(){ return {}; }) ])
+      .then(function(r){
+        _PACS = (r[0] && r[0].ok && r[0].dados) ? r[0].dados : [];
+        _INTS = (r[1] && r[1].ok && r[1].dados) ? r[1].dados : [];
+        _pacLista();
+      })
+      .catch(function(){ c.innerHTML = '<div style="padding:24px;text-align:center;color:var(--tx-4)">Não consegui carregar.</div>'; });
+  };
+
+  function _pacLista(){
+    var c = document.getElementById('pac-corpo');
+    var h = '<div style="font-size:12px;color:var(--tx-4);margin-bottom:14px;line-height:1.5">Combos com preço fechado. Aparecem no app do cliente — quando alguém se interessa, o nome dele cai aqui embaixo.</div>';
+    h += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn bp bsm" onclick="_alocoNovoPacote()">+ Novo pacote</button></div>';
+
+    if (!_PACS.length){
+      h += '<div style="padding:28px 16px;text-align:center;border:1px dashed var(--bd,#333);border-radius:12px;color:var(--tx-4);font-size:13px">Nenhum pacote ainda.<br><span style="font-size:12px">Ex.: 4 cortes por R$ 100 — o cliente paga adiantado e volta mais.</span></div>';
+    } else {
+      h += '<div style="display:flex;flex-direction:column;gap:8px">';
+      _PACS.forEach(function(p){
+        var inat = String(p.status||'ATIVO').toUpperCase() === 'INATIVO';
+        h += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd,#2a2a2a);border-radius:10px'+(inat?';opacity:.5':'')+'">';
+        h += '<div style="flex:1;min-width:0">';
+        h += '<div style="font-weight:600;font-size:14px">'+_esc(p.nome)+(inat?' <span style="font-size:10px;color:var(--tx-4)">(inativo)</span>':'')+'</div>';
+        if (p.descricao) h += '<div style="font-size:12px;color:var(--tx-4);margin-top:2px">'+_esc(p.descricao)+'</div>';
+        if (p.itens) h += '<div style="font-size:11px;color:var(--tx-4);margin-top:2px">'+_esc(p.itens)+'</div>';
+        h += '</div>';
+        h += '<div style="font-weight:700;white-space:nowrap">'+_money(p.preco)+'</div>';
+        h += '<div style="display:flex;gap:6px"><button class="btn bg bsm" style="padding:5px 10px;font-size:11px" onclick="_alocoEdPacote(\''+_esc(p.id)+'\')">Editar</button>'
+           + '<button class="btn bsm" style="padding:5px 10px;font-size:11px;background:#5a1a1a;color:#fff" onclick="_alocoDelPacote(\''+_esc(p.id)+'\')">✕</button></div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    if (_INTS.length){
+      h += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--bd,#2a2a2a)">';
+      h += '<div style="font-size:13px;font-weight:600;margin-bottom:10px">Quem demonstrou interesse ('+_INTS.length+')</div>';
+      h += '<div style="display:flex;flex-direction:column;gap:6px">';
+      _INTS.slice(0,25).forEach(function(i){
+        var w = _wa(i.telefone);
+        h += '<div style="display:flex;align-items:center;gap:10px;font-size:12px;padding:8px 10px;border:1px solid var(--bd,#2a2a2a);border-radius:8px">';
+        h += '<div style="flex:1;min-width:0"><span style="font-weight:600">'+_esc(i.cliente||'Cliente')+'</span> <span style="color:var(--tx-4)">— '+_esc(i.pacote||'')+'</span></div>';
+        if (w) h += '<a href="'+w+'" target="_blank" rel="noopener" class="btn bg bsm" style="padding:4px 10px;font-size:11px;text-decoration:none">Chamar</a>';
+        h += '</div>';
+      });
+      h += '</div></div>';
+    }
+    c.innerHTML = h;
+  }
+  function _money(v){
+    var n = parseFloat(v) || 0;
+    return 'R$ ' + n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  }
+
+  function _pacForm(p){
+    p = p || { nome:'', descricao:'', preco:'', itens:'', status:'ATIVO' };
+    var c = document.getElementById('pac-corpo');
+    var h = '';
+    h += '<div class="fg"><label class="fl">Nome do pacote</label><input type="text" class="fi" id="pc-nome" placeholder="Ex: Combo 4 cortes" value="'+_esc(p.nome)+'"></div>';
+    h += '<div class="fg"><label class="fl">Descrição</label><input type="text" class="fi" id="pc-desc" placeholder="Ex: 4 cortes para usar em 3 meses" value="'+_esc(p.descricao)+'"></div>';
+    h += '<div class="fg"><label class="fl">O que inclui</label><input type="text" class="fi" id="pc-itens" placeholder="Ex: 4x Corte + 1x Barba" value="'+_esc(p.itens)+'"></div>';
+    h += '<div style="display:flex;gap:10px"><div class="fg" style="flex:1"><label class="fl">Preço R$</label><input type="number" class="fi" id="pc-preco" min="0" step="0.01" placeholder="100.00" value="'+(p.preco||'')+'"></div>';
+    h += '<div class="fg" style="flex:1"><label class="fl">Status</label><select class="fs" id="pc-st"><option value="ATIVO"'+(String(p.status).toUpperCase()!=='INATIVO'?' selected':'')+'>Ativo</option><option value="INATIVO"'+(String(p.status).toUpperCase()==='INATIVO'?' selected':'')+'>Inativo</option></select></div></div>';
+    h += '<div class="ma"><button class="btn bg" onclick="_alocoVoltarPacotes()">Voltar</button><button class="btn bp" id="pc-sv" onclick="_alocoSalvarPacote()">Salvar</button></div>';
+    c.innerHTML = h;
+  }
+  window._alocoNovoPacote = function(){ _edPac = null; _pacForm(null); };
+  window._alocoEdPacote = function(id){
+    var p = _PACS.filter(function(x){ return String(x.id) === String(id); })[0];
+    if (!p) return;
+    _edPac = id; _pacForm(p);
+  };
+  window._alocoVoltarPacotes = function(){ _edPac = null; _pacLista(); };
+  window._alocoSalvarPacote = function(){
+    var nome = document.getElementById('pc-nome').value.trim();
+    var preco = parseFloat(document.getElementById('pc-preco').value);
+    if (!nome){ _er('Informe o nome do pacote.'); return; }
+    if (!(preco >= 0)){ _er('Preço inválido.'); return; }
+    var d = { action:'pacote_save', nome:nome,
+      descricao: document.getElementById('pc-desc').value.trim(),
+      itens: document.getElementById('pc-itens').value.trim(),
+      preco: preco, status: document.getElementById('pc-st').value };
+    if (_edPac) d.id = _edPac;
+    var btn = document.getElementById('pc-sv');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    _post(d).then(function(j){
+      btn.disabled = false; btn.textContent = 'Salvar';
+      if (j && j.ok){ _ok(j.mensagem || 'Pacote salvo.'); alocoPacotes(); }
+      else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
+    }).catch(function(){ btn.disabled = false; btn.textContent = 'Salvar'; _er('Erro de conexão.'); });
+  };
+  window._alocoDelPacote = function(id){
+    var p = _PACS.filter(function(x){ return String(x.id) === String(id); })[0];
+    if (!p) return;
+    if (!confirm('Excluir o pacote "' + p.nome + '"?')) return;
+    _post({ action:'pacote_del', id:id }).then(function(j){
+      if (j && j.ok){ _ok('Pacote excluído.'); alocoPacotes(); }
+      else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
+    }).catch(function(){ _er('Erro de conexão.'); });
+  };
+
+  /* ── 3. FILA DE ESPERA ──────────────────────────────────── */
+  window.alocoFila = function(){
+    montar(); oModal('fila');
+    var c = document.getElementById('fila-corpo');
+    c.innerHTML = '<div class="lw"><div class="sp"></div>Carregando...</div>';
+    _get('fila').then(function(j){
+      var l = (j && j.ok && j.dados) ? j.dados : [];
+      var h = '<div style="font-size:12px;color:var(--tx-4);margin-bottom:14px;line-height:1.5">Quem entrou na fila pelo app, por ordem de chegada.</div>';
+      if (!l.length){
+        h += '<div style="padding:28px 16px;text-align:center;border:1px dashed var(--bd,#333);border-radius:12px;color:var(--tx-4);font-size:13px">Ninguém na fila agora.</div>';
+      } else {
+        h += '<div style="display:flex;flex-direction:column;gap:8px">';
+        l.forEach(function(f){
+          var w = _wa(f.telefone);
+          h += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd,#2a2a2a);border-radius:10px">';
+          h += '<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--alc-ac,#0097fd);color:#fff;font-weight:700;font-size:13px;flex:0 0 auto">'+f.posicao+'</div>';
+          h += '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">'+_esc(f.cliente||'Cliente')+'</div>';
+          h += '<div style="font-size:11px;color:var(--tx-4)">'+(f.barbeiro ? _esc(f.barbeiro) : 'qualquer profissional')+'</div></div>';
+          if (w) h += '<a href="'+w+'" target="_blank" rel="noopener" class="btn bg bsm" style="padding:5px 10px;font-size:11px;text-decoration:none">Chamar</a>';
+          h += '<button class="btn bp bsm" style="padding:5px 10px;font-size:11px" onclick="_alocoFilaAcao(\''+_esc(f.id)+'\',\'atender\')">Atendido</button>';
+          h += '<button class="btn bsm" style="padding:5px 10px;font-size:11px;background:#5a1a1a;color:#fff" onclick="_alocoFilaAcao(\''+_esc(f.id)+'\',\'remover\')">✕</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      c.innerHTML = h;
+      _filaBadge(l.length);
+    }).catch(function(){ c.innerHTML = '<div style="padding:24px;text-align:center;color:var(--tx-4)">Não consegui carregar.</div>'; });
+  };
+  window._alocoFilaAcao = function(id, qual){
+    _post({ action: qual === 'atender' ? 'fila_atender' : 'fila_remover', id:id })
+      .then(function(j){
+        if (j && j.ok){ _ok(qual === 'atender' ? 'Marcado como atendido.' : 'Removido da fila.'); alocoFila(); }
+        else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
+      }).catch(function(){ _er('Erro de conexão.'); });
+  };
+  function _filaBadge(n){
+    var b = document.getElementById('aloco-btn-fila');
+    if (b) b.textContent = n > 0 ? ('Fila · ' + n) : 'Fila';
+  }
+
+  /* ── botões nas telas que já existem ────────────────────── */
+  function _botoesSvc(){
+    var hdr = document.querySelector('.SV-HDR');
+    if (!hdr || hdr.querySelector('#aloco-btn-hora')) return;
+    var alvo = hdr.lastElementChild;                     // bloco do "+ Novo Serviço"
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex;gap:8px;margin-right:8px';
+    wrap.innerHTML =
+      '<button class="btn bg bsm" id="aloco-btn-hora" onclick="alocoHorario()">Horário de funcionamento</button>'
+    + '<button class="btn bg bsm" id="aloco-btn-pac" onclick="alocoPacotes()">Pacotes</button>';
+    if (alvo && alvo.parentNode === hdr) hdr.insertBefore(wrap, alvo);
+    else hdr.appendChild(wrap);
+  }
+  function _botaoFila(){
+    var mh = document.querySelector('#ct .mh');
+    if (!mh || mh.querySelector('#aloco-btn-fila')) return;
+    var cx = mh.lastElementChild;
+    if (!cx) return;
+    var b = document.createElement('button');
+    b.className = 'btn bg bsm'; b.id = 'aloco-btn-fila'; b.textContent = 'Fila';
+    b.onclick = function(){ alocoFila(); };
+    cx.insertBefore(b, cx.firstChild);
+    _get('fila').then(function(j){
+      var n = (j && j.ok && j.dados) ? j.dados.length : 0;
+      _filaBadge(n);
+      if (n > 0) b.className = 'btn bp bsm';
+    }).catch(function(){});
+  }
+
+  function _envolver(nome, depois){
+    var antes = window[nome];
+    if (typeof antes !== 'function' || antes._alocoEnv) return;
+    var novo = function(){ var r = antes.apply(this, arguments); try{ setTimeout(depois, 0); }catch(e){} return r; };
+    novo._alocoEnv = 1; window[nome] = novo;
+  }
+  function _ligar(){
+    _envolver('_drawSvc', _botoesSvc);
+    _envolver('ldAgd', _botaoFila);
+    _botoesSvc(); _botaoFila();
+  }
+  if (document.readyState !== 'loading') setTimeout(_ligar, 0);
+  else document.addEventListener('DOMContentLoaded', function(){ setTimeout(_ligar, 0); });
+})();
+
+</script>
 </body>
 </html>
