@@ -419,6 +419,27 @@
     } catch(e){}
   }
 
+  // ── TELA EM BRANCO AO ABRIR O APP ─────────────────────────────
+  // O conteudo nasce invisivel (.fu) e so aparece quando o initScreen
+  // roda — e ele esta preso ao DOMContentLoaded. Em app instalado, o
+  // sistema restaura a pagina do cache e esse evento nao dispara de
+  // novo: a tela fica vazia ate o cliente trocar de aba. Aqui a gente
+  // garante que o conteudo da tela ativa sempre apareca.
+  function garantirVisivel(){
+    try {
+      var tela = document.querySelector('.screen.active') || document.getElementById('screen-home');
+      if(!tela) return;
+      var itens = tela.querySelectorAll('.fu');
+      for(var i = 0; i < itens.length; i++) itens[i].classList.add('on');
+    } catch(e){}
+  }
+  window.addEventListener('pageshow', garantirVisivel);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) setTimeout(garantirVisivel, 60);
+  });
+  window.addEventListener('focus', garantirVisivel);
+  [0, 400, 1200, 2500, 5200].forEach(function(ms){ setTimeout(garantirVisivel, ms); });
+
   // ── a faixa preta atras do relogio do celular ──────────────────
   // Em app instalado, a cor daquela faixa vem da meta theme-color.
   // Deixando ela igual ao topo do degrade, a tela sobe ate o relogio
