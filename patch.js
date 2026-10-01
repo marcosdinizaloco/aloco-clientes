@@ -444,7 +444,7 @@
   // Em app instalado, a cor daquela faixa vem da meta theme-color.
   // Deixando ela igual ao topo do degrade, a tela sobe ate o relogio
   // sem risco preto no meio. Hora e bateria continuam aparecendo.
-  var COR_TOPO = '#0C0905';
+  var COR_TOPO = '#000000';
   function corDoTopo(){
     try {
       var m = document.querySelector('meta[name="theme-color"]');
