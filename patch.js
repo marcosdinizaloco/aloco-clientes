@@ -1,6 +1,7 @@
 // ALOCO - ajustes globais dos apps.
 (function(){
   var K = 'aloco_cliente';
+  var P = 'aloco_agd_pendente';
 
   function lerCookie(){
     try { var m = document.cookie.match(/(?:^|;\s*)aloco_cliente=([^;]*)/);
@@ -60,12 +61,58 @@
   restaurar();
   var n = 0, t = setInterval(function(){ restaurar(); if (++n > 40) clearInterval(t); }, 400);
 
+  // ── AVISO DE AGENDAMENTO NAO CONFIRMADO ────────────────────────────
+  // Antes o app dizia "horario garantido" mesmo quando o envio falhava: o
+  // POST terminava em .catch(function(){}) e ninguem ficava sabendo.
+  var ultimoUrl = '';
+  function faixa(txt, acao){
+    var id = 'aloco-aviso-agd';
+    var el = document.getElementById(id);
+    if(!el){
+      el = document.createElement('div'); el.id = id;
+      el.style.cssText = 'position:fixed;left:12px;right:12px;bottom:16px;z-index:999999;'
+        + 'background:#8c2f2f;color:#fff;padding:13px 15px;border-radius:12px;font:600 13px/1.4 inherit;'
+        + 'box-shadow:0 10px 28px rgba(0,0,0,.5);display:flex;gap:10px;align-items:center';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<span style="flex:1">'+txt+'</span>';
+    if(acao){
+      var b = document.createElement('button');
+      b.textContent = 'Tentar de novo';
+      b.style.cssText = 'border:0;border-radius:9px;padding:9px 12px;font:700 12px inherit;'
+        + 'background:#fff;color:#8c2f2f;cursor:pointer';
+      b.onclick = acao; el.appendChild(b);
+    }
+    el.style.display = 'flex';
+  }
+  function esconderFaixa(){ var el=document.getElementById('aloco-aviso-agd'); if(el) el.style.display='none'; }
+
+  function guardarPendente(url, body){
+    try { localStorage.setItem(P, JSON.stringify({ url:url, body:body, em:Date.now() })); } catch(e){}
+  }
+  function limparPendente(){ try { localStorage.removeItem(P); } catch(e){} }
+
+  function reenviar(){
+    var p = null; try { p = JSON.parse(localStorage.getItem(P) || 'null'); } catch(e){}
+    if(!p || !p.url || !p.body) { esconderFaixa(); return; }
+    faixa('Enviando de novo...', null);
+    _fetch.call(window, p.url, { method:'POST', body:p.body })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){ limparPendente(); esconderFaixa(); }
+        else faixa('A barbearia ainda nao recebeu o seu horario.', reenviar);
+      })
+      .catch(function(){ faixa('Sem conexao. O seu horario ainda nao foi enviado.', reenviar); });
+  }
+
   // AGENDAMENTO: completa o que faltar com o que esta na tela de confirmacao
   var _fetch = window.fetch;
   window.fetch = function(url, opt){
+    var ehAgendar = false;
     try {
       if (opt && String(opt.method||'').toUpperCase() === 'POST'
           && typeof opt.body === 'string' && opt.body.indexOf('"agendar"') >= 0){
+        ehAgendar = true;
         var o = JSON.parse(opt.body);
         var g = function(id){ var e = document.getElementById(id); return e ? String(e.textContent||'').trim() : ''; };
         var vazio = function(v){ return !v || v === 'undefined' || v === 'null'; };
@@ -79,9 +126,35 @@
           var v = g('cd-vl').replace(/[^\d,]/g,'').replace(',','.');
           o.valor = parseFloat(v) || 0;
         }
-        opt = { method:'POST', body: JSON.stringify(o) };
+        var corpo = JSON.stringify(o);
+        opt = Object.assign({}, opt, { body: corpo });   // mantem headers e o resto
+        ultimoUrl = String(url || '');
+        guardarPendente(ultimoUrl, corpo);
       }
     } catch(e){}
-    return _fetch.call(this, url, opt);
+
+    var r = _fetch.call(this, url, opt);
+    if (!ehAgendar) return r;
+    return r.then(function(resp){
+      try {
+        resp.clone().json().then(function(j){
+          if (j && j.ok){ limparPendente(); esconderFaixa(); }
+          else faixa('A barbearia nao recebeu o seu horario.', reenviar);
+        }).catch(function(){ limparPendente(); esconderFaixa(); });
+      } catch(e){}
+      return resp;
+    }, function(err){
+      faixa('Sem conexao. O seu horario ainda nao foi enviado.', reenviar);
+      throw err;
+    });
   };
+
+  // se o app foi fechado com um agendamento pendente, tenta assim que abrir
+  try {
+    var pend = JSON.parse(localStorage.getItem(P) || 'null');
+    if (pend && pend.url) setTimeout(reenviar, 2500);
+  } catch(e){}
+  window.addEventListener('online', function(){
+    try { if (localStorage.getItem(P)) reenviar(); } catch(e){}
+  });
 })();
