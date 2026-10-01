@@ -383,6 +383,42 @@
       .catch(function(){});
   }
 
+  // ── TEXTO VOLTA A TER CONTRASTE ───────────────────────────────
+  // O gerador pintava a rampa de texto inteira com a cor da marca
+  // (--cr virava #5d87ff num app azul). Resultado: titulo, paragrafo e
+  // destaque todos no mesmo tom — chapado e sem hierarquia. Aqui a cor do
+  // texto volta pra perto do branco, guardando so um fio do tom da marca.
+  function _rgbDe(txt){
+    txt = String(txt || '').trim();
+    var m = txt.match(/^#([0-9a-f]{6})$/i);
+    if(m){
+      var n = parseInt(m[1], 16);
+      return { r:(n >> 16) & 255, g:(n >> 8) & 255, b:n & 255 };
+    }
+    m = txt.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    if(m) return { r:+m[1], g:+m[2], b:+m[3] };
+    return null;
+  }
+  function clarearTexto(){
+    try {
+      var raiz = document.documentElement;
+      if(raiz.getAttribute('data-aloco-txt')) return;
+      var cor = _rgbDe(getComputedStyle(raiz).getPropertyValue('--cr'));
+      if(!cor) return;
+      var p = 0.80;                               // 80% branco, 20% da marca
+      var r = Math.round(255 * p + cor.r * (1 - p));
+      var g = Math.round(255 * p + cor.g * (1 - p));
+      var b = Math.round(255 * p + cor.b * (1 - p));
+      var base = r + ',' + g + ',' + b;
+      raiz.style.setProperty('--cr', 'rgb(' + base + ')');
+      raiz.style.setProperty('--c2', 'rgba(' + base + ',0.62)');
+      raiz.style.setProperty('--c3', 'rgba(' + base + ',0.40)');
+      raiz.style.setProperty('--c4', 'rgba(' + base + ',0.20)');
+      raiz.style.setProperty('--c5', 'rgba(' + base + ',0.09)');
+      raiz.setAttribute('data-aloco-txt', '1');
+    } catch(e){}
+  }
+
   // a tesoura emoji vira icone de verdade, no tom do texto do botao
   var TESOURA =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
@@ -407,6 +443,7 @@
 
   function ligarMeus(){
     if(!document.querySelector('.nav-items')) return false;
+    clarearTexto();
     tirarFila();
     trocarEmoji();
     if(!montarMeus()) return false;
