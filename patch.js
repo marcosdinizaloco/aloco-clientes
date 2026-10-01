@@ -70,7 +70,9 @@
     var el = document.getElementById(id);
     if(!el){
       el = document.createElement('div'); el.id = id;
-      el.style.cssText = 'position:fixed;left:12px;right:12px;bottom:16px;z-index:999999;'
+      // acima da barra de abas do app, senao a faixa cobre a navegacao
+      el.style.cssText = 'position:fixed;left:12px;right:12px;z-index:999999;'
+        + 'bottom:calc(84px + env(safe-area-inset-bottom, 0px));'
         + 'background:#8c2f2f;color:#fff;padding:13px 15px;border-radius:12px;font:600 13px/1.4 inherit;'
         + 'box-shadow:0 10px 28px rgba(0,0,0,.5);display:flex;gap:10px;align-items:center';
       document.body.appendChild(el);
