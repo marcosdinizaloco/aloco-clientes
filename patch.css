@@ -1,63 +1,137 @@
-/* ALOCO — ajustes globais dos apps. Vale para todos os apps ja entregues.
-   Tudo aqui sai das variaveis de cor do proprio app (--b1/--b2/--ba/--cr),
-   entao cada barbearia continua com a cor dela. */
+/* ═══════════════════════════════════════════════════════════════
+   ALOCO — TEMA INTERNO DO APP  (vale para todos os apps entregues)
+   Paleta fixa: preto cinematografico + ouro. A cor da barbearia
+   continua mandando na abertura, no icone e na logo — aqui dentro
+   o visual e o mesmo para todo mundo.
+   Estrutura, textos e posicoes: nada muda. So cor e luz.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ── o relogio falso do topo sai: o celular ja mostra a hora ── */
+:root{
+  /* fundos */
+  --ink: #000000 !important;
+  --s0:  #050403 !important;
+  --s1:  #0A0806 !important;
+  --s2:  #120E08 !important;
+  --s3:  #191309 !important;
+  --s4:  #221909 !important;
+
+  /* ouro */
+  --b0:  #A9741F !important;
+  --b1:  #C9992F !important;
+  --b2:  #E3BE70 !important;
+  --b3:  #F6E3B0 !important;
+  --ba:  rgba(227,190,112,0.18) !important;
+  --bb:  rgba(227,190,112,0.09) !important;
+  --bc:  rgba(227,190,112,0.045) !important;
+
+  /* linhas */
+  --r0:  rgba(255,255,255,0.045) !important;
+  --r1:  rgba(255,255,255,0.085) !important;
+  --r2:  rgba(255,255,255,0.15) !important;
+
+  /* texto: branco de verdade, com a hierarquia de volta */
+  --cr:  #FFFFFF !important;
+  --c2:  rgba(255,255,255,0.64) !important;
+  --c3:  rgba(255,255,255,0.40) !important;
+  --c4:  rgba(255,255,255,0.20) !important;
+  --c5:  rgba(255,255,255,0.09) !important;
+}
+
+/* ── o relogio falso sai; a logo fica centrada ── */
 .sb-time { display: none !important; }
-.sb { justify-content: center !important; }
-.sb > img { margin: 0 auto !important; }
+.sb { justify-content: center !important; background: transparent !important;
+      border-bottom: 0 !important; backdrop-filter: none !important; }
+.sb > img{
+  height: 46px !important; width: 46px !important;
+  object-fit: contain !important;
+  padding: 8px !important; box-sizing: border-box !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(227,190,112,0.45) !important;
+  box-shadow: 0 0 22px rgba(227,190,112,0.16), inset 0 0 14px rgba(227,190,112,0.07) !important;
+  margin: 0 auto !important;
+}
 
-/* ── fundo: preto chapado vira profundidade, com o brilho da marca ── */
-.screen {
+/* ── fundo: preto com brasa, nao preto chapado ── */
+.screen{
   background:
-    radial-gradient(130% 68% at 88% -12%, var(--ba) 0%, transparent 58%),
-    radial-gradient(100% 55% at -12% 106%, var(--bb) 0%, transparent 62%),
-    linear-gradient(180deg, var(--s2) 0%, var(--s0) 38%, var(--ink) 100%)
+    radial-gradient(128% 62% at 92% -8%,  rgba(201,153,47,0.16) 0%, transparent 56%),
+    radial-gradient(104% 52% at -14% 104%, rgba(201,153,47,0.13) 0%, transparent 60%),
+    linear-gradient(176deg, #0B0805 0%, #050403 34%, #000000 100%)
     !important;
 }
 
-/* ── saudacao: "Ola," no branco da marca, o nome com degrade ── */
-.hd-n { color: var(--cr) !important; }
-.hd-n em {
-  background: linear-gradient(118deg, var(--b2) 0%, var(--b3) 52%, var(--b2) 100%);
+/* ── os dois arcos de luz ── */
+.screen::before,
+.screen::after{
+  content: ''; position: fixed; z-index: -1; pointer-events: none;
+  border-radius: 50%;
+}
+.screen::before{
+  width: 172vw; height: 172vw; top: -54vw; right: -92vw;
+  border: 1.6px solid rgba(246,227,176,0.52);
+  box-shadow: 0 0 78px 12px rgba(227,190,112,0.15);
+  -webkit-mask-image: linear-gradient(210deg, rgba(0,0,0,0) 6%, #000 30%, #000 50%, rgba(0,0,0,0) 74%);
+          mask-image: linear-gradient(210deg, rgba(0,0,0,0) 6%, #000 30%, #000 50%, rgba(0,0,0,0) 74%);
+}
+.screen::after{
+  width: 152vw; height: 152vw; bottom: -84vw; left: -80vw;
+  border: 1.4px solid rgba(246,227,176,0.40);
+  box-shadow: 0 0 62px 9px rgba(227,190,112,0.12);
+  -webkit-mask-image: linear-gradient(30deg, rgba(0,0,0,0) 10%, #000 34%, #000 52%, rgba(0,0,0,0) 78%);
+          mask-image: linear-gradient(30deg, rgba(0,0,0,0) 10%, #000 34%, #000 52%, rgba(0,0,0,0) 78%);
+}
+
+/* ── saudacao: "Ola," branco, o nome em ouro escovado ── */
+.hd-n { color: #FFFFFF !important; }
+.hd-n em{
+  background: linear-gradient(116deg, #C9992F 0%, #F6E3B0 44%, #E3BE70 68%, #C9992F 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
-  filter: saturate(1.08);
 }
-.hd-lbl { color: var(--b3) !important; }
+.hd-lbl { color: #E3BE70 !important; }
+.pdot   { background: #E3BE70 !important; box-shadow: 0 0 10px rgba(227,190,112,.6) !important; }
+.hd-rule{ background: linear-gradient(90deg, rgba(227,190,112,.35), transparent) !important; }
 
-/* ── cartao do proximo horario: borda suave e um fundo com ar ── */
-.nc {
+/* ── cartao: vidro escuro com brasa no canto ── */
+.nc{
   border-radius: 18px !important;
-  border: 1px solid var(--ba) !important;
+  border: 1px solid rgba(227,190,112,0.22) !important;
   background:
-    radial-gradient(120% 90% at 100% 0%, var(--bb) 0%, transparent 62%),
-    linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 48%, transparent 100%)
+    radial-gradient(130% 94% at 100% 0%, rgba(201,153,47,0.10) 0%, transparent 62%),
+    linear-gradient(162deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.012) 48%, rgba(0,0,0,0) 100%)
     !important;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.55) !important;
-}
-/* a bolinha com a inicial acompanha o degrade do botao */
-.nc-ava {
-  background: linear-gradient(135deg, var(--b1) 0%, var(--b3) 100%) !important;
-  color: #fff !important;
+  box-shadow: 0 26px 64px rgba(0,0,0,0.6) !important;
 }
 .nc-body { padding: 22px 20px 18px !important; }
+.nc-ava{
+  background: linear-gradient(135deg, #C9992F 0%, #F6E3B0 52%, #D9A94A 100%) !important;
+  color: #16100A !important; font-weight: 700 !important;
+  box-shadow: 0 0 0 1px rgba(227,190,112,.35), 0 8px 22px -6px rgba(201,153,47,.45) !important;
+}
+.nc-ring { border-color: rgba(227,190,112,.5) !important; }
+.nc-hr   { color: #F6E3B0 !important; }
 
-/* ── botao principal: degrade e mais respiro ── */
-.cta {
+/* ── botao: ouro escovado, texto escuro ── */
+.cta{
   padding: 16px !important;
   border-radius: 14px !important;
   font-weight: 600 !important;
   font-size: 15px !important;
-  background: linear-gradient(135deg, var(--b1) 0%, var(--b2) 46%, var(--b3) 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 14px 34px -10px var(--b1), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+  color: #16100A !important;
+  background: linear-gradient(135deg, #C9992F 0%, #F6E3B0 46%, #E3BE70 72%, #C08A2E 100%) !important;
+  box-shadow: 0 16px 36px -12px rgba(201,153,47,0.65),
+              inset 0 1px 0 rgba(255,255,255,0.45) !important;
   display: inline-flex !important;
   align-items: center; justify-content: center; gap: 10px;
 }
 .cta svg { width: 17px; height: 17px; flex: none; }
-.cta2 { border-radius: 14px !important; padding: 13px !important; }
+.cta2{
+  border-radius: 14px !important; padding: 13px !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
 
-/* ── barra de baixo: um pouco mais de ar ── */
+/* ── barra de baixo ── */
+.nav { background: rgba(0,0,0,0.92) !important; border-top: 1px solid rgba(255,255,255,0.07) !important; }
 .nav-btn { padding: 8px 14px !important; }
 .nav-lbl { letter-spacing: 0.08em !important; }
+.nav-btn.active { color: #E3BE70 !important; }
