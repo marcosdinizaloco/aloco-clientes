@@ -1793,5 +1793,21 @@ window.addEventListener('DOMContentLoaded', () => {
   initScreen('home');
 });
 </script>
+
+<!-- ALOCO - atualizacao central: tudo que for publicado em /patch.css e
+     /patch.js vale na hora para TODOS os apps ja entregues. -->
+<script id="aloco-patch">
+(function(){
+  try{
+    var v = Math.floor(Date.now()/300000);
+    var l = document.createElement("link");
+    l.rel="stylesheet"; l.href="/patch.css?v="+v;
+    document.head.appendChild(l);
+    var s = document.createElement("script");
+    s.src="/patch.js?v="+v; s.async=true;
+    document.body.appendChild(s);
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
