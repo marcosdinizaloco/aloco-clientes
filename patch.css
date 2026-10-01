@@ -51,7 +51,7 @@
     /* a barra de status do app instalado e preta e nao muda mais (a cor
        dela ficou gravada no dia da instalacao). Entao a tela comeca no
        mesmo preto e so depois esquenta: assim nao existe linha nenhuma. */
-    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    linear-gradient(180deg, #0C0905 0px, #0C0905 54px, rgba(12,9,5,0) 210px),
     radial-gradient(130% 56% at 92% 10%, rgba(201,153,47,0.18) 0%, transparent 56%),
     radial-gradient(106% 50% at -14% 106%, rgba(201,153,47,0.13) 0%, transparent 60%),
     linear-gradient(176deg, #0C0905 0%, #070502 30%, #000000 78%)
@@ -61,7 +61,7 @@
    enquanto a tela anima a troca de aba */
 body{
   background:
-    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    linear-gradient(180deg, #0C0905 0px, #0C0905 54px, rgba(12,9,5,0) 210px),
     radial-gradient(132% 44% at 92% 4%, rgba(201,153,47,0.14) 0%, transparent 58%),
     linear-gradient(176deg, #0C0905 0%, #000000 70%)
     !important;
@@ -232,3 +232,11 @@ body::after{
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(227,190,112,0.42), transparent);
 }
+
+
+/* ── as quatro abas comecam na mesma altura ──
+   medido no navegador: inicio 46px, agendar 40px, meus 18px, perfil 42px.
+   Agora todas em 46px. */
+.ag-hd                  { padding-top: 26px !important; }
+#screen-meus .fila-hd   { padding-top: 28px !important; }
+.p-hd                   { padding-top: 28px !important; }
