@@ -13,14 +13,31 @@
   function lerLocal(){ try { return localStorage.getItem(K) || ''; } catch(e){ return ''; } }
   function gravarLocal(v){ try { localStorage.setItem(K, v); } catch(e){} }
 
+  // o app grava o nome completo por cima do campo "nome" e mantem o sobrenome:
+  // junta os dois depois e sai "Marcos Diniz Diniz". Aqui tiramos a repeticao.
+  function semRepetir(o){
+    try {
+      if(!o || !o.nome || !o.sobrenome) return o;
+      var n = String(o.nome).trim(), s = String(o.sobrenome).trim();
+      if (n.length > s.length && n.slice(-(s.length+1)).toLowerCase() === (' '+s).toLowerCase()){
+        o.nome = n.slice(0, n.length - s.length - 1).trim();
+      }
+    } catch(e){}
+    return o;
+  }
+  function normalizar(txt){
+    try { var o = JSON.parse(txt); if(!o) return txt; return JSON.stringify(semRepetir(o)); }
+    catch(e){ return txt; }
+  }
+
   var atual = lerLocal() || lerCookie();
-  if (atual && atual !== 'null'){ gravarLocal(atual); gravarCookie(atual); }
+  if (atual && atual !== 'null'){ atual = normalizar(atual); gravarLocal(atual); gravarCookie(atual); }
 
   if (typeof window.salvarSessao === 'function'){
     var _salvar = window.salvarSessao;
     window.salvarSessao = function(d){
-      try { gravarCookie(JSON.stringify(d)); } catch(e){}
-      return _salvar.apply(this, arguments);
+      try { d = semRepetir(d); gravarCookie(JSON.stringify(d)); } catch(e){}
+      return _salvar.call(this, d);
     };
   }
   if (typeof window.sairConta === 'function'){
@@ -43,7 +60,7 @@
   restaurar();
   var n = 0, t = setInterval(function(){ restaurar(); if (++n > 40) clearInterval(t); }, 400);
 
-  // ── AGENDAMENTO: completa o que faltar com o que esta na tela de confirmacao
+  // AGENDAMENTO: completa o que faltar com o que esta na tela de confirmacao
   var _fetch = window.fetch;
   window.fetch = function(url, opt){
     try {
@@ -52,17 +69,12 @@
         var o = JSON.parse(opt.body);
         var g = function(id){ var e = document.getElementById(id); return e ? String(e.textContent||'').trim() : ''; };
         var vazio = function(v){ return !v || v === 'undefined' || v === 'null'; };
+        var c = {}; try { c = semRepetir(JSON.parse(lerLocal() || lerCookie() || '{}')) || {}; } catch(e){}
         if (vazio(o.servico))  o.servico  = g('cd-svc');
         if (vazio(o.barbeiro)) o.barbeiro = g('cd-bar');
         if (vazio(o.horario))  o.horario  = g('cd-hr');
-        if (vazio(o.cliente)){
-          var c = {}; try { c = JSON.parse(lerLocal() || lerCookie() || '{}') || {}; } catch(e){}
-          o.cliente = ((c.nome||'') + ' ' + (c.sobrenome||'')).trim() || 'Cliente';
-        }
-        if (vazio(o.telefone)){
-          var c2 = {}; try { c2 = JSON.parse(lerLocal() || lerCookie() || '{}') || {}; } catch(e){}
-          o.telefone = String(c2.telefone || '');
-        }
+        if (vazio(o.telefone)) o.telefone = String(c.telefone || '');
+        o.cliente = ((c.nome||'') + ' ' + (c.sobrenome||'')).trim() || o.cliente || 'Cliente';
         if (!o.valor){
           var v = g('cd-vl').replace(/[^\d,]/g,'').replace(',','.');
           o.valor = parseFloat(v) || 0;
