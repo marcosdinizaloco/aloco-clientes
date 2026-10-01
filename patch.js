@@ -1,4 +1,24 @@
 // ALOCO - ajustes globais dos apps.
+
+// ── O VISUAL NUNCA MAIS FICA PARA TRAS ──────────────────────────
+// O carregador dentro de cada app troca a URL do patch.css so a cada
+// 5 minutos, entao o navegador podia servir CSS velho por muito tempo.
+// Aqui ele e recarregado com carimbo unico a cada abertura.
+(function(){
+  try{
+    var novo = document.createElement('link');
+    novo.rel = 'stylesheet';
+    novo.href = '/patch.css?t=' + Date.now();
+    novo.onload = function(){
+      try{
+        var velhos = document.querySelectorAll('link[href*="/patch.css?v="]');
+        for(var i = 0; i < velhos.length; i++) velhos[i].remove();
+      }catch(e){}
+    };
+    document.head.appendChild(novo);
+  }catch(e){}
+})();
+
 (function(){
   var K = 'aloco_cliente';
   var P = 'aloco_agd_pendente';
