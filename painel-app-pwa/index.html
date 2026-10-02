@@ -1818,13 +1818,48 @@ body{
     [/\u{1F488}/gu, '\u{1F485}']   // poste de barbearia -> esmalte
   ];
 
+  /* Antes cada pedacinho de texto da tela passava pelas 110 frases e pelas
+     20 expressoes, uma por uma. Numa tela de agenda cheia isso e meio milhao
+     de comparacoes a cada redesenho - era isso que deixava o painel pesado
+     no salao (na barbearia o motor nem liga). Agora ha um portao: uma unica
+     expressao que diz, de primeira, se o texto tem alguma palavra que este
+     motor sabe trocar. Quase tudo ("R$ 45,00", "09:30", "Segunda") sai por
+     ali sem custo. E o que ja foi traduzido fica guardado. */
+  function _chave(txt){
+    var ws = String(txt).toLowerCase().match(/[0-9a-z\u00e0-\u00ff]{4,}/g);
+    if(!ws || !ws.length) return null;
+    var m = ws[0];
+    for(var i = 1; i < ws.length; i++) if(ws[i].length > m.length) m = ws[i];
+    return m;
+  }
+  var F_CH = [], P_CH = [], _chs = {};
+  (function(){
+    var i, k;
+    for(i = 0; i < FRASES.length; i++){ k = _chave(FRASES[i][0]); F_CH.push(k); if(k) _chs[k] = 1; }
+    for(i = 0; i < PALAVRAS.length; i++){
+      k = _chave(String(PALAVRAS[i][0].source)
+            .replace(/\\b/g, '').replace(/\\u\{[^}]*\}/g, '').replace(/[\\\/]/g, ''));
+      P_CH.push(k); if(k) _chs[k] = 1;
+    }
+  })();
+  var PORTAO = new RegExp(Object.keys(_chs).join('|'), 'i');
+  var MEMO = Object.create(null), MEMON = 0;
+
   function traduzir(t){
     if(!t || t.indexOf('') === 0) return t;
-    var s = t, i;
+    if(t.length < 2) return t;   // o emoji sozinho tem 2 - nao pode escapar
+    var pronto = MEMO[t];
+    if(pronto !== undefined) return pronto;
+    var s = t, i, abre = PORTAO.test(t);
     for(i = 0; i < FRASES.length; i++){
+      if(!abre && F_CH[i]) continue;
       if(s.indexOf(FRASES[i][0]) >= 0) s = s.split(FRASES[i][0]).join(FRASES[i][1]);
     }
-    for(i = 0; i < PALAVRAS.length; i++) s = s.replace(PALAVRAS[i][0], PALAVRAS[i][1]);
+    for(i = 0; i < PALAVRAS.length; i++){
+      if(!abre && P_CH[i]) continue;
+      s = s.replace(PALAVRAS[i][0], PALAVRAS[i][1]);
+    }
+    if(MEMON < 5000){ MEMO[t] = s; MEMON++; }
     return s;
   }
   window.alocoTraduzir = traduzir;
@@ -1872,18 +1907,41 @@ body{
 
   function tudo(){ varrer(document.body); try{ document.title = traduzir(document.title); }catch(e){} }
 
+  /* O observador disparava a cada no inserido, no meio do desenho da tela, e
+     a propria troca de texto gerava um novo disparo. Agora as mudancas sao
+     juntadas e tratadas de uma vez no quadro seguinte, com a escrita marcada
+     para nao se observar a si mesma. Lote grande demais: uma varredura so. */
   function ligar(){
     tudo();
+    var fila = [], marcado = false, escrevendo = false;
+    function rodar(){
+      marcado = false;
+      var lote = fila; fila = [];
+      escrevendo = true;
+      try {
+        if(lote.length > 60) tudo();
+        else for(var i = 0; i < lote.length; i++) varrer(lote[i]);
+      } catch(e){}
+      escrevendo = false;
+    }
+    var depois = window.requestAnimationFrame
+      ? function(f){ window.requestAnimationFrame(f); }
+      : function(f){ setTimeout(f, 16); };
     try {
       new MutationObserver(function(muts){
+        if(escrevendo) return;
         for(var i = 0; i < muts.length; i++){
           var m = muts[i];
-          if(m.type === 'characterData'){ var n = traduzir(m.target.nodeValue); if(n !== m.target.nodeValue) m.target.nodeValue = n; }
-          else for(var j = 0; j < m.addedNodes.length; j++) varrer(m.addedNodes[j]);
+          if(m.type === 'characterData') fila.push(m.target);
+          else for(var j = 0; j < m.addedNodes.length; j++){
+            var no = m.addedNodes[j];
+            if(no.nodeType === 1 || no.nodeType === 3) fila.push(no);
+          }
         }
+        if(fila.length && !marcado){ marcado = true; depois(rodar); }
       }).observe(document.body, { childList:true, subtree:true, characterData:true });
     } catch(e){}
-    [120, 600, 1500, 3000, 6000].forEach(function(ms){ setTimeout(tudo, ms); });
+    [400, 2000].forEach(function(ms){ setTimeout(tudo, ms); });
   }
   function comecar(){
     if(window.__alocoSegLigado) return;
