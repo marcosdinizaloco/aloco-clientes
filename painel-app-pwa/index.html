@@ -5692,8 +5692,60 @@ window.onload = function(){
     novo._ax = 1; window[nome] = novo;
   }
 
+
+  /* ══ % de comissão no cadastro do profissional ═════════════ */
+  var _comPend = null;
+
+  function _campoComissao(){
+    var md = document.querySelector('#ov-barb .md');
+    if (!md || md.querySelector('#bi-com')) return;
+    var ma = md.querySelector('.ma');
+    var fg = document.createElement('div');
+    fg.className = 'fg';
+    fg.innerHTML = '<label class="fl">Comissão (%)</label>'
+      + '<input type="number" class="fi" id="bi-com" min="0" max="100" step="1" placeholder="Ex: 40">'
+      + '<div style="font-size:11px;color:var(--tx-4);margin-top:5px">Quanto este profissional recebe do que ele faturar. Deixe vazio se você não trabalha com comissão.</div>';
+    if (ma) md.insertBefore(fg, ma); else md.appendChild(fg);
+  }
+  function _preencherComissao(id){
+    var el = document.getElementById('bi-com');
+    if (!el) return;
+    var b = (window._barbs || []).filter(function(x){ return String(x.id) === String(id); })[0];
+    el.value = (b && parseFloat(b.comissao) > 0) ? b.comissao : '';
+  }
+  function _envolverDepois(nome, depois){
+    var orig = window[nome];
+    if (typeof orig !== 'function' || orig._axd) return;
+    var novo = function(){ var r = orig.apply(this, arguments);
+      try { depois.apply(this, arguments); } catch(e){} return r; };
+    novo._axd = 1; window[nome] = novo;
+  }
+  function _ligarComissao(){
+    _campoComissao();
+    _envolverDepois('nvBarb', function(){ _campoComissao(); var e=document.getElementById('bi-com'); if(e) e.value=''; });
+    _envolverDepois('edBarb', function(id){ _campoComissao(); _preencherComissao(id); });
+    // guarda o que foi digitado; o envio acontece quando a lista recarrega,
+    // porque um profissional novo só ganha id depois de gravado.
+    _envolver('svBarb', function(){
+      var el = document.getElementById('bi-com'), nm = document.getElementById('bi-nome');
+      if (el && nm && String(nm.value||'').trim()){
+        var pct = parseFloat(el.value);
+        _comPend = { nome:String(nm.value).trim(), pct: (isNaN(pct) || pct < 0) ? 0 : Math.min(100, pct) };
+      }
+      return false;
+    });
+    _envolver('ldBarb', function(){
+      if (!_comPend) return false;
+      var p = _comPend; _comPend = null;
+      var m = {}; m[p.nome] = p.pct;
+      _post({ action:'horario_save', comissoes:m }).catch(function(){});
+      return false;
+    });
+  }
+
   function _ligar(){
     _montarMenu();
+    _ligarComissao();
     // ir(): intercepta só as três telas novas; o resto segue igual
     _envolver('ir', function(tela, btn){
       if (!NOVAS[tela]) return false;
