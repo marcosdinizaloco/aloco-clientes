@@ -3379,7 +3379,9 @@ function ldBarb(){
 function rnBarb(){_drawEquipe();}
 
 function _drawEquipe(){
-  var raw=_barbs.length?_barbs:_barbsMock();
+  // Com a API ligada e nenhum profissional cadastrado, a lista fica vazia
+  // de propósito. Os três nomes de demonstração só existem no modo exemplo.
+  var raw=_barbs.length?_barbs:(_isGAS()?[]:_barbsMock());
   var barbs=_isGAS()?_barbCompute(raw):_barbMockEnrich(raw);
   var ativos=barbs.filter(function(b){return b.status==='ATIVO';});
 
@@ -3799,7 +3801,7 @@ function ldSvc(){
 function rnSvc(){_drawSvc();}
 
 function _drawSvc(){
-  var raw=_svcs.length?_svcs:_svcsMock();
+  var raw=_svcs.length?_svcs:(_isGAS()?[]:_svcsMock());
   var svcs=_isGAS()?_svcRealEnrich(raw,_agds):_svcMockEnrich(raw);
   var ativos=svcs.filter(function(s){return s.status==='ATIVO';});
   var sorted=svcs.slice().sort(function(a,b){return(b._rec||0)-(a._rec||0);});
