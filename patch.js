@@ -1134,6 +1134,16 @@
   if (window.__alocoInstalar) return;
   window.__alocoInstalar = 1;
 
+  // So uma pagina que e um app de verdade pode convidar a instalar, e quem
+  // diz isso ao navegador e o <link rel="manifest">. As paginas internas
+  // (codigos.html, barbeiro.html) carregam este mesmo patch.js mas nao tem
+  // manifest nem icone: convidar a instalar la gera um atalho quebrado.
+  (function(){
+    var m = document.querySelector('link[rel="manifest"]');
+    if (!m || !m.getAttribute('href')) window.__alocoInstalarBloqueado = 1;
+  })();
+  if (window.__alocoInstalarBloqueado) return;
+
   var CHAVE  = 'aloco_instalar_adiado';
   var VEZES  = 'aloco_instalar_recusas';
   var SELO   = 'aloco_instalar_selo';
