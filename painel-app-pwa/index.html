@@ -3406,7 +3406,7 @@ function _drawEquipe(){
 
   // Header dos cards
   h+='<div class="EQ-HDR">';
-  h+='<div><span class="EQ-HTIT">Equipe</span><span class="EQ-HSUB">'+barbs.length+' profissional'+(barbs.length!==1?'is':'')+' · '+ativos.length+' ativo'+(ativos.length!==1?'s':'')+'</span></div>';
+  h+='<div><span class="EQ-HTIT">Equipe</span><span class="EQ-HSUB">'+barbs.length+' '+(barbs.length!==1?'profissionais':'profissional')+' · '+ativos.length+' ativo'+(ativos.length!==1?'s':'')+'</span></div>';
   h+='<div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" onclick="ldBarb()">↻</button><button class="btn btn-primary btn-sm" onclick="nvBarb()">+ Novo Barbeiro</button></div>';
   h+='</div>';
 
@@ -3596,7 +3596,9 @@ function _eqCharts(barbs){
   });
   var svcsArr=Object.keys(svcsCount).map(function(k){return{nome:k,qtd:svcsCount[k]};});
   svcsArr.sort(function(a,b){return b.qtd-a.qtd;});
-  if(!svcsArr.length)svcsArr=[{nome:'Corte',qtd:16},{nome:'Corte + Barba',qtd:10},{nome:'Barba',qtd:3}];
+  if(!svcsArr.length){
+    h+='<div style="padding:16px 2px;font-size:12px;color:var(--tx-4);line-height:1.5">Ainda sem atendimentos hoje. O gr\u00e1fico aparece assim que o primeiro for registrado.</div>';
+  } else {
   var totS=svcsArr.reduce(function(s,x){return s+x.qtd;},0)||1;
   var svCores=['#d8d8d8','#888','#555'];
   // Donut SVG
@@ -3615,6 +3617,7 @@ function _eqCharts(barbs){
     h+='<div class="EQ-DONUT-ITEM"><div class="EQ-DIN"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(svCores[i]||'#333')+';margin-right:4px"></span>'+esc(s.nome)+'</div><div class="EQ-DIV">'+s.qtd+' <span style="font-size:10px;color:var(--tx-4);font-weight:400">('+pct+'%)</span></div></div>';
   });
   h+='</div></div>';
+  }
   h+='</div>';
 
   // ── Ocupação por barbeiro ──
@@ -5455,11 +5458,17 @@ window.onload = function(){
     _get('horario').then(function(j){
       var d = (j && j.ok && j.dados) ? j.dados : { abre:9, fecha:19, intervalo:30, dias:[1,2,3,4,5,6] };
       var dias = d.dias || [1,2,3,4,5,6];
+      var seg = String(d.segmento || window.__alocoSeg || 'barber').toLowerCase();
       var h = '<div style="max-width:560px">';
+      h += '<div class="fg"><label class="fl">Tipo de neg\u00f3cio</label><div id="hora-seg" style="display:flex;gap:8px;flex-wrap:wrap">';
+      [['barber','Barbearia'],['beauty','Sal\u00e3o de beleza']].forEach(function(o){
+        h += '<button type="button" data-seg="'+o[0]+'" data-on="'+(seg===o[0]?'1':'0')+'" class="btn bsm" style="'+_axEstiloOp(seg===o[0])+'" onclick="_axTogSeg(this)">'+o[1]+'</button>';
+      });
+      h += '</div><div style="font-size:11px;color:var(--tx-4);margin-top:6px">Muda os textos do painel e do aplicativo (profissional/barbeiro, sal\u00e3o/barbearia).</div></div>';
       h += '<div class="fg"><label class="fl">Dias que abre</label><div id="hora-dias" style="display:flex;gap:6px;flex-wrap:wrap">';
       for (var i=0;i<7;i++){
         var on = dias.indexOf(i) >= 0;
-        h += '<button type="button" data-dia="'+i+'" class="btn '+(on?'bp':'bg')+' bsm" style="min-width:54px;padding:9px 10px;font-size:12px" onclick="_axTogDia(this)">'+DIAS[i]+'</button>';
+        h += '<button type="button" data-dia="'+i+'" data-on="'+(on?'1':'0')+'" class="btn bsm" style="min-width:54px;'+_axEstiloOp(on)+'" onclick="_axTogDia(this)">'+DIAS[i]+'</button>';
       }
       h += '</div></div>';
       h += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
@@ -5479,15 +5488,28 @@ window.onload = function(){
     for (var i=de;i<=ate;i++) s += '<option value="'+i+'"'+(Number(sel)===i?' selected':'')+'>'+(i<10?'0'+i:i)+':00</option>';
     return s;
   }
-  window._axTogDia = function(btn){
-    var on = btn.classList.contains('bp');
-    btn.classList.toggle('bp', !on); btn.classList.toggle('bg', on);
+  window._axEstiloOp = function(on){
+    return on
+      ? 'padding:9px 12px;font-size:12px;background:var(--alc-ac,#0097fd);color:#fff;border:1px solid transparent;font-weight:600'
+      : 'padding:9px 12px;font-size:12px;background:transparent;color:var(--tx-4);border:1px solid rgba(255,255,255,.14);font-weight:500';
+  };
+  function _axPintar(btn, on){
+    btn.setAttribute('data-on', on ? '1' : '0');
+    btn.setAttribute('style', _axEstiloOp(on));
+  }
+  window._axTogDia = function(btn){ _axPintar(btn, btn.getAttribute('data-on') !== '1'); };
+  window._axTogSeg = function(btn){
+    var pai = document.getElementById('hora-seg'); if (!pai) return;
+    pai.querySelectorAll('button').forEach(function(b){ _axPintar(b, b === btn); });
   };
   window._axSalvarHorario = function(){
     var dias = [];
     document.querySelectorAll('#hora-dias button').forEach(function(b){
-      if (b.classList.contains('bp')) dias.push(Number(b.getAttribute('data-dia')));
+      if (b.getAttribute('data-on') === '1') dias.push(Number(b.getAttribute('data-dia')));
     });
+    var seg = '';
+    var bs = document.querySelector('#hora-seg button[data-on="1"]');
+    if (bs) seg = bs.getAttribute('data-seg');
     var abre = Number(document.getElementById('hora-abre').value);
     var fecha = Number(document.getElementById('hora-fecha').value);
     if (!dias.length){ _er('Escolha pelo menos um dia.'); return; }
@@ -5495,11 +5517,13 @@ window.onload = function(){
     var btn = document.getElementById('hora-sv');
     btn.disabled = true; btn.textContent = 'Salvando...';
     _post({ action:'horario_save', abre:abre, fecha:fecha,
-            intervalo:Number(document.getElementById('hora-int').value), dias:dias })
+            intervalo:Number(document.getElementById('hora-int').value), dias:dias, segmento:seg })
       .then(function(j){
         btn.disabled = false; btn.textContent = 'Salvar';
-        if (j && j.ok) _ok(j.mensagem || 'Horário salvo.');
-        else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
+        if (j && j.ok){
+          _ok(j.mensagem || 'Horário salvo.');
+          if (j.segmento) _axAplicarSeg(j.segmento);
+        } else _er('Erro: ' + ((j && j.erro) || 'tente de novo'));
       })
       .catch(function(){ btn.disabled = false; btn.textContent = 'Salvar'; _er('Erro de conexão.'); });
   };
@@ -5704,7 +5728,7 @@ window.onload = function(){
     fg.className = 'fg';
     fg.innerHTML = '<label class="fl">Comissão (%)</label>'
       + '<input type="number" class="fi" id="bi-com" min="0" max="100" step="1" placeholder="Ex: 40">'
-      + '<div style="font-size:11px;color:var(--tx-4);margin-top:5px">Quanto este profissional recebe do que ele faturar. Deixe vazio se você não trabalha com comissão.</div>';
+      + '<div style="font-size:11px;color:var(--tx-4);margin-top:5px">Quanto esta pessoa recebe do que faturar. Deixe vazio se você não trabalha com comissão.</div>';
     if (ma) md.insertBefore(fg, ma); else md.appendChild(fg);
   }
   function _preencherComissao(id){
@@ -5743,9 +5767,110 @@ window.onload = function(){
     });
   }
 
+
+  /* ══ segmento: salão x barbearia, vindo do servidor ════════ */
+  window._axAplicarSeg = function(seg){
+    seg = String(seg||'').toLowerCase();
+    if (seg !== 'beauty' && seg !== 'barber') return;
+    var atual = '';
+    try { atual = String(localStorage.getItem('aloco_seg')||'').toLowerCase(); } catch(e){}
+    if (atual === seg) return;
+    try { localStorage.setItem('aloco_seg', seg); } catch(e){}
+    try { window.ALOCO_SEG = seg; } catch(e){}
+    // o motor de tradução já rodou sobre a página; uma recarga é o jeito
+    // honesto de reescrever tudo. Só acontece quando o valor muda.
+    try {
+      if (!sessionStorage.getItem('aloco_seg_recarregou')){
+        sessionStorage.setItem('aloco_seg_recarregou','1');
+        location.reload();
+      }
+    } catch(e){}
+  };
+  function _axDescobrirSeg(){
+    if (!ALOCO.SENHA) return;
+    var tem = false;
+    try { tem = !!localStorage.getItem('aloco_seg'); } catch(e){}
+    var naUrl = false;
+    try { naUrl = !!(new URLSearchParams(location.search)).get('seg'); } catch(e){}
+    if (naUrl) return;                       // a URL manda; o motor já tratou
+    _get('horario').then(function(j){
+      var seg = j && j.ok && j.dados && j.dados.segmento;
+      if (seg) _axAplicarSeg(seg);
+      else if (!tem) { /* servidor ainda não sabe: fica no padrão */ }
+    }).catch(function(){});
+  }
+
+  /* ══ ocupação de verdade nas telas que calculavam sozinhas ══ */
+  var _AXH = null;
+  function _axHorario(){
+    if (_AXH) return Promise.resolve(_AXH);
+    return _get('horario').then(function(j){
+      _AXH = (j && j.ok && j.dados) ? j.dados : { abre:9, fecha:19, intervalo:30 };
+      return _AXH;
+    }).catch(function(){ _AXH = { abre:9, fecha:19, intervalo:30 }; return _AXH; });
+  }
+  function _axMin(t){ try { return _minHora(xhora(t)); } catch(e){ return -1; } }
+  function _axCapBarb(b){
+    var H = _AXH || { abre:9, fecha:19, intervalo:30 };
+    var iv = Number(H.intervalo) || 30;
+    var a = (Number(H.abre)||9) * 60, f = (Number(H.fecha)||19) * 60;
+    var bi = _axMin(b && b.hIni), bf = _axMin(b && b.hFim);
+    if (bi >= 0) a = Math.max(a, bi);
+    if (bf >= 0) f = Math.min(f, bf);
+    var n = Math.floor((f - a) / iv);
+    return n > 0 ? n : 0;
+  }
+  function _axCapDia(){
+    var l = (window._barbs || []).filter(function(b){ return String(b.status||'ATIVO').toUpperCase() === 'ATIVO'; });
+    if (!l.length) return 0;
+    return l.reduce(function(s, b){ return s + _axCapBarb(b); }, 0);
+  }
+  function _axLigarOcupacao(){
+    // Profissionais: "_slots" era a quantidade de agendamentos do dia, não a
+    // capacidade — por isso "0 horários vagos" numa agenda vazia.
+    var orig = window._barbCompute;
+    if (typeof orig === 'function' && !orig._ax){
+      var novo = function(){
+        var r = orig.apply(this, arguments);
+        try {
+          (r || []).forEach(function(b){
+            var cap = _axCapBarb(b);
+            if (cap > 0){
+              b._slots = cap;
+              b._ocup = Math.min(100, Math.round(((b._ocupados||0) / cap) * 100));
+            }
+          });
+        } catch(e){}
+        return r;
+      };
+      novo._ax = 1; window._barbCompute = novo;
+    }
+    // Agenda: o cartão "Ocupação" dividia confirmados pelo total de
+    // agendamentos — dava 100% com um agendamento e "0 de 0" com nenhum.
+    _envolverDepois('_agdStrip', function(){
+      try {
+        var el = document.getElementById('ag-strip'); if (!el) return;
+        var cap = _axCapDia(); if (!(cap > 0)) return;
+        var ocup = (window._agds || []).filter(function(a){
+          var st = String(a.status||'').toUpperCase();
+          return st !== 'CANCELADO' && !(typeof _ehBlq === 'function' && _ehBlq(a));
+        }).length;
+        var pct = Math.min(100, Math.round((ocup / cap) * 100));
+        el.querySelectorAll('div').forEach(function(c){
+          var t = c.firstElementChild;
+          if (!t || String(t.textContent||'').trim().toLowerCase() !== 'ocupação') return;
+          var v = t.nextElementSibling, d = v && v.nextElementSibling;
+          if (v) v.textContent = pct + '%';
+          if (d) d.textContent = ocup + ' de ' + cap + ' horários';
+        });
+      } catch(e){}
+    });
+  }
+
   function _ligar(){
     _montarMenu();
     _ligarComissao();
+    _axHorario().then(function(){ _axLigarOcupacao(); _axDescobrirSeg(); });
     // ir(): intercepta só as três telas novas; o resto segue igual
     _envolver('ir', function(tela, btn){
       if (!NOVAS[tela]) return false;
