@@ -6401,6 +6401,81 @@ window.onload = function(){
 /* "Livre" era azul fixo; no salão segue o rosé */
 :root[data-seg="beauty"] .EQ-DIST.li{ color:#E4A0A0 !important; }
 :root[data-seg="beauty"] .CX-CARD-DOT{ background:#C77F7F !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   CONTRASTE E PROFUNDIDADE — mesma paleta, três níveis claros:
+   fundo #0B080A  →  card #1C1316  →  destaque #26181B
+   ══════════════════════════════════════════════════════════════ */
+:root[data-seg="beauty"]{
+  --bq-card:  linear-gradient(160deg, rgba(199,127,127,.13), rgba(169,99,99,.05) 62%), #1C1316;
+  --bq-card2: linear-gradient(160deg, rgba(199,127,127,.20), rgba(169,99,99,.08) 62%), #26181B;
+  --bq-bd:    #4A2A2C;
+  --bq-bd2:   #704144;
+}
+:root[data-seg="beauty"] body{
+  background:
+    radial-gradient(1300px 680px at 6% -12%, rgba(169,99,99,.26), transparent 64%),
+    radial-gradient(1000px 560px at 106% -6%, rgba(201,166,107,.08), transparent 58%),
+    #0B080A !important;
+}
+/* containers que ainda usavam branco translúcido */
+:root[data-seg="beauty"] .CMD-CW,
+:root[data-seg="beauty"] .CMD-SW,
+:root[data-seg="beauty"] .CMD-KSTRIP,
+:root[data-seg="beauty"] .CX-LIST,
+:root[data-seg="beauty"] .CX-PANEL,
+:root[data-seg="beauty"] .CMD-PI{
+  background: var(--bq-card) !important;
+  border-color: var(--bq-bd) !important;
+  box-shadow: inset 0 1px 0 rgba(240,193,193,.07), 0 6px 22px rgba(0,0,0,.46) !important;
+}
+:root[data-seg="beauty"] .CMD-PI{ background: rgba(199,127,127,.09) !important; }
+:root[data-seg="beauty"] .CMD-CW:hover,
+:root[data-seg="beauty"] .CX-PANEL:hover{ border-color: var(--bq-bd2) !important; }
+
+/* os blocos de destaque ficam um degrau acima */
+:root[data-seg="beauty"] .CMD-IA,
+:root[data-seg="beauty"] .HMETA,
+:root[data-seg="beauty"] .FHERO,
+:root[data-seg="beauty"] .md,
+:root[data-seg="beauty"] .EQ-CARD{
+  background: var(--bq-card2) !important;
+  border-color: var(--bq-bd2) !important;
+}
+:root[data-seg="beauty"] .CMD-IA{
+  background: linear-gradient(150deg, rgba(199,127,127,.26) 0%, #26181B 72%) !important;
+}
+
+/* separação entre seções: régua rosé um pouco mais presente */
+:root[data-seg="beauty"] .CMD-CT::after,
+:root[data-seg="beauty"] .FGT::after,
+:root[data-seg="beauty"] .FSECT::before,
+:root[data-seg="beauty"] .FSECT::after,
+:root[data-seg="beauty"] .EQ-CT::after{ background: rgba(169,99,99,.40) !important; }
+
+/* títulos mais legíveis, sem clarear o fundo */
+:root[data-seg="beauty"] .CMD-CT,
+:root[data-seg="beauty"] .CMD-KL,
+:root[data-seg="beauty"] .FKLB,
+:root[data-seg="beauty"] .FHLB,
+:root[data-seg="beauty"] .FGT,
+:root[data-seg="beauty"] .FSECT,
+:root[data-seg="beauty"] .EQ-CT,
+:root[data-seg="beauty"] .HCT,
+:root[data-seg="beauty"] .CRM-CT,
+:root[data-seg="beauty"] .SV-THL{ color:#EAB0B0 !important; opacity:1 !important; }
+:root[data-seg="beauty"] .CMD-KT,
+:root[data-seg="beauty"] .FSUB{ color:#B59494 !important; }
+
+/* a faixa de indicadores precisa de divisórias visíveis */
+:root[data-seg="beauty"] .CMD-K{ border-color: var(--bq-bd) !important; }
+:root[data-seg="beauty"] .CMD-K + .CMD-K{ border-left-color: rgba(169,99,99,.34) !important; }
+
+/* estados vazios deixam de sumir */
+:root[data-seg="beauty"] .ES,
+:root[data-seg="beauty"] .es{ background: var(--bq-card) !important; border-color: var(--bq-bd) !important; }
+:root[data-seg="beauty"] .es-title{ color:#F0C1C1 !important; }
+:root[data-seg="beauty"] .es-sub{ color:#B59494 !important; }
 </style>
 </body>
 </html>
