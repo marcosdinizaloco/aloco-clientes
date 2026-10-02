@@ -5917,7 +5917,6 @@ window.onload = function(){
    estrutura, medida, texto ou comportamento muda aqui.
    ══════════════════════════════════════════════════════════════ */
 
-/* cores de gráfico viram token, pra mudarem junto com o segmento */
 :root{
   --ch-1:#d8d8d8; --ch-2:#888888; --ch-3:#555555; --ch-4:#aaaaaa;
   --ch-linha:rgba(237,234,230,.55);
@@ -5926,60 +5925,66 @@ window.onload = function(){
 }
 
 :root[data-seg="beauty"]{
-  --bg-base:     #0B0A0D;
-  --bg-surface:  #17131C;
-  --bg-elevated: #1F1927;
-  --bg-input:    #1B1621;
-  --bg-hover:    rgba(201,143,175,.08);
-  --bg-active:   rgba(201,143,175,.14);
+  --rose:    #C98FAF;   /* primária   */
+  --rose-cl: #E3B9C9;   /* destaque   */
+  --rose-xl: #F2D7E2;   /* topo de gradiente */
+  --ouro:    #C9A66B;
 
-  --bd-subtle:   rgba(227,185,201,.10);
-  --bd-default:  rgba(227,185,201,.17);
-  --bd-strong:   rgba(227,185,201,.28);
-  --bd-focus:    rgba(201,143,175,.50);
+  --bg-base:     #0B0A0D;
+  --bg-surface:  #171320;
+  --bg-elevated: #211A2B;
+  --bg-input:    #1E1726;
+  --bg-hover:    rgba(201,143,175,.12);
+  --bg-active:   rgba(201,143,175,.20);
+
+  --bd-subtle:   rgba(201,143,175,.20);
+  --bd-default:  rgba(201,143,175,.30);
+  --bd-strong:   rgba(227,185,201,.46);
+  --bd-focus:    rgba(227,185,201,.70);
 
   --tx-1: #F5EEF2;
-  --tx-2: rgba(245,238,242,.64);
-  --tx-3: rgba(240,222,232,.44);
-  --tx-4: rgba(240,222,232,.28);
-  --tx-5: rgba(240,222,232,.15);
+  --tx-2: rgba(245,238,242,.76);
+  --tx-3: #9E949D;
+  --tx-4: rgba(201,143,175,.72);
+  --tx-5: rgba(201,143,175,.34);
 
-  --c-green:  #82C9A5; --c-green-bg:  rgba(130,201,165,.11); --c-green-bd:  rgba(130,201,165,.28);
-  --c-yellow: #C9A66B; --c-yellow-bg: rgba(201,166,107,.11); --c-yellow-bd: rgba(201,166,107,.28);
-  --c-red:    #C2697F; --c-red-bg:    rgba(194,105,127,.11); --c-red-bd:    rgba(194,105,127,.28);
-  --c-blue:   #C98FAF; --c-blue-bg:   rgba(201,143,175,.11); --c-blue-bd:   rgba(201,143,175,.28);
+  --c-green:  #82C9A5; --c-green-bg:  rgba(130,201,165,.14); --c-green-bd:  rgba(130,201,165,.36);
+  --c-yellow: #C9A66B; --c-yellow-bg: rgba(201,166,107,.14); --c-yellow-bd: rgba(201,166,107,.36);
+  --c-red:    #D9788F; --c-red-bg:    rgba(217,120,143,.14); --c-red-bd:    rgba(217,120,143,.36);
+  --c-blue:   #C98FAF; --c-blue-bg:   rgba(201,143,175,.16); --c-blue-bd:   rgba(201,143,175,.40);
 
   --alc-ac:    #C98FAF;
-  --alc-ac-bg: rgba(201,143,175,.13);
-  --alc-ac-bd: rgba(201,143,175,.34);
+  --alc-ac-bg: rgba(201,143,175,.18);
+  --alc-ac-bd: rgba(201,143,175,.45);
 
-  --ch-1:#E3B9C9; --ch-2:#C98FAF; --ch-3:#8E5F79; --ch-4:#533648;
-  --ch-linha:rgba(227,185,201,.72);
-  --ch-bar:#2A2029; --ch-barH:#E3B9C9; --ch-lbl:rgba(227,185,201,.34); --ch-lbl2:rgba(227,185,201,.62);
-  --ouro:#C9A66B;
+  /* gráficos: rosa visível, do claro ao médio */
+  --ch-1:#F2D2E0; --ch-2:#DDAAC4; --ch-3:#C78FAB; --ch-4:#A97190;
+  --ch-linha:#E3B9C9;
+  --ch-bar:#3B2B38; --ch-barH:#E8BFD1;
+  --ch-lbl:rgba(227,185,201,.58); --ch-lbl2:rgba(227,185,201,.85);
+  --ch-fundo:rgba(201,143,175,.16);
 
   --sh-sm:  0 1px 3px rgba(0,0,0,.45);
   --sh-md:  0 4px 18px rgba(0,0,0,.50);
   --sh-lg:  0 14px 44px rgba(0,0,0,.58);
   --sh-modal: 0 24px 64px rgba(0,0,0,.72);
 
-  /* usados pelas regras abaixo */
-  --bq-card:  linear-gradient(180deg, rgba(227,185,201,.055), rgba(227,185,201,.012) 55%), #17131C;
-  --bq-card2: linear-gradient(180deg, rgba(227,185,201,.085), rgba(227,185,201,.02) 60%), #1C1724;
-  --bq-bd:    rgba(227,185,201,.13);
-  --bq-bd2:   rgba(227,185,201,.24);
+  --bq-card:  linear-gradient(160deg, rgba(201,143,175,.22), rgba(201,143,175,.06) 60%), #171320;
+  --bq-card2: linear-gradient(160deg, rgba(201,143,175,.30), rgba(201,143,175,.09) 62%), #1D1627;
+  --bq-bd:    rgba(201,143,175,.34);
+  --bq-bd2:   rgba(227,185,201,.46);
 }
 
-/* ── fundo: preto ameixa com dois brilhos muito discretos ─────── */
+/* ── fundo ─────────────────────────────────────────────────────── */
 :root[data-seg="beauty"] body{
   background:
-    radial-gradient(1250px 640px at 8% -10%, rgba(201,143,175,.13), transparent 60%),
-    radial-gradient(1000px 540px at 104% -4%, rgba(201,166,107,.07), transparent 56%),
+    radial-gradient(1300px 680px at 6% -12%, rgba(201,143,175,.30), transparent 64%),
+    radial-gradient(1000px 560px at 106% -6%, rgba(201,166,107,.10), transparent 58%),
     #0B0A0D !important;
   background-attachment: fixed !important;
 }
 
-/* ── todas as superfícies de cartão ───────────────────────────── */
+/* ── cartões ───────────────────────────────────────────────────── */
 :root[data-seg="beauty"] .HC,
 :root[data-seg="beauty"] .CMD-K,
 :root[data-seg="beauty"] .EQ-CARD,
@@ -6001,7 +6006,8 @@ window.onload = function(){
 :root[data-seg="beauty"] .FOPI,
 :root[data-seg="beauty"] .FRKI,
 :root[data-seg="beauty"] .HMB,
-:root[data-seg="beauty"] .HST{
+:root[data-seg="beauty"] .HST,
+:root[data-seg="beauty"] .FHERO{
   background: var(--bq-card) !important;
   border-color: var(--bq-bd) !important;
 }
@@ -6018,288 +6024,325 @@ window.onload = function(){
 :root[data-seg="beauty"] .SV-ROW:hover,
 :root[data-seg="beauty"] .card-pm:hover{
   border-color: var(--bq-bd2) !important;
-  box-shadow: 0 0 0 1px rgba(201,143,175,.10), 0 10px 30px rgba(0,0,0,.45) !important;
+  box-shadow: 0 0 0 1px rgba(227,185,201,.18), 0 12px 34px rgba(201,143,175,.12) !important;
 }
 
-/* ── barra lateral e topo ─────────────────────────────────────── */
+/* rótulos dos indicadores em rosé — é o que dá o tom à tela ───── */
+:root[data-seg="beauty"] .CMD-KL,
+:root[data-seg="beauty"] .FKLB,
+:root[data-seg="beauty"] .FHLB,
+:root[data-seg="beauty"] .FGT,
+:root[data-seg="beauty"] .FSECT,
+:root[data-seg="beauty"] .EQ-CT,
+:root[data-seg="beauty"] .HCT,
+:root[data-seg="beauty"] .CRM-CT,
+:root[data-seg="beauty"] .SV-THL,
+:root[data-seg="beauty"] .EQ-HSUB,
+:root[data-seg="beauty"] .fl{ color: var(--rose-cl) !important; }
+:root[data-seg="beauty"] .CMD-KT,
+:root[data-seg="beauty"] .FSUB{ color: rgba(227,185,201,.62) !important; }
+
+/* ── barra lateral ─────────────────────────────────────────────── */
 :root[data-seg="beauty"] .nav{
-  background: linear-gradient(180deg, #110E15, #0C0A10) !important;
-  border-right-color: rgba(227,185,201,.10) !important;
+  background: linear-gradient(180deg, #19131F, #0E0B12) !important;
+  border-right-color: rgba(201,143,175,.22) !important;
 }
 :root[data-seg="beauty"] .nav-brand,
-:root[data-seg="beauty"] .nav-ft{ border-color: rgba(227,185,201,.10) !important; }
+:root[data-seg="beauty"] .nav-ft{ border-color: rgba(201,143,175,.20) !important; }
+:root[data-seg="beauty"] .nb{ color: rgba(245,238,242,.72) !important; }
+:root[data-seg="beauty"] .nb-ico{ color: var(--rose) !important; opacity:.95 !important; }
+:root[data-seg="beauty"] .nb.on{
+  background: linear-gradient(90deg, rgba(201,143,175,.34), rgba(201,143,175,.12)) !important;
+  box-shadow: inset 0 0 0 1px rgba(227,185,201,.40), 0 0 18px rgba(201,143,175,.14) !important;
+  color: #FFF !important;
+}
+:root[data-seg="beauty"] .nb.on .nb-bar{ background: var(--rose-cl) !important; }
+:root[data-seg="beauty"] .nb.on .nb-ico{ color: var(--rose-xl) !important; opacity:1 !important; }
+:root[data-seg="beauty"] .nb:hover:not(.on){ background: rgba(201,143,175,.14) !important; }
+:root[data-seg="beauty"] .nav-glabel{ color: rgba(227,185,201,.52) !important; }
 :root[data-seg="beauty"] .hdr{
-  background: rgba(11,10,13,.82) !important;
-  border-bottom-color: rgba(227,185,201,.10) !important;
+  background: rgba(16,12,20,.86) !important;
+  border-bottom-color: rgba(201,143,175,.20) !important;
 }
 :root[data-seg="beauty"] .hdr-pill,
 :root[data-seg="beauty"] .hdr-logo,
 :root[data-seg="beauty"] .h-sync{
-  background: rgba(227,185,201,.05) !important;
-  border-color: rgba(227,185,201,.13) !important;
+  background: rgba(201,143,175,.12) !important;
+  border-color: rgba(201,143,175,.28) !important;
+  color: var(--rose-cl) !important;
 }
 
-/* item ativo do menu */
-:root[data-seg="beauty"] .nb.on{
-  background: linear-gradient(90deg, rgba(201,143,175,.20), rgba(201,143,175,.05)) !important;
-  box-shadow: inset 0 0 0 1px rgba(227,185,201,.20) !important;
-  color: var(--tx-1) !important;
-}
-:root[data-seg="beauty"] .nb.on .nb-bar{ background: var(--alc-ac) !important; }
-:root[data-seg="beauty"] .nb.on .nb-ico{ color: var(--alc-ac) !important; opacity:1 !important; }
-:root[data-seg="beauty"] .nb:hover:not(.on){ background: rgba(201,143,175,.07) !important; }
-:root[data-seg="beauty"] .nav-glabel{ color: rgba(227,185,201,.30) !important; }
-
-/* ── botões ───────────────────────────────────────────────────── */
+/* ── botões ────────────────────────────────────────────────────── */
 :root[data-seg="beauty"] .btn.bp,
-:root[data-seg="beauty"] .btn.btn-primary{
-  background: linear-gradient(135deg,#E8C2D2,#C98FAF) !important;
+:root[data-seg="beauty"] .btn.btn-primary,
+:root[data-seg="beauty"] .btn-primary,
+:root[data-seg="beauty"] .bp,
+:root[data-seg="beauty"] .HACBTN.prim,
+:root[data-seg="beauty"] .FPB.on,
+:root[data-seg="beauty"] .avb.on{
+  background: linear-gradient(135deg,#F2D7E2,#C98FAF) !important;
   border-color: transparent !important;
-  color: #1A1017 !important;
-  font-weight: 600;
+  color: #231520 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 16px rgba(201,143,175,.26) !important;
 }
 :root[data-seg="beauty"] .btn.bp:hover,
-:root[data-seg="beauty"] .btn.btn-primary:hover{
-  background: linear-gradient(135deg,#F0D0DD,#D49FBB) !important;
-}
+:root[data-seg="beauty"] .btn.btn-primary:hover{ filter: brightness(1.07); }
 :root[data-seg="beauty"] .btn.bg,
-:root[data-seg="beauty"] .btn-ghost{ border-color: rgba(227,185,201,.18) !important; }
+:root[data-seg="beauty"] .btn-ghost{
+  border-color: rgba(201,143,175,.34) !important;
+  color: var(--rose-cl) !important;
+}
 :root[data-seg="beauty"] .btn.bg:hover,
-:root[data-seg="beauty"] .btn-ghost:hover{ background: rgba(201,143,175,.09) !important; }
+:root[data-seg="beauty"] .btn-ghost:hover{ background: rgba(201,143,175,.16) !important; }
 
-/* ── campos ───────────────────────────────────────────────────── */
+/* ── campos ────────────────────────────────────────────────────── */
 :root[data-seg="beauty"] .fi,
 :root[data-seg="beauty"] .fs,
 :root[data-seg="beauty"] .search-bar{
-  background: rgba(227,185,201,.045) !important;
-  border-color: rgba(227,185,201,.13) !important;
+  background: rgba(201,143,175,.09) !important;
+  border-color: rgba(201,143,175,.26) !important;
   color: var(--tx-1) !important;
 }
 :root[data-seg="beauty"] .fi:focus,
 :root[data-seg="beauty"] .search-bar:focus{
-  border-color: rgba(201,143,175,.45) !important;
-  box-shadow: 0 0 0 3px rgba(201,143,175,.10) !important;
+  border-color: var(--rose-cl) !important;
+  box-shadow: 0 0 0 3px rgba(201,143,175,.18) !important;
 }
-:root[data-seg="beauty"] .fl{ color: rgba(227,185,201,.52) !important; }
 
-/* ── títulos de seção: champagne, não branco ──────────────────── */
-:root[data-seg="beauty"] .FGT,
-:root[data-seg="beauty"] .EQ-CT,
-:root[data-seg="beauty"] .HCT,
-:root[data-seg="beauty"] .CRM-CT{ color: rgba(227,185,201,.44) !important; }
-
-/* ── barras, gráficos e medidores ─────────────────────────────── */
+/* ── barras, medidores e etiquetas ─────────────────────────────── */
 :root[data-seg="beauty"] .EQ-BARF,
 :root[data-seg="beauty"] .SV-BARF,
+:root[data-seg="beauty"] .HMBPF,
 :root[data-seg="beauty"] .HMBPBG > div,
 :root[data-seg="beauty"] .HBIQ-IBAR > div,
 :root[data-seg="beauty"] .bar-f{
-  background: linear-gradient(90deg,var(--ch-2),var(--ch-1)) !important;
+  background: linear-gradient(90deg,#C98FAF,#F0C8DA) !important;
 }
 :root[data-seg="beauty"] .EQ-BARBG,
 :root[data-seg="beauty"] .SV-BARBG,
 :root[data-seg="beauty"] .HMBPBG,
-:root[data-seg="beauty"] .bar-w{ background: rgba(227,185,201,.09) !important; }
+:root[data-seg="beauty"] .bar-w{ background: rgba(201,143,175,.16) !important; }
+:root[data-seg="beauty"] .bx,
+:root[data-seg="beauty"] .st-n,
+:root[data-seg="beauty"] .SV-RANK{
+  background: rgba(201,143,175,.18) !important;
+  color: var(--rose-cl) !important;
+}
+:root[data-seg="beauty"] .bx-AT,
+:root[data-seg="beauty"] .badge-green,
+:root[data-seg="beauty"] .st-p{
+  background: var(--c-green-bg) !important; color: var(--c-green) !important;
+  border-color: var(--c-green-bd) !important;
+}
+:root[data-seg="beauty"] .SV-RANK.g,
+:root[data-seg="beauty"] .EQ-MEDAL.g{ color: var(--ouro) !important; background: rgba(201,166,107,.18) !important; }
 
-/* ── grade da agenda ──────────────────────────────────────────── */
-:root[data-seg="beauty"] .agh{ background: #1A1521 !important; color: var(--tx-2) !important; }
-:root[data-seg="beauty"] .ags:hover{ background: rgba(201,143,175,.08) !important; }
-:root[data-seg="beauty"] .agsi-ok{ background: var(--alc-ac-bg) !important; color: var(--ch-1) !important; }
+/* ── agenda ────────────────────────────────────────────────────── */
+:root[data-seg="beauty"] .agh{ background: #241B2D !important; color: var(--rose-cl) !important; }
+:root[data-seg="beauty"] .ags:hover{ background: rgba(201,143,175,.16) !important; }
+:root[data-seg="beauty"] .agsi-ok{ background: rgba(201,143,175,.22) !important; color: var(--rose-xl) !important; border-color: rgba(227,185,201,.45) !important; }
 
-/* ── marca: Beauty em champagne, IA em dourado ────────────────── */
-:root[data-seg="beauty"] .nav-ft-ver > div:first-child{ color:#E3B9C9 !important; }
+/* ── avatares ──────────────────────────────────────────────────── */
+:root[data-seg="beauty"] .FRKA,
+:root[data-seg="beauty"] .EQ-AV,
+:root[data-seg="beauty"] .CRM-AV,
+:root[data-seg="beauty"] .HPIA{
+  background: linear-gradient(135deg, rgba(201,143,175,.32), rgba(201,143,175,.12)) !important;
+  border-color: rgba(227,185,201,.38) !important;
+  color: var(--rose-xl) !important;
+}
+
+/* ── marca ─────────────────────────────────────────────────────── */
+:root[data-seg="beauty"] .nav-ft-ver{
+  background: linear-gradient(135deg, rgba(201,166,107,.12), rgba(201,143,175,.08)) !important;
+  border: 1px solid rgba(201,166,107,.30) !important;
+  border-radius: 12px; padding: 12px 8px;
+}
+:root[data-seg="beauty"] .nav-ft-ver > div:first-child{ color:var(--rose-cl) !important; }
 :root[data-seg="beauty"] .nav-ft-ver > div:first-child span{ color: var(--ouro) !important; }
+:root[data-seg="beauty"] .nav-ft-ver > div:first-child div{ color: rgba(201,166,107,.60) !important; }
 :root[data-seg="beauty"] .nav-ft-dot{ background: var(--c-green) !important; }
 :root[data-seg="beauty"] .nav-ft-dot.amber{ background: var(--ouro) !important; }
-:root[data-seg="beauty"] .nav-brand-ico{
-  background: linear-gradient(135deg, rgba(227,185,201,.16), rgba(201,166,107,.10)) !important;
-  border-color: rgba(227,185,201,.18) !important;
-}
-
-/* ── ouro só nos detalhes estratégicos ────────────────────────── */
-:root[data-seg="beauty"] .SV-RANK.g,
-:root[data-seg="beauty"] .EQ-MEDAL.g{ color: var(--ouro) !important; }
-
-/* ── barra de rolagem ─────────────────────────────────────────── */
-:root[data-seg="beauty"] ::-webkit-scrollbar-thumb{ background: rgba(201,143,175,.18) !important; }
-:root[data-seg="beauty"] ::-webkit-scrollbar-thumb:hover{ background: rgba(201,143,175,.30) !important; }
-
-
-/* ── botões brancos do painel viram rosé no modo salão ────────── */
-:root[data-seg="beauty"] .btn-primary,
-:root[data-seg="beauty"] .bp,
-:root[data-seg="beauty"] .HACBTN.prim,
-:root[data-seg="beauty"] .FTAB.on,
-:root[data-seg="beauty"] .avb.on{
-  background: linear-gradient(135deg,#E8C2D2,#C98FAF) !important;
-  color: #1A1017 !important;
-  border-color: transparent !important;
-}
-:root[data-seg="beauty"] .HMBPF{
-  background: linear-gradient(90deg,var(--ch-3),var(--ch-1)) !important;
-}
-:root[data-seg="beauty"] .FSVCBARF,
-:root[data-seg="beauty"] .FPAGBF,
-:root[data-seg="beauty"] .FRKBARF{
-  background: linear-gradient(90deg,var(--ch-2),var(--ch-1)) !important;
-}
-/* logo da marca: leva o azul para o rosé sem trocar o arquivo */
 :root[data-seg="beauty"] .nav-brand img,
 :root[data-seg="beauty"] .nav-brand-ico img,
-:root[data-seg="beauty"] .hdr-logo img{
-  filter: hue-rotate(135deg) saturate(.68) brightness(1.10);
+:root[data-seg="beauty"] .hdr-logo img{ filter: hue-rotate(135deg) saturate(.80) brightness(1.14); }
+:root[data-seg="beauty"] .nav-brand > div:nth-child(2){ color:#F5EEF2 !important; }
+:root[data-seg="beauty"] .nav-brand > div:nth-child(2) div{ color:rgba(227,185,201,.60) !important; }
+
+/* ── rolagem ───────────────────────────────────────────────────── */
+:root[data-seg="beauty"] ::-webkit-scrollbar-thumb{ background: rgba(201,143,175,.34) !important; }
+:root[data-seg="beauty"] ::-webkit-scrollbar-thumb:hover{ background: rgba(201,143,175,.52) !important; }
+
+/* ── assistente ────────────────────────────────────────────────── */
+:root[data-seg="beauty"] .CMD-IA{
+  background: linear-gradient(150deg, rgba(201,143,175,.22) 0%, rgba(26,20,34,.96) 70%) !important;
+  border-color: rgba(227,185,201,.34) !important;
 }
-:root[data-seg="beauty"] .nav-brand > div:nth-child(2){ color:#F0E2E9 !important; }
-:root[data-seg="beauty"] .nav-brand > div:nth-child(2) div{ color:rgba(227,185,201,.42) !important; }
+:root[data-seg="beauty"] .CMD-IA::before{
+  background: linear-gradient(90deg, transparent, var(--rose-cl), transparent) !important;
+}
+:root[data-seg="beauty"] .CMD-IA-AV{
+  background: linear-gradient(135deg, rgba(227,185,201,.42), rgba(201,166,107,.16)) !important;
+  border-color: rgba(227,185,201,.52) !important;
+  box-shadow: 0 6px 22px rgba(201,143,175,.28) !important;
+}
+:root[data-seg="beauty"] .CMD-IA-AV img{ filter: hue-rotate(135deg) saturate(.8); }
+:root[data-seg="beauty"] .CMD-IA-BADGE{
+  background: rgba(201,166,107,.20) !important; color: var(--ouro) !important;
+  border-color: rgba(201,166,107,.45) !important;
+}
+:root[data-seg="beauty"] .CMD-IA-NM{ color: var(--rose-xl) !important; }
+:root[data-seg="beauty"] .CMD-IA-ST{ color: var(--ouro) !important; }
+:root[data-seg="beauty"] .CMD-IA-ST-DOT{ background: var(--ouro) !important; box-shadow:0 0 8px var(--ouro) !important; }
+:root[data-seg="beauty"] .CMD-IA-STEP,
+:root[data-seg="beauty"] .CMD-IA-MSG,
+:root[data-seg="beauty"] .CMD-IA-INSIGHT{
+  background: rgba(201,143,175,.10) !important;
+  border-color: rgba(201,143,175,.26) !important;
+  color: rgba(245,238,242,.80) !important;
+}
+:root[data-seg="beauty"] .hdr-pill.ia{
+  background: rgba(201,166,107,.16) !important;
+  border-color: rgba(201,166,107,.36) !important;
+  color: var(--ouro) !important;
+}
 
-
-/* ── Centro Financeiro: tem CSS próprio com cores fixas ───────── */
-:root[data-seg="beauty"]{ --ch-fundo: rgba(227,185,201,.07); }
-:root[data-seg="beauty"] .FW{ background:#0B0A0D !important; }
-:root[data-seg="beauty"] .FHD{ border-bottom-color:rgba(227,185,201,.10) !important; }
+/* ── Centro Financeiro: tem CSS próprio com cores fixas ────────── */
+:root[data-seg="beauty"] .FW{ background:transparent !important; }
+:root[data-seg="beauty"] .FHD{ border-bottom-color:rgba(201,143,175,.22) !important; }
 :root[data-seg="beauty"] .FTIT{ color:#F5EEF2 !important; }
-:root[data-seg="beauty"] .FSUB,
 :root[data-seg="beauty"] .FHMSG,
 :root[data-seg="beauty"] .FOPTXT,
-:root[data-seg="beauty"] .FINTLM{ color:rgba(240,222,232,.46) !important; }
+:root[data-seg="beauty"] .FINTLM{ color:#9E949D !important; }
 :root[data-seg="beauty"] .FHMSG strong,
-:root[data-seg="beauty"] .FINTLM strong{ color:#E3B9C9 !important; }
-
+:root[data-seg="beauty"] .FINTLM strong{ color:var(--rose-cl) !important; }
 :root[data-seg="beauty"] .FPB,
 :root[data-seg="beauty"] .FNB{
-  background:rgba(227,185,201,.05) !important;
-  border-color:rgba(227,185,201,.14) !important;
-  color:rgba(240,222,232,.55) !important;
+  background:rgba(201,143,175,.10) !important;
+  border-color:rgba(201,143,175,.28) !important;
+  color:var(--rose-cl) !important;
 }
-:root[data-seg="beauty"] .FPB.on{
-  background:linear-gradient(135deg,#E8C2D2,#C98FAF) !important;
-  color:#1A1017 !important; border-color:transparent !important;
-}
-:root[data-seg="beauty"] .FNL{ color:#E3B9C9 !important; }
-:root[data-seg="beauty"] .FNH{ color:rgba(240,222,232,.42) !important; }
-
-:root[data-seg="beauty"] .FHERO,
-:root[data-seg="beauty"] .FK,
-:root[data-seg="beauty"] .FG{
-  background:linear-gradient(180deg, rgba(227,185,201,.055), rgba(227,185,201,.012) 55%), #17131C !important;
-  border-color:rgba(227,185,201,.13) !important;
-}
-:root[data-seg="beauty"] .FK:hover,
-:root[data-seg="beauty"] .FOPI:hover{ border-color:rgba(227,185,201,.26) !important; }
-:root[data-seg="beauty"] .FHB{ border-right-color:rgba(227,185,201,.10) !important; }
-:root[data-seg="beauty"] .FHLB,
-:root[data-seg="beauty"] .FKLB,
-:root[data-seg="beauty"] .FGT,
-:root[data-seg="beauty"] .FSECT{ color:rgba(227,185,201,.40) !important; }
-:root[data-seg="beauty"] .FGT::after,
-:root[data-seg="beauty"] .FSECT::before,
-:root[data-seg="beauty"] .FSECT::after{ background:rgba(227,185,201,.10) !important; }
+:root[data-seg="beauty"] .FNL{ color:var(--rose-xl) !important; }
+:root[data-seg="beauty"] .FNH{ color:rgba(227,185,201,.62) !important; }
+:root[data-seg="beauty"] .FHB{ border-right-color:rgba(201,143,175,.20) !important; }
 :root[data-seg="beauty"] .FHNUM,
 :root[data-seg="beauty"] .FHPCT,
 :root[data-seg="beauty"] .FKV,
 :root[data-seg="beauty"] .FRKVV,
 :root[data-seg="beauty"] .FSVCVV,
 :root[data-seg="beauty"] .FPAGV{ color:#F5EEF2 !important; }
-:root[data-seg="beauty"] .FHNUM.prev{ color:rgba(227,185,201,.55) !important; }
-
+:root[data-seg="beauty"] .FHNUM.prev{ color:var(--rose) !important; }
+:root[data-seg="beauty"] .FGT::after,
+:root[data-seg="beauty"] .FSECT::before,
+:root[data-seg="beauty"] .FSECT::after{ background:rgba(201,143,175,.22) !important; }
 :root[data-seg="beauty"] .FHPBG,
 :root[data-seg="beauty"] .FRKPB,
 :root[data-seg="beauty"] .FSVCBAR,
-:root[data-seg="beauty"] .FPAGB{ background:rgba(227,185,201,.08) !important; }
+:root[data-seg="beauty"] .FPAGB{ background:rgba(201,143,175,.16) !important; }
 :root[data-seg="beauty"] .FHPFILL,
 :root[data-seg="beauty"] .FSVCBARF,
 :root[data-seg="beauty"] .FRKPF,
-:root[data-seg="beauty"] .FPAGBF{ background:linear-gradient(90deg,#C98FAF,#E3B9C9) !important; }
-:root[data-seg="beauty"] .FRKPF.gold{ background:linear-gradient(90deg,#9A7B3A,#C9A66B) !important; }
-:root[data-seg="beauty"] .FRKN.gold{ color:#C9A66B !important; }
-
+:root[data-seg="beauty"] .FPAGBF{ background:linear-gradient(90deg,#C98FAF,#F0C8DA) !important; }
+:root[data-seg="beauty"] .FRKPF.gold{ background:linear-gradient(90deg,#A8863F,#E0BE84) !important; }
+:root[data-seg="beauty"] .FRKN.gold{ color:var(--ouro) !important; }
 :root[data-seg="beauty"] .FRKI,
 :root[data-seg="beauty"] .FSVCI,
-:root[data-seg="beauty"] .FPAGI{ border-bottom-color:rgba(227,185,201,.08) !important; }
-:root[data-seg="beauty"] .FRKA{
-  background:rgba(227,185,201,.07) !important;
-  border-color:rgba(227,185,201,.14) !important;
-  color:#E3B9C9 !important;
-}
+:root[data-seg="beauty"] .FPAGI{ border-bottom-color:rgba(201,143,175,.16) !important; }
 :root[data-seg="beauty"] .FRKNM,
 :root[data-seg="beauty"] .FSVCNM,
 :root[data-seg="beauty"] .FPAGNM,
-:root[data-seg="beauty"] .FOPTIT{ color:#EADCE3 !important; }
+:root[data-seg="beauty"] .FOPTIT{ color:#F0E4EB !important; }
 :root[data-seg="beauty"] .FRKDT,
 :root[data-seg="beauty"] .FRKVS,
 :root[data-seg="beauty"] .FSVCBD,
 :root[data-seg="beauty"] .FSVCPCT,
 :root[data-seg="beauty"] .FPAGP,
-:root[data-seg="beauty"] .FRKN{ color:rgba(240,222,232,.34) !important; }
-
-:root[data-seg="beauty"] .FOPI,
-:root[data-seg="beauty"] .FINTL{
-  background:rgba(227,185,201,.03) !important;
-  border-color:rgba(227,185,201,.10) !important;
-}
-:root[data-seg="beauty"] .FINTL{ border-left-color:#C98FAF !important; }
-
-:root[data-seg="beauty"] .FMT th{ color:rgba(227,185,201,.38) !important; border-bottom-color:rgba(227,185,201,.10) !important; }
-:root[data-seg="beauty"] .FMT td{ color:rgba(240,222,232,.62) !important; border-bottom-color:rgba(227,185,201,.06) !important; }
+:root[data-seg="beauty"] .FRKN{ color:rgba(227,185,201,.60) !important; }
+:root[data-seg="beauty"] .FINTL{ border-left-color:var(--rose) !important; }
+:root[data-seg="beauty"] .FMT th{ color:var(--rose-cl) !important; border-bottom-color:rgba(201,143,175,.22) !important; }
+:root[data-seg="beauty"] .FMT td{ color:rgba(245,238,242,.74) !important; border-bottom-color:rgba(201,143,175,.12) !important; }
 :root[data-seg="beauty"] .FMTV{ color:#F5EEF2 !important; }
-:root[data-seg="beauty"] .FMTF{ border-color:rgba(227,185,201,.16) !important; color:rgba(240,222,232,.5) !important; }
-:root[data-seg="beauty"] .FMT tr:hover td{ background:rgba(227,185,201,.04) !important; }
-
+:root[data-seg="beauty"] .FMTF{ border-color:rgba(201,143,175,.30) !important; color:var(--rose-cl) !important; }
+:root[data-seg="beauty"] .FMT tr:hover td{ background:rgba(201,143,175,.09) !important; }
 :root[data-seg="beauty"] .FHDELTA.p,
 :root[data-seg="beauty"] .FKD.p,
 :root[data-seg="beauty"] .FOPTAG.r,
-:root[data-seg="beauty"] .FMTST.ok{ color:#82C9A5 !important; background:rgba(130,201,165,.11) !important; }
+:root[data-seg="beauty"] .FMTST.ok{ color:#82C9A5 !important; background:rgba(130,201,165,.14) !important; }
 :root[data-seg="beauty"] .FHDELTA.n,
-:root[data-seg="beauty"] .FKD.n{ color:#C2697F !important; background:rgba(194,105,127,.11) !important; }
+:root[data-seg="beauty"] .FKD.n{ color:#D9788F !important; background:rgba(217,120,143,.14) !important; }
 :root[data-seg="beauty"] .FOPTAG.y,
-:root[data-seg="beauty"] .FMTST.pd{ color:#C9A66B !important; background:rgba(201,166,107,.11) !important; }
-:root[data-seg="beauty"] .FOPTAG.b{ color:#C98FAF !important; background:rgba(201,143,175,.11) !important; }
-:root[data-seg="beauty"] .FKD.z{ color:rgba(240,222,232,.4) !important; background:rgba(227,185,201,.05) !important; }
-
-:root[data-seg="beauty"] .FVZT{ color:rgba(227,185,201,.50) !important; }
-:root[data-seg="beauty"] .FVZS{ color:rgba(240,222,232,.28) !important; }
-:root[data-seg="beauty"] .FSP{ border-color:rgba(227,185,201,.16) !important; border-top-color:#C98FAF !important; }
-
-
-/* ── bloco da assistente: deixa de ser verde, vira rosé/champagne ── */
-:root[data-seg="beauty"] .CMD-IA{
-  background: linear-gradient(150deg, rgba(40,22,33,.92) 0%, rgba(11,10,13,.96) 100%) !important;
-  border-color: rgba(201,143,175,.18) !important;
-}
-:root[data-seg="beauty"] .CMD-IA::before{
-  background: linear-gradient(90deg, transparent, rgba(201,143,175,.55), transparent) !important;
-}
-:root[data-seg="beauty"] .CMD-IA-AV{
-  background: linear-gradient(135deg, rgba(201,143,175,.26), rgba(201,166,107,.08)) !important;
-  border-color: rgba(201,143,175,.32) !important;
-  box-shadow: 0 6px 20px rgba(201,143,175,.16) !important;
-}
-:root[data-seg="beauty"] .CMD-IA-AV img{ filter: hue-rotate(135deg) saturate(.7); }
-:root[data-seg="beauty"] .CMD-IA-BADGE{
-  background: rgba(201,166,107,.13) !important;
-  color: var(--ouro) !important;
-  border-color: rgba(201,166,107,.28) !important;
-}
-:root[data-seg="beauty"] .CMD-IA-NM{ color:#F0E2E9 !important; }
-:root[data-seg="beauty"] .hdr-pill.ia{
-  background: rgba(201,166,107,.10) !important;
-  border-color: rgba(201,166,107,.22) !important;
-  color: var(--ouro) !important;
-}
+:root[data-seg="beauty"] .FMTST.pd{ color:var(--ouro) !important; background:rgba(201,166,107,.14) !important; }
+:root[data-seg="beauty"] .FOPTAG.b{ color:var(--rose-cl) !important; background:rgba(201,143,175,.16) !important; }
+:root[data-seg="beauty"] .FKD.z{ color:rgba(227,185,201,.60) !important; background:rgba(201,143,175,.10) !important; }
+:root[data-seg="beauty"] .FVZT{ color:var(--rose-cl) !important; }
+:root[data-seg="beauty"] .FVZS{ color:#9E949D !important; }
+:root[data-seg="beauty"] .FSP{ border-color:rgba(201,143,175,.26) !important; border-top-color:var(--rose-cl) !important; }
 
 
-:root[data-seg="beauty"] .CMD-IA-ST{ color:var(--ouro) !important; }
-:root[data-seg="beauty"] .CMD-IA-ST-DOT{ background:var(--ouro) !important; box-shadow:0 0 6px var(--ouro) !important; }
-:root[data-seg="beauty"] .CMD-IA-STEP{
-  background:rgba(227,185,201,.04) !important;
-  border-color:rgba(227,185,201,.11) !important;
-  color:rgba(240,222,232,.52) !important;
+/* ── acento rosé no topo de cada cartão: é o que dá presença ───── */
+:root[data-seg="beauty"] .CMD-K,
+:root[data-seg="beauty"] .FK,
+:root[data-seg="beauty"] .FG,
+:root[data-seg="beauty"] .EQ-CARD,
+:root[data-seg="beauty"] .EQ-CW,
+:root[data-seg="beauty"] .CRM-CARD,
+:root[data-seg="beauty"] .SV-K,
+:root[data-seg="beauty"] .FHERO{ position:relative; }
+:root[data-seg="beauty"] .CMD-K::after,
+:root[data-seg="beauty"] .FK::after,
+:root[data-seg="beauty"] .FG::after,
+:root[data-seg="beauty"] .EQ-CARD::after,
+:root[data-seg="beauty"] .EQ-CW::after,
+:root[data-seg="beauty"] .CRM-CARD::after,
+:root[data-seg="beauty"] .SV-K::after,
+:root[data-seg="beauty"] .FHERO::after{
+  content:""; position:absolute; top:0; left:14px; right:14px; height:2px;
+  background:linear-gradient(90deg, transparent, #C98FAF 18%, #F2D7E2 50%, #C98FAF 82%, transparent);
+  border-radius:0 0 3px 3px; opacity:.85; pointer-events:none;
 }
-:root[data-seg="beauty"] .CMD-IA-MSG,
-:root[data-seg="beauty"] .CMD-IA-INSIGHT{
-  background:rgba(227,185,201,.035) !important;
-  border-color:rgba(227,185,201,.11) !important;
+/* brilho interno suave nos cartões */
+:root[data-seg="beauty"] .CMD-K,
+:root[data-seg="beauty"] .FK,
+:root[data-seg="beauty"] .FG,
+:root[data-seg="beauty"] .EQ-CARD,
+:root[data-seg="beauty"] .EQ-CW,
+:root[data-seg="beauty"] .FHERO,
+:root[data-seg="beauty"] .CRM-CARD{
+  box-shadow: inset 0 1px 0 rgba(242,215,226,.10), 0 6px 22px rgba(0,0,0,.42) !important;
 }
+/* números e títulos ganham um leve brilho rosé */
+:root[data-seg="beauty"] .CMD-KV,
+:root[data-seg="beauty"] .FHNUM,
+:root[data-seg="beauty"] .FKV{ text-shadow: 0 0 22px rgba(201,143,175,.28); }
+:root[data-seg="beauty"] .mt,
+:root[data-seg="beauty"] .FTIT,
+:root[data-seg="beauty"] #H-greet{ color:#FBF2F6 !important; }
+/* rótulos: cheios, sem transparência */
+:root[data-seg="beauty"] .CMD-KL,
+:root[data-seg="beauty"] .FKLB,
+:root[data-seg="beauty"] .FHLB,
+:root[data-seg="beauty"] .FGT,
+:root[data-seg="beauty"] .FSECT,
+:root[data-seg="beauty"] .EQ-CT,
+:root[data-seg="beauty"] .HCT,
+:root[data-seg="beauty"] .CRM-CT,
+:root[data-seg="beauty"] .SV-THL{ color:#E3B9C9 !important; opacity:1 !important; }
+
+/* ícones do menu sempre rosé, não só o ativo */
+:root[data-seg="beauty"] .nb .nb-ico{ color:#DDAAC4 !important; opacity:1 !important; }
+/* títulos de bloco em rosa champagne, como na referência */
+:root[data-seg="beauty"] .CMD-IA-NM,
+:root[data-seg="beauty"] .EQ-HTIT,
+:root[data-seg="beauty"] .HCTIT{ color:#F2D7E2 !important; }
+/* divisores internos */
+:root[data-seg="beauty"] .EQ-CT::after,
+:root[data-seg="beauty"] .HCT::after,
+:root[data-seg="beauty"] .CRM-CT::after{ background:rgba(201,143,175,.26) !important; }
+/* linhas de tabela e separadores gerais */
+:root[data-seg="beauty"] .EQ-PRROW,
+:root[data-seg="beauty"] .EQ-BAR-ITEM,
+:root[data-seg="beauty"] .SV-TH{ border-color:rgba(201,143,175,.16) !important; }
 </style>
 </body>
 </html>
