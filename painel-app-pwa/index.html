@@ -2872,7 +2872,7 @@ function ldHome(){
   h+='<div><div class="CMD-GREET" id="H-greet">'+_homeSaud()+', '+ALOCO.NOME+'</div>';
   h+='<div class="CMD-DATE">'+dataStr+' · <span id="H-ts-label" style="color:rgba(74,158,110,.7);font-weight:600">sincronizando...</span></div></div>';
   h+='<div class="CMD-TOP-R">';
-  h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(74,158,110,.08);border:1px solid rgba(74,158,110,.2);font-size:10px;font-weight:700;color:var(--c-green);letter-spacing:.06em;text-transform:uppercase"><span style="width:5px;height:5px;border-radius:50%;background:var(--c-green);animation:_pls2 2s ease infinite;display:inline-block"></span>Ao vivo</div>';
+  h+='<div class="aloco-selo" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(74,158,110,.08);border:1px solid rgba(74,158,110,.2);font-size:10px;font-weight:700;color:var(--c-green);letter-spacing:.06em;text-transform:uppercase"><span style="width:5px;height:5px;border-radius:50%;background:var(--c-green);animation:_pls2 2s ease infinite;display:inline-block"></span>Ao vivo</div>';
   h+='<button class="CMD-TOP-BTN" id="btn-sync" onclick="carregarHome(true)">↻ Atualizar</button>';
   h+='</div></div>';
 
@@ -6271,6 +6271,18 @@ window.onload = function(){
 :root[data-tema="claro"] .nav-ft-ver > div:first-child{ color:#15151A !important; }
 :root[data-tema="claro"] .nav-ft-ver > div:first-child div{ color:rgba(21,21,26,.42) !important; }
 :root[data-tema="claro"] .hdr-ctx{ color:rgba(21,21,26,.45) !important; }
+
+/* ── enfeites sem função saem da tela ──────────────────────────
+   "Ao vivo", "Sincronizado", o nome repetido no topo, o selo
+   AO VIVO da Central e o "Sistema online / Dados ao vivo" do pé
+   da barra lateral não informam nada que o dono possa usar.
+   Ficam escondidos; o HTML continua lá, então é só apagar estas
+   regras se algum dia voltarem a ter utilidade. */
+.hdr-pill,
+.aloco-selo,
+.nav-ft-row{ display:none !important; }
+/* o pé da barra lateral existia só para abrigar aqueles dois avisos */
+.nav-ft{ padding-top:14px !important; }
 </style>
 <script>
 /* ══════════════════════════════════════════════════════════════
