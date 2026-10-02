@@ -364,3 +364,53 @@ body::after{
 .pressa-glow{ background: radial-gradient(circle, rgba(227,190,112,0.18) 0%, transparent 70%) !important; }
 .st-wait, .st-wait .fb-dot, .bq-status.wait, .bq-status.wait .bq-dot,
 .st-near .trk-eta b{ color: #E3BE70 !important; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ABERTURA (SPLASH) — tirar a borda dura da logo
+
+   A logo entra como arquivo retangular. Quando ela e JPEG (sem canal de
+   transparencia) o preto do arquivo nunca e exatamente o preto da tela, e
+   o resultado e um retangulo visivel por cima do fundo: parece imagem
+   colada. A mascara abaixo dissolve so a franja externa, em degrade, e
+   deixa o miolo intacto — o anel e o texto nao sao tocados.
+
+   closest-side = o degrade termina na borda mais proxima, entao os cantos
+   (que sao sempre fundo) somem por completo.
+   ═══════════════════════════════════════════════════════════════════════ */
+#splash .splash-logo,
+#splash .splash-logo img,
+#splash .splash-logo-wrap img,
+.splash-logo > img,
+.splash-logo{
+  -webkit-mask-image: radial-gradient(closest-side,
+      #000 0%, #000 84%, rgba(0,0,0,.55) 92%, rgba(0,0,0,.18) 97%, transparent 100%);
+          mask-image: radial-gradient(closest-side,
+      #000 0%, #000 84%, rgba(0,0,0,.55) 92%, rgba(0,0,0,.18) 97%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-position: center;   mask-position: center;
+  -webkit-mask-size: 100% 100%;    mask-size: 100% 100%;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* o retangulo do proprio contorno tambem some */
+#splash .splash-logo-wrap,
+#splash .splash-logo-circle{
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* a mesma franja no icone pequeno dentro do app (cabecalho, cadastro) */
+.cad-logo-circle img,
+.logo-circle img,
+.sb img{
+  -webkit-mask-image: radial-gradient(closest-side,
+      #000 0%, #000 88%, rgba(0,0,0,.5) 95%, transparent 100%);
+          mask-image: radial-gradient(closest-side,
+      #000 0%, #000 88%, rgba(0,0,0,.5) 95%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;    mask-size: 100% 100%;
+}
