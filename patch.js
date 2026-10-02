@@ -1134,8 +1134,17 @@
   if (window.__alocoInstalar) return;
   window.__alocoInstalar = 1;
 
-  var CHAVE = 'aloco_instalar_adiado';
-  var DESCANSO = 5 * 24 * 3600 * 1000;
+  var CHAVE  = 'aloco_instalar_adiado';
+  var VEZES  = 'aloco_instalar_recusas';
+  // clicar fora NAO e recusa: so tira a caixa da frente desta carga da
+  // pagina. Por isso e uma variavel na memoria, nao storage nenhum:
+  // sessionStorage sobrevive ao recarregar, e recarregar tem que
+  // trazer o convite de volta.
+  var calado = false;
+  // recusar de verdade cala por 3 dias. Na terceira recusa, cala por 30:
+  // quem disse nao tres vezes nao quer, e insistir vira incomodo.
+  var DESCANSO  = 3 * 24 * 3600 * 1000;
+  var DESISTIR  = 30 * 24 * 3600 * 1000;
   var RESPIRO = 500;      // depois que a abertura sai
   var PACIENCIA = 2500;   // espera o beforeinstallprompt antes de ensinar na mao
 
@@ -1147,13 +1156,28 @@
     } catch(e){}
     return false;
   }
+  function recusas(){
+    try { return Number(localStorage.getItem(VEZES) || 0) || 0; } catch(e){ return 0; }
+  }
   function adiado(){
+    if (calado) return true;   // fechou sem responder nesta carga da pagina
     try {
       var t = Number(localStorage.getItem(CHAVE) || 0);
-      return !!(t && (Date.now() - t) < DESCANSO);
+      if (!t) return false;
+      var quanto = recusas() >= 3 ? DESISTIR : DESCANSO;
+      return (Date.now() - t) < quanto;
     } catch(e){ return false; }
   }
-  function adiar(){ try { localStorage.setItem(CHAVE, String(Date.now())); } catch(e){} }
+  // fechou sem responder (clicou fora, ESC): so some ate recarregar
+  function porAgora(){ calado = true; }
+  // disse "Agora nao" de verdade: conta a recusa e cala pelo periodo
+  function adiar(){
+    porAgora();
+    try {
+      localStorage.setItem(CHAVE, String(Date.now()));
+      localStorage.setItem(VEZES, String(recusas() + 1));
+    } catch(e){}
+  }
 
   var UA = navigator.userAgent || '';
   function ehIOS(){
@@ -1337,7 +1361,13 @@
     if (modo === 'webview') caixa.classList.add('setaCima');
 
     caixa.querySelector('#alcInstNao').onclick = function(){ adiar(); fechar(); };
-    caixa.addEventListener('click', function(e){ if (e.target === caixa){ adiar(); fechar(); } });
+    caixa.addEventListener('click', function(e){ if (e.target === caixa){ porAgora(); fechar(); } });
+    if (!window.__alcInstEsc){
+      window.__alcInstEsc = 1;
+      document.addEventListener('keydown', function(e){
+        if ((e.key === 'Escape' || e.key === 'Esc') && aberto){ porAgora(); fechar(); }
+      });
+    }
 
     caixa.querySelector('#alcInstOk').onclick = function(){
       if (modo === 'android'){
@@ -1369,10 +1399,10 @@
         var p = copiar();
         btn.textContent = 'Link copiado ✓';
         if (p && p.then) p.then(function(){}, function(){ btn.textContent = 'Copiar o link'; });
-        setTimeout(function(){ adiar(); fechar(); }, 1400);
+        setTimeout(function(){ porAgora(); fechar(); }, 1400);
         return;
       }
-      adiar(); fechar();
+      porAgora(); fechar();   // tocou em Entendi: vai instalar, nao e recusa
     };
 
     caixa.classList.add('on');
@@ -1414,7 +1444,8 @@
 
   window.addEventListener('appinstalled', function(){
     pedido = null; fechar();
-    try { localStorage.removeItem(CHAVE); } catch(e){}
+    try { localStorage.removeItem(CHAVE); localStorage.removeItem(VEZES); } catch(e){}
+    calado = false;
   });
 
   quandoPronto(function(){
@@ -1431,7 +1462,8 @@
 
   // para testar: alocoInstalar() ou alocoInstalar('ios'|'manual'|'webview')
   window.alocoInstalar = function(modo){
-    try { localStorage.removeItem(CHAVE); } catch(e){}
+    try { localStorage.removeItem(CHAVE); localStorage.removeItem(VEZES); } catch(e){}
+    calado = false;
     aberto = false;
     abrir(modo || (pedido ? 'android' : (ehWebView() ? 'webview' : (ehIOS() ? 'ios' : 'manual'))));
   };
