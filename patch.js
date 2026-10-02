@@ -1107,3 +1107,217 @@
   if (document.readyState !== 'loading') comecar();
   else document.addEventListener('DOMContentLoaded', comecar);
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INSTALAR NA TELA DE INICIO
+   O cliente abre o link, ve um site e vai embora. Ninguem procura
+   sozinho o menu do navegador para "adicionar a tela de inicio". Entao
+   o proprio app pede, uma vez, de forma clara:
+
+     - Android/Chrome: ha API. Um botao, um toque, instalado.
+     - iPhone/Safari: nao ha API. Entao mostramos o caminho com o
+       icone certo e uma seta apontando para a barra do Safari.
+
+   Nao aparece se o app ja esta instalado. Se a pessoa dispensar, so
+   volta a perguntar daqui a 5 dias. Nunca atrapalha quem esta no meio
+   de um agendamento: so entra depois de 20 segundos de uso.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  if (window.__alocoInstalar) return;
+  window.__alocoInstalar = 1;
+
+  var CHAVE = 'aloco_instalar_adiado';
+  var ESPERA = 20000;          // 20s de uso antes de convidar
+  var DESCANSO = 5 * 24 * 3600 * 1000;   // 5 dias apos dispensar
+
+  function jaInstalado(){
+    try {
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+      if (navigator.standalone === true) return true;              // iOS
+    } catch(e){}
+    return false;
+  }
+  function adiado(){
+    try {
+      var t = Number(localStorage.getItem(CHAVE) || 0);
+      return t && (Date.now() - t) < DESCANSO;
+    } catch(e){ return false; }
+  }
+  function adiar(){ try { localStorage.setItem(CHAVE, String(Date.now())); } catch(e){} }
+
+  function ehIOS(){
+    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function ehSafari(){
+    var ua = navigator.userAgent;
+    return /safari/i.test(ua) && !/crios|fxios|edgios|opios/i.test(ua);
+  }
+
+  // a cor do app: usa a propria marca do cliente quando existir
+  function corDaMarca(){
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue('--cr');
+      if (v && v.trim()) return v.trim();
+    } catch(e){}
+    try {
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m && m.content) return m.content;
+    } catch(e){}
+    return '#C9A227';
+  }
+  function iconeDoApp(){
+    var cand = ['link[rel="apple-touch-icon"]','link[rel="icon"]'];
+    for (var i = 0; i < cand.length; i++){
+      var el = document.querySelector(cand[i]);
+      if (el && el.getAttribute('href')) return el.getAttribute('href');
+    }
+    return 'icon-192.png';
+  }
+  function nomeDoApp(){
+    try {
+      var m = document.querySelector('meta[name="application-name"]');
+      if (m && m.content) return m.content;
+    } catch(e){}
+    return (document.title || 'o app').replace(/\s+[-–|·]\s+.*$/, '').trim();
+  }
+
+  var estilo = ''
+  + '#alcInstBg{position:fixed;inset:0;z-index:2147483000;display:none;'
+  +   'background:rgba(0,0,0,.72);backdrop-filter:blur(3px);'
+  +   '-webkit-backdrop-filter:blur(3px);align-items:flex-end;justify-content:center}'
+  + '#alcInstBg.on{display:flex;animation:alcInstFade .22s ease}'
+  + '@keyframes alcInstFade{from{opacity:0}to{opacity:1}}'
+  + '@keyframes alcInstSobe{from{transform:translateY(100%)}to{transform:translateY(0)}}'
+  + '@keyframes alcInstSeta{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}'
+  + '#alcInstCx{width:100%;max-width:440px;background:#121214;color:#EDEAE6;'
+  +   'border-radius:20px 20px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));'
+  +   'box-shadow:0 -16px 48px rgba(0,0,0,.6);font-family:inherit;'
+  +   'animation:alcInstSobe .26s cubic-bezier(.2,.8,.3,1)}'
+  + '#alcInstCx .topo{display:flex;align-items:center;gap:13px;margin-bottom:14px}'
+  + '#alcInstCx .ico{width:54px;height:54px;border-radius:13px;overflow:hidden;flex:0 0 auto;'
+  +   'background:rgba(255,255,255,.06);box-shadow:0 3px 12px rgba(0,0,0,.4)}'
+  + '#alcInstCx .ico img{width:100%;height:100%;object-fit:contain;display:block}'
+  + '#alcInstCx h4{margin:0;font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.25}'
+  + '#alcInstCx .sub{margin:3px 0 0;font-size:12.5px;color:#9A9A9F;line-height:1.4}'
+  + '#alcInstCx .passos{margin:0 0 16px;padding:0;list-style:none}'
+  + '#alcInstCx .passos li{display:flex;align-items:center;gap:10px;padding:9px 0;'
+  +   'font-size:13.5px;color:#D8D5D1;line-height:1.35;border-top:1px solid rgba(255,255,255,.07)}'
+  + '#alcInstCx .passos li:first-child{border-top:0}'
+  + '#alcInstCx .num{flex:0 0 auto;width:21px;height:21px;border-radius:50%;'
+  +   'display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0B0B0C}'
+  + '#alcInstCx svg{flex:0 0 auto;vertical-align:-3px}'
+  + '#alcInstOk{width:100%;border:0;border-radius:13px;padding:15px;font-size:15px;'
+  +   'font-weight:700;font-family:inherit;color:#0B0B0C;cursor:pointer;letter-spacing:-.01em}'
+  + '#alcInstOk:active{transform:scale(.985)}'
+  + '#alcInstNao{width:100%;margin-top:9px;background:none;border:0;color:#7E7E85;'
+  +   'font-size:12.5px;font-family:inherit;padding:9px;cursor:pointer}'
+  + '#alcInstSeta{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;'
+  +   'z-index:2147483001;display:none;color:#fff;animation:alcInstSeta 1.5s ease-in-out infinite}'
+  + '#alcInstBg.ios #alcInstSeta{display:block}';
+
+  // o icone de compartilhar do iOS, desenhado (nao depende de fonte nem imagem)
+  var SVG_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 15V3"/><path d="M8 7l4-4 4 4"/>'
+    + '<path d="M20 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/></svg>';
+  var SVG_MAIS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round">'
+    + '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  var SVG_BAIXO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>';
+
+  var pedido = null;      // o beforeinstallprompt guardado
+  var caixa = null;
+
+  function montar(modo){
+    if (caixa) return caixa;
+    var st = document.createElement('style');
+    st.textContent = estilo;
+    document.head.appendChild(st);
+
+    var cor = corDaMarca();
+    var bg = document.createElement('div');
+    bg.id = 'alcInstBg';
+
+    var corpo = (modo === 'ios')
+      ? '<ul class="passos">'
+        + '<li><span class="num" style="background:' + cor + '">1</span>'
+        +   'Toque em ' + SVG_SHARE + ' <b>Compartilhar</b>, na barra de baixo</li>'
+        + '<li><span class="num" style="background:' + cor + '">2</span>'
+        +   'Role e toque em ' + SVG_MAIS + ' <b>Adicionar à Tela de Início</b></li>'
+        + '<li><span class="num" style="background:' + cor + '">3</span>'
+        +   'Confirme em <b>Adicionar</b></li>'
+        + '</ul>'
+        + '<button id="alcInstOk" style="background:' + cor + '">Entendi</button>'
+      : '<button id="alcInstOk" style="background:' + cor + '">Instalar agora</button>';
+
+    bg.innerHTML =
+        '<div id="alcInstCx" role="dialog" aria-modal="true" aria-label="Instalar o aplicativo">'
+      +   '<div class="topo">'
+      +     '<div class="ico"><img src="' + iconeDoApp() + '" alt=""></div>'
+      +     '<div><h4>Deixe ' + nomeDoApp() + ' no seu celular</h4>'
+      +     '<p class="sub">Vira um ícone na tela de início. Abre direto, sem navegador.</p></div>'
+      +   '</div>'
+      +   corpo
+      +   '<button id="alcInstNao">Agora não</button>'
+      + '</div>'
+      + '<div id="alcInstSeta">' + SVG_BAIXO + '</div>';
+
+    document.body.appendChild(bg);
+    caixa = bg;
+
+    bg.querySelector('#alcInstNao').onclick = function(){ adiar(); fechar(); };
+    bg.addEventListener('click', function(e){ if (e.target === bg){ adiar(); fechar(); } });
+
+    bg.querySelector('#alcInstOk').onclick = function(){
+      if (modo === 'ios'){ adiar(); fechar(); return; }
+      fechar();
+      if (!pedido) return;
+      try {
+        pedido.prompt();
+        pedido.userChoice.then(function(r){
+          if (!r || r.outcome !== 'accepted') adiar();
+          pedido = null;
+        });
+      } catch(e){ adiar(); }
+    };
+    return bg;
+  }
+
+  function abrir(modo){
+    montar(modo).classList.add('on');
+    if (modo === 'ios') caixa.classList.add('ios');
+    document.documentElement.style.overflow = 'hidden';
+  }
+  function fechar(){
+    if (caixa) caixa.classList.remove('on');
+    document.documentElement.style.overflow = '';
+  }
+
+  // Android e desktop: o navegador avisa quando da para instalar
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    pedido = e;
+    if (jaInstalado() || adiado()) return;
+    setTimeout(function(){ if (pedido && !jaInstalado()) abrir('android'); }, ESPERA);
+  });
+
+  window.addEventListener('appinstalled', function(){
+    pedido = null; fechar();
+    try { localStorage.removeItem(CHAVE); } catch(e){}
+  });
+
+  // iPhone: nao ha evento nenhum, entao o convite e por conta propria
+  if (ehIOS() && ehSafari() && !jaInstalado() && !adiado()){
+    setTimeout(function(){ if (!jaInstalado()) abrir('ios'); }, ESPERA);
+  }
+
+  // para testar na hora, sem esperar: alocoInstalar() no console
+  window.alocoInstalar = function(){
+    abrir((ehIOS() && ehSafari()) ? 'ios' : 'android');
+  };
+})();
