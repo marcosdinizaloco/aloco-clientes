@@ -5787,17 +5787,24 @@ window.onload = function(){
     } catch(e){}
   };
   function _axDescobrirSeg(){
-    if (!ALOCO.SENHA) return;
-    var tem = false;
-    try { tem = !!localStorage.getItem('aloco_seg'); } catch(e){}
     var naUrl = false;
     try { naUrl = !!(new URLSearchParams(location.search)).get('seg'); } catch(e){}
     if (naUrl) return;                       // a URL manda; o motor já tratou
-    _get('horario').then(function(j){
-      var seg = j && j.ok && j.dados && j.dados.segmento;
-      if (seg) _axAplicarSeg(seg);
-      else if (!tem) { /* servidor ainda não sabe: fica no padrão */ }
-    }).catch(function(){});
+    if (ALOCO.SENHA){
+      _get('horario').then(function(j){
+        var seg = j && j.ok && j.dados && j.dados.segmento;
+        if (seg) _axAplicarSeg(seg);
+      }).catch(function(){});
+      return;
+    }
+    // sem senha (tela de login): 'disponibilidade' é pública e traz o segmento
+    var tem = false;
+    try { tem = !!localStorage.getItem('aloco_seg'); } catch(e){}
+    if (tem) return;
+    fetch(ALOCO.API_URL + '?action=disponibilidade&b=' + encodeURIComponent(ALOCO.BARBEARIA))
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (j && j.segmento) _axAplicarSeg(j.segmento); })
+      .catch(function(){});
   }
 
   /* ══ ocupação de verdade nas telas que calculavam sozinhas ══ */
