@@ -6604,40 +6604,47 @@ window.onload = function(){
 
 </script>
 <style>
-/* ALOCO — BARRA LATERAL
+/* ALOCO — BARRA LATERAL (so no desktop)
    Ela comecava abaixo do cabecalho mas media 100vh: sobrava altura para
    fora da tela e o overflow:hidden cortava o rodape. Pior, "Equipe e
    acessos" — o ultimo item do menu — ficava escondido.
 
    Agora a barra mede a altura util; so a LISTA DE LINKS rola, e o rodape
-   (status, marca, aviso do plano) fica preso embaixo, sempre visivel. */
-.nav{
-  height:calc(100vh - var(--hdr-h)) !important;
-  min-height:0 !important;
-  overflow:hidden !important;
-  display:flex !important;
-  flex-direction:column !important;
-}
-.nav-brand{flex:0 0 auto}
-.nav-links{
-  flex:1 1 auto !important;
-  min-height:0 !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  padding-bottom:6px;
-  scrollbar-width:thin;
-}
-.nav-links::-webkit-scrollbar{width:6px}
-.nav-links::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
-.nav-ft{flex:0 0 auto}
-#alcAssLink{flex:0 0 auto}
+   (status, marca, aviso do plano) fica preso embaixo, sempre visivel.
 
-/* o rodape ocupava espaco demais e empurrava o menu para fora da tela */
-.nav-ft{padding:9px 14px 10px !important}
-.nav-ft-ver{margin-top:9px !important}
+   TUDO isto vive dentro de @media(min-width:769px). Sem esse cerco, o
+   display:flex !important daqui anulava a regra do celular
+   — @media(max-width:768px){.nav{display:none}} — e a barra passava a
+   cobrir o conteudo no telefone. */
+@media (min-width: 769px){
+  .nav{
+    height:calc(100vh - var(--hdr-h)) !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+  }
+  .nav-brand{flex:0 0 auto}
+  .nav-links{
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    padding-bottom:6px;
+    scrollbar-width:thin;
+  }
+  .nav-links::-webkit-scrollbar{width:6px}
+  .nav-links::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+  .nav-ft{flex:0 0 auto}
+  #alcAssLink{flex:0 0 auto}
 
-/* ultimo item do menu: destaque leve para nao se perder no fim da lista */
-#nb-eq{margin-bottom:4px}
+  /* o rodape ocupava espaco demais e empurrava o menu para fora da tela */
+  .nav-ft{padding:9px 14px 10px !important}
+  .nav-ft-ver{margin-top:9px !important}
+
+  /* ultimo item do menu: destaque leve para nao se perder no fim da lista */
+  #nb-eq{margin-bottom:4px}
+}
 </style>
 </body>
 </html>
