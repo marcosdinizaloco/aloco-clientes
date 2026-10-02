@@ -1111,17 +1111,23 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    INSTALAR NA TELA DE INICIO
-   O cliente abre o link, ve um site e vai embora. Ninguem procura
-   sozinho o menu do navegador para "adicionar a tela de inicio". Entao
-   o proprio app pede, uma vez, de forma clara:
 
-     - Android/Chrome: ha API. Um botao, um toque, instalado.
-     - iPhone/Safari: nao ha API. Entao mostramos o caminho com o
-       icone certo e uma seta apontando para a barra do Safari.
+   O cliente abre o link, ve um site e vai embora. Ninguem procura sozinho
+   o menu do navegador para "adicionar a tela de inicio". Entao o proprio
+   app pede. Quatro situacoes, porque o mundo real tem quatro:
 
-   Nao aparece se o app ja esta instalado. Se a pessoa dispensar, so
-   volta a perguntar daqui a 5 dias. Nunca atrapalha quem esta no meio
-   de um agendamento: so entra depois de 20 segundos de uso.
+     1. android   - o navegador avisa que da para instalar (beforeinstallprompt).
+                    Um botao, um toque, instalado.
+     2. ios       - Safari no iPhone nao tem API nenhuma. Mostramos o caminho
+                    com os icones certos.
+     3. manual    - Android/Chrome que nao mandou o evento. Em vez de nao
+                    mostrar nada (era o furo), ensinamos pelo menu.
+     4. webview   - abriu dentro do WhatsApp/Instagram. Ali NAO da para
+                    instalar de jeito nenhum: o caminho e sair para o
+                    navegador de verdade. Esse e o caso mais comum, porque
+                    o link chega por WhatsApp.
+
+   Nao aparece se ja esta instalado. "Agora nao" silencia por 5 dias.
    ═══════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
@@ -1129,36 +1135,49 @@
   window.__alocoInstalar = 1;
 
   var CHAVE = 'aloco_instalar_adiado';
-  // imediato: so espera a abertura (splash) terminar, para nao aparecer
-  // por cima da animacao. Se nao houver splash, entra quase na hora.
-  var ESPERA = 500;
-  var DESCANSO = 5 * 24 * 3600 * 1000;   // 5 dias apos dispensar
+  var DESCANSO = 5 * 24 * 3600 * 1000;
+  var RESPIRO = 500;      // depois que a abertura sai
+  var PACIENCIA = 2500;   // espera o beforeinstallprompt antes de ensinar na mao
 
+  // ── situacao do aparelho ────────────────────────────────────────────
   function jaInstalado(){
     try {
       if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
-      if (navigator.standalone === true) return true;              // iOS
+      if (navigator.standalone === true) return true;
     } catch(e){}
     return false;
   }
   function adiado(){
     try {
       var t = Number(localStorage.getItem(CHAVE) || 0);
-      return t && (Date.now() - t) < DESCANSO;
+      return !!(t && (Date.now() - t) < DESCANSO);
     } catch(e){ return false; }
   }
   function adiar(){ try { localStorage.setItem(CHAVE, String(Date.now())); } catch(e){} }
 
+  var UA = navigator.userAgent || '';
   function ehIOS(){
-    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+    return /iphone|ipad|ipod/i.test(UA)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
-  function ehSafari(){
-    var ua = navigator.userAgent;
-    return /safari/i.test(ua) && !/crios|fxios|edgios|opios/i.test(ua);
+  // navegador de dentro de outro app: WhatsApp, Instagram, Facebook, etc.
+  function ehWebView(){
+    if (/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Twitter|TikTok|Snapchat/i.test(UA)) return true;
+    if (/\bwv\b/i.test(UA)) return true;                       // Android WebView
+    // iOS: so o Safari de verdade traz "Version/" no UA. O navegador de
+    // dentro do WhatsApp nem "Safari" escreve, entao exigir isso deixava
+    // passar justamente o caso mais comum.
+    if (ehIOS() && !/Version\//i.test(UA)) return true;
+    return false;
+  }
+  function qualNavegadorIOS(){
+    if (/CriOS/i.test(UA))  return 'Chrome';
+    if (/FxiOS/i.test(UA))  return 'Firefox';
+    if (/EdgiOS/i.test(UA)) return 'Edge';
+    return 'Safari';
   }
 
-  // a cor do app: usa a propria marca do cliente quando existir
+  // ── aparencia ───────────────────────────────────────────────────────
   function corDaMarca(){
     try {
       var v = getComputedStyle(document.documentElement).getPropertyValue('--cr');
@@ -1186,14 +1205,32 @@
     return (document.title || 'o app').replace(/\s+[-–|·]\s+.*$/, '').trim();
   }
 
+  var SVG_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 15V3"/><path d="M8 7l4-4 4 4"/>'
+    + '<path d="M20 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/></svg>';
+  var SVG_MAIS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round">'
+    + '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  var SVG_MENU = '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">'
+    + '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/>'
+    + '<circle cx="12" cy="19" r="1.9"/></svg>';
+  var SVG_BAIXO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>';
+  var SVG_CIMA = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
+
   var estilo = ''
   + '#alcInstBg{position:fixed;inset:0;z-index:2147483000;display:none;'
-  +   'background:rgba(0,0,0,.72);backdrop-filter:blur(3px);'
+  +   'background:rgba(0,0,0,.74);backdrop-filter:blur(3px);'
   +   '-webkit-backdrop-filter:blur(3px);align-items:flex-end;justify-content:center}'
   + '#alcInstBg.on{display:flex;animation:alcInstFade .22s ease}'
   + '@keyframes alcInstFade{from{opacity:0}to{opacity:1}}'
   + '@keyframes alcInstSobe{from{transform:translateY(100%)}to{transform:translateY(0)}}'
-  + '@keyframes alcInstSeta{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}'
+  + '@keyframes alcInstPulsa{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(7px);opacity:1}}'
+  + '@keyframes alcInstPulsaC{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-7px);opacity:1}}'
   + '#alcInstCx{width:100%;max-width:440px;background:#121214;color:#EDEAE6;'
   +   'border-radius:20px 20px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));'
   +   'box-shadow:0 -16px 48px rgba(0,0,0,.6);font-family:inherit;'
@@ -1216,27 +1253,144 @@
   + '#alcInstOk:active{transform:scale(.985)}'
   + '#alcInstNao{width:100%;margin-top:9px;background:none;border:0;color:#7E7E85;'
   +   'font-size:12.5px;font-family:inherit;padding:9px;cursor:pointer}'
-  + '#alcInstSeta{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;'
-  +   'z-index:2147483001;display:none;color:#fff;animation:alcInstSeta 1.5s ease-in-out infinite}'
-  + '#alcInstBg.ios #alcInstSeta{display:block}';
+  + '#alcInstSeta{position:fixed;left:50%;transform:translateX(-50%);'
+  +   'z-index:2147483001;display:none;color:#fff}'
+  + '#alcInstBg.setaBaixo #alcInstSeta{display:block;bottom:12px;'
+  +   'animation:alcInstPulsa 1.5s ease-in-out infinite}'
+  + '#alcInstBg.setaCima #alcInstSeta{display:block;top:12px;'
+  +   'animation:alcInstPulsaC 1.5s ease-in-out infinite}';
 
-  // o icone de compartilhar do iOS, desenhado (nao depende de fonte nem imagem)
-  var SVG_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
-    + '<path d="M12 15V3"/><path d="M8 7l4-4 4 4"/>'
-    + '<path d="M20 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/></svg>';
-  var SVG_MAIS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="1.9" stroke-linecap="round">'
-    + '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
-  var SVG_BAIXO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" '
-    + 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
-    + '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>';
+  // ── a caixa ─────────────────────────────────────────────────────────
+  var pedido = null;      // o beforeinstallprompt guardado
+  var caixa = null;
+  var aberto = false;
+  var estiloPosto = false;
 
+  function passo(cor, n, texto){
+    return '<li><span class="num" style="background:' + cor + '">' + n + '</span>' + texto + '</li>';
+  }
 
+  function conteudo(modo, cor){
+    if (modo === 'android'){
+      return '<button id="alcInstOk" style="background:' + cor + '">Instalar agora</button>';
+    }
+    if (modo === 'ios'){
+      return '<ul class="passos">'
+        + passo(cor, 1, 'Toque em ' + SVG_SHARE + ' <b>Compartilhar</b>, na barra de baixo')
+        + passo(cor, 2, 'Role e toque em ' + SVG_MAIS + ' <b>Adicionar à Tela de Início</b>')
+        + passo(cor, 3, 'Confirme em <b>Adicionar</b>')
+        + '</ul><button id="alcInstOk" style="background:' + cor + '">Entendi</button>';
+    }
+    if (modo === 'manual'){
+      return '<ul class="passos">'
+        + passo(cor, 1, 'Toque em ' + SVG_MENU + ' no canto do navegador')
+        + passo(cor, 2, 'Escolha <b>Adicionar à tela inicial</b>')
+        + passo(cor, 3, 'Confirme em <b>Adicionar</b>')
+        + '</ul><button id="alcInstOk" style="background:' + cor + '">Entendi</button>';
+    }
+    // webview: nao da para instalar de dentro do WhatsApp
+    return '<ul class="passos">'
+      + passo(cor, 1, 'Toque em ' + SVG_MENU + ' no canto da tela')
+      + passo(cor, 2, 'Escolha <b>Abrir no navegador</b>')
+      + passo(cor, 3, 'Lá vai aparecer o botão para instalar')
+      + '</ul><button id="alcInstOk" style="background:' + cor + '">Copiar o link</button>';
+  }
+
+  function tituloESub(modo){
+    if (modo === 'webview'){
+      return ['Abra no navegador para instalar',
+              'Você entrou por dentro de outro aplicativo. Aqui não dá para instalar.'];
+    }
+    return ['Deixe ' + nomeDoApp() + ' no seu celular',
+            'Vira um ícone na tela de início. Abre direto, sem navegador.'];
+  }
+
+  function abrir(modo){
+    if (aberto || jaInstalado() || adiado()) return;
+    if (!estiloPosto){
+      var st = document.createElement('style');
+      st.textContent = estilo;
+      document.head.appendChild(st);
+      estiloPosto = true;
+    }
+    var cor = corDaMarca();
+    var ts = tituloESub(modo);
+
+    if (!caixa){
+      caixa = document.createElement('div');
+      caixa.id = 'alcInstBg';
+      document.body.appendChild(caixa);
+    }
+    caixa.className = '';
+    caixa.innerHTML =
+        '<div id="alcInstCx" role="dialog" aria-modal="true" aria-label="Instalar o aplicativo">'
+      +   '<div class="topo">'
+      +     '<div class="ico"><img src="' + iconeDoApp() + '" alt=""></div>'
+      +     '<div><h4>' + ts[0] + '</h4><p class="sub">' + ts[1] + '</p></div>'
+      +   '</div>'
+      +   conteudo(modo, cor)
+      +   '<button id="alcInstNao">Agora não</button>'
+      + '</div>'
+      + '<div id="alcInstSeta">' + (modo === 'webview' ? SVG_CIMA : SVG_BAIXO) + '</div>';
+
+    if (modo === 'ios')     caixa.classList.add('setaBaixo');
+    if (modo === 'webview') caixa.classList.add('setaCima');
+
+    caixa.querySelector('#alcInstNao').onclick = function(){ adiar(); fechar(); };
+    caixa.addEventListener('click', function(e){ if (e.target === caixa){ adiar(); fechar(); } });
+
+    caixa.querySelector('#alcInstOk').onclick = function(){
+      if (modo === 'android'){
+        fechar();
+        if (!pedido) return;
+        try {
+          pedido.prompt();
+          pedido.userChoice.then(function(r){
+            if (!r || r.outcome !== 'accepted') adiar();
+            pedido = null;
+          });
+        } catch(e){ adiar(); }
+        return;
+      }
+      if (modo === 'webview'){
+        var btn = this;
+        var copiar = function(){
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText)
+              return navigator.clipboard.writeText(location.href);
+          } catch(e){}
+          try {
+            var i = document.createElement('input');
+            i.value = location.href; document.body.appendChild(i);
+            i.select(); document.execCommand('copy'); document.body.removeChild(i);
+          } catch(e){}
+          return null;
+        };
+        var p = copiar();
+        btn.textContent = 'Link copiado ✓';
+        if (p && p.then) p.then(function(){}, function(){ btn.textContent = 'Copiar o link'; });
+        setTimeout(function(){ adiar(); fechar(); }, 1400);
+        return;
+      }
+      adiar(); fechar();
+    };
+
+    caixa.classList.add('on');
+    aberto = true;
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function fechar(){
+    if (caixa) caixa.classList.remove('on');
+    aberto = false;
+    document.documentElement.style.overflow = '';
+  }
+
+  // ── quando convidar ─────────────────────────────────────────────────
   // o app abre com uma animacao (#splash). Convidar por cima dela fica feio
-  // e a pessoa nem le. Entao: assim que o splash sai, convidamos.
+  // e a pessoa nem le. Entao: assim que a abertura sai, convidamos.
   function quandoPronto(fn){
-    var limite = Date.now() + 6000;      // nunca espera mais que 6s
+    var limite = Date.now() + 6000;
     function visivel(el){
       if (!el) return false;
       var cs;
@@ -1245,87 +1399,17 @@
     }
     function tentar(){
       var sp = document.getElementById('splash') || document.querySelector('.splash,#alocoSplash');
-      if (!visivel(sp) || Date.now() > limite){ setTimeout(fn, ESPERA); return; }
+      if (!visivel(sp) || Date.now() > limite){ setTimeout(fn, RESPIRO); return; }
       setTimeout(tentar, 150);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tentar);
     else tentar();
   }
 
-  var pedido = null;      // o beforeinstallprompt guardado
-  var caixa = null;
-
-  function montar(modo){
-    if (caixa) return caixa;
-    var st = document.createElement('style');
-    st.textContent = estilo;
-    document.head.appendChild(st);
-
-    var cor = corDaMarca();
-    var bg = document.createElement('div');
-    bg.id = 'alcInstBg';
-
-    var corpo = (modo === 'ios')
-      ? '<ul class="passos">'
-        + '<li><span class="num" style="background:' + cor + '">1</span>'
-        +   'Toque em ' + SVG_SHARE + ' <b>Compartilhar</b>, na barra de baixo</li>'
-        + '<li><span class="num" style="background:' + cor + '">2</span>'
-        +   'Role e toque em ' + SVG_MAIS + ' <b>Adicionar à Tela de Início</b></li>'
-        + '<li><span class="num" style="background:' + cor + '">3</span>'
-        +   'Confirme em <b>Adicionar</b></li>'
-        + '</ul>'
-        + '<button id="alcInstOk" style="background:' + cor + '">Entendi</button>'
-      : '<button id="alcInstOk" style="background:' + cor + '">Instalar agora</button>';
-
-    bg.innerHTML =
-        '<div id="alcInstCx" role="dialog" aria-modal="true" aria-label="Instalar o aplicativo">'
-      +   '<div class="topo">'
-      +     '<div class="ico"><img src="' + iconeDoApp() + '" alt=""></div>'
-      +     '<div><h4>Deixe ' + nomeDoApp() + ' no seu celular</h4>'
-      +     '<p class="sub">Vira um ícone na tela de início. Abre direto, sem navegador.</p></div>'
-      +   '</div>'
-      +   corpo
-      +   '<button id="alcInstNao">Agora não</button>'
-      + '</div>'
-      + '<div id="alcInstSeta">' + SVG_BAIXO + '</div>';
-
-    document.body.appendChild(bg);
-    caixa = bg;
-
-    bg.querySelector('#alcInstNao').onclick = function(){ adiar(); fechar(); };
-    bg.addEventListener('click', function(e){ if (e.target === bg){ adiar(); fechar(); } });
-
-    bg.querySelector('#alcInstOk').onclick = function(){
-      if (modo === 'ios'){ adiar(); fechar(); return; }
-      fechar();
-      if (!pedido) return;
-      try {
-        pedido.prompt();
-        pedido.userChoice.then(function(r){
-          if (!r || r.outcome !== 'accepted') adiar();
-          pedido = null;
-        });
-      } catch(e){ adiar(); }
-    };
-    return bg;
-  }
-
-  function abrir(modo){
-    montar(modo).classList.add('on');
-    if (modo === 'ios') caixa.classList.add('ios');
-    document.documentElement.style.overflow = 'hidden';
-  }
-  function fechar(){
-    if (caixa) caixa.classList.remove('on');
-    document.documentElement.style.overflow = '';
-  }
-
-  // Android e desktop: o navegador avisa quando da para instalar
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     pedido = e;
-    if (jaInstalado() || adiado()) return;
-    quandoPronto(function(){ if (pedido && !jaInstalado()) abrir('android'); });
+    if (!aberto) quandoPronto(function(){ if (pedido) abrir('android'); });
   });
 
   window.addEventListener('appinstalled', function(){
@@ -1333,13 +1417,22 @@
     try { localStorage.removeItem(CHAVE); } catch(e){}
   });
 
-  // iPhone: nao ha evento nenhum, entao o convite e por conta propria
-  if (ehIOS() && ehSafari() && !jaInstalado() && !adiado()){
-    quandoPronto(function(){ if (!jaInstalado()) abrir('ios'); });
-  }
+  quandoPronto(function(){
+    if (jaInstalado() || adiado() || aberto) return;
+    if (pedido)      return abrir('android');
+    if (ehWebView()) return abrir('webview');
+    if (ehIOS())     return abrir(qualNavegadorIOS() === 'Safari' ? 'ios' : 'webview');
+    // Android/desktop: da um tempo para o evento chegar; se nao vier, ensina na mao
+    setTimeout(function(){
+      if (jaInstalado() || adiado() || aberto) return;
+      abrir(pedido ? 'android' : 'manual');
+    }, PACIENCIA);
+  });
 
-  // para testar na hora, sem esperar: alocoInstalar() no console
-  window.alocoInstalar = function(){
-    abrir((ehIOS() && ehSafari()) ? 'ios' : 'android');
+  // para testar: alocoInstalar() ou alocoInstalar('ios'|'manual'|'webview')
+  window.alocoInstalar = function(modo){
+    try { localStorage.removeItem(CHAVE); } catch(e){}
+    aberto = false;
+    abrir(modo || (pedido ? 'android' : (ehWebView() ? 'webview' : (ehIOS() ? 'ios' : 'manual'))));
   };
 })();
