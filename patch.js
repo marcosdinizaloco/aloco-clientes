@@ -1136,6 +1136,12 @@
 
   var CHAVE  = 'aloco_instalar_adiado';
   var VEZES  = 'aloco_instalar_recusas';
+  var SELO   = 'aloco_instalar_selo';
+  // Versao da regra de insistencia. Versoes antigas calavam por 5 dias ate
+  // quando a pessoa so clicava fora sem querer, e isso ficou gravado no
+  // celular de quem ja abriu o app. Ao subir este numero, todo silencio
+  // gravado por uma regra antiga e descartado uma unica vez.
+  var SELO_ATUAL = '3';
   // clicar fora NAO e recusa: so tira a caixa da frente desta carga da
   // pagina. Por isso e uma variavel na memoria, nao storage nenhum:
   // sessionStorage sobrevive ao recarregar, e recarregar tem que
@@ -1156,10 +1162,29 @@
     } catch(e){}
     return false;
   }
+  // descarta, uma vez so, o silencio gravado por uma regra antiga
+  (function(){
+    try {
+      if (localStorage.getItem(SELO) !== SELO_ATUAL){
+        localStorage.removeItem(CHAVE);
+        localStorage.removeItem(VEZES);
+        localStorage.setItem(SELO, SELO_ATUAL);
+      }
+    } catch(e){}
+  })();
+
+  // ?instalar=1 no fim do link reabre o convite na marra, sem console.
+  // Serve para testar no celular e para reenviar a quem disse que nao viu.
+  var FORCAR = /[?&]instalar=1\b/.test(location.search);
+  if (FORCAR){
+    try { localStorage.removeItem(CHAVE); localStorage.removeItem(VEZES); } catch(e){}
+  }
+
   function recusas(){
     try { return Number(localStorage.getItem(VEZES) || 0) || 0; } catch(e){ return 0; }
   }
   function adiado(){
+    if (FORCAR) return false;
     if (calado) return true;   // fechou sem responder nesta carga da pagina
     try {
       var t = Number(localStorage.getItem(CHAVE) || 0);
@@ -1349,7 +1374,8 @@
     caixa.innerHTML =
         '<div id="alcInstCx" role="dialog" aria-modal="true" aria-label="Instalar o aplicativo">'
       +   '<div class="topo">'
-      +     '<div class="ico"><img src="' + iconeDoApp() + '" alt=""></div>'
+      +     '<div class="ico"><img src="' + iconeDoApp() + '" alt="" '
+      +        'onerror="this.parentNode.style.display=\'none\'"></div>'
       +     '<div><h4>' + ts[0] + '</h4><p class="sub">' + ts[1] + '</p></div>'
       +   '</div>'
       +   conteudo(modo, cor)
