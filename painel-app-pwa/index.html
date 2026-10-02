@@ -6589,5 +6589,20 @@ window.onload = function(){
 })();
 
 </script>
+<style>
+/* ALOCO — a barra lateral comecava abaixo do cabecalho mas media 100vh,
+   entao o rodape (Alterar senha / aviso do plano) caia para fora da tela
+   e o overflow:hidden cortava. Agora ela mede a altura util e rola. */
+.nav{
+  height:calc(100vh - var(--hdr-h)) !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:18px !important;
+  scrollbar-width:thin;
+}
+.nav::-webkit-scrollbar{width:6px}
+.nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+</style>
 </body>
 </html>
