@@ -4766,7 +4766,7 @@ function _fNorm(a){
 }
 
 function _fBarChart(dados,H,showVal){dados=_fNorm(dados);if(!dados||!dados.length)return _fVz('📊','','');var max=Math.max.apply(null,dados.map(function(d){return d.valor||0}))||1;var bW=42,gap=18,pL=4;var W=dados.length*(bW+gap)+pL;var h='<svg class="FBAR-SVG" viewBox="0 0 '+W+' '+(H+32)+'" preserveAspectRatio="xMidYMid meet">';dados.forEach(function(d,i){var x=pL+i*(bW+gap),bH=Math.max(4,Math.round(((d.valor||0)/max)*H)),y=H-bH;var isH=!!d.hoje,c=isH?'var(--ch-barH)':'var(--ch-bar)',ct=isH?'var(--ch-lbl2)':'var(--ch-lbl)';h+='<rect x="'+x+'" y="'+y+'" width="'+bW+'" height="'+bH+'" rx="3" fill="'+c+'"/>';h+='<text x="'+(x+bW/2)+'" y="'+(H+12)+'" text-anchor="middle" font-size="9" fill="var(--ch-lbl)">'+d.label+'</text>';if(showVal&&d.valor>0)h+='<text x="'+(x+bW/2)+'" y="'+(y-4)+'" text-anchor="middle" font-size="8" fill="'+ct+'">'+_fK(d.valor)+'</text>';});h+='</svg>';return h;}
-function _fHBarChart(dados){dados=_fNorm(dados);if(!dados||!dados.length)return _fVz('—','','');var max=Math.max.apply(null,dados.map(function(d){return d.valor||0}))||1;var h='';dados.slice(0,6).forEach(function(d){var pct=Math.round(((d.valor||0)/max)*100);h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">'+(d.label||d.nome||'—')+'</span><span style="font-size:12px;font-weight:700;color:#fff">'+fmt(d.valor||0)+'</span></div><div style="height:4px;background:var(--ch-fundo);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--ch-2);border-radius:2px;transition:width .7s ease"></div></div></div>';});return h;}
+function _fHBarChart(dados){dados=_fNorm(dados);if(!dados||!dados.length)return _fVz('—','','');var max=Math.max.apply(null,dados.map(function(d){return d.valor||0}))||1;var h='';dados.slice(0,6).forEach(function(d){var pct=Math.round(((d.valor||0)/max)*100);h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">'+(d.label||d.nome||'—')+'</span><span style="font-size:12px;font-weight:700;color:var(--tx-1)">'+fmt(d.valor||0)+'</span></div><div style="height:4px;background:var(--ch-fundo);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--ch-2);border-radius:2px;transition:width .7s ease"></div></div></div>';});return h;}
 function _fLineChart(dados,H){dados=_fNorm(dados);if(!dados||!dados.length)return _fVz('📈','','');var max=Math.max.apply(null,dados.map(function(d){return d.valor||0}))||1;var min=Math.min.apply(null,dados.map(function(d){return d.valor||0}))||0;var range=(max-min)||1;var W=600,padL=10,padR=10;var step=(W-padL-padR)/(dados.length-1||1);var pts=dados.map(function(d,i){var x=padL+i*step,y=H-Math.round(((d.valor||0)-min)/range*(H-10))-5;return{x:x,y:y,v:d.valor,l:d.label};});var pathD=pts.map(function(p,i){return(i===0?'M':'L')+p.x+','+p.y;}).join(' ');var areaD=pathD+' L'+pts[pts.length-1].x+','+(H+5)+' L'+pts[0].x+','+(H+5)+' Z';var h='<svg class="FBAR-SVG" viewBox="0 0 '+W+' '+(H+28)+'" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="fLG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--ch-lbl)" stop-opacity=".8"/><stop offset="100%" stop-color="var(--ch-lbl)" stop-opacity="0"/></linearGradient></defs><path d="'+areaD+'" fill="url(#fLG)"/><path d="'+pathD+'" fill="none" stroke="var(--ch-lbl2)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>';pts.forEach(function(p,i){if(i%Math.max(1,Math.floor(pts.length/7))===0||i===pts.length-1){h+='<circle cx="'+p.x+'" cy="'+p.y+'" r="2.5" fill="var(--ch-barH)"/>';h+='<text x="'+p.x+'" y="'+(H+14)+'" text-anchor="middle" font-size="8" fill="var(--ch-lbl)">'+p.l+'</text>';}});h+='</svg>';return h;}
 function _fCount(id,target,isMoney){var el=document.getElementById(id);if(!el)return;var dur=1000,t0=null;function tick(ts){if(!t0)t0=ts;var prog=Math.min((ts-t0)/dur,1);var ease=1-Math.pow(1-prog,3);var cur=Math.round(target*ease);el.textContent=isMoney?fmt(cur):cur;if(prog<1){var rid=requestAnimationFrame(tick);_finRAFs.push(rid);}} _finRAFs.push(requestAnimationFrame(tick));}
 function _fK(v){return v>=1000?'R$'+(Math.round(v/100)/10)+'k':'R$'+Math.round(v);}
@@ -5917,5 +5917,417 @@ window.onload = function(){
   --ouro:#C8A020;
 }
 </style>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   TEMA CLARO — o painel nasceu escuro; isto redefine as cores
+   quando o dono escolhe o modo dia. Nada de estrutura muda.
+   ══════════════════════════════════════════════════════════════ */
+.aloco-tema{
+  display:flex; align-items:center; gap:6px;
+  padding:4px 11px; border-radius:20px; cursor:pointer;
+  font-family:inherit; font-size:10px; font-weight:600; letter-spacing:.02em;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  color:var(--tx-2); transition:all .18s ease; line-height:1;
+}
+.aloco-tema:hover{ background:rgba(255,255,255,.1); color:var(--tx-1); }
+.aloco-tema .ic{ font-size:12px; line-height:1; }
+
+:root[data-tema="claro"]{
+  --bg-base:     #F4F4F6;
+  --bg-surface:  #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-input:    #F7F7F9;
+  --bg-hover:    rgba(0,0,0,.04);
+  --bg-active:   rgba(0,0,0,.07);
+
+  --bd-subtle:   rgba(17,17,20,.09);
+  --bd-default:  rgba(17,17,20,.15);
+  --bd-strong:   rgba(17,17,20,.26);
+  --bd-focus:    rgba(17,17,20,.42);
+
+  --tx-1: #15151A;
+  --tx-2: rgba(21,21,26,.70);
+  --tx-3: rgba(21,21,26,.52);
+  --tx-4: rgba(21,21,26,.38);
+  --tx-5: rgba(21,21,26,.22);
+
+  --c-green:  #2F8456; --c-green-bg:  rgba(47,132,86,.10);  --c-green-bd:  rgba(47,132,86,.28);
+  --c-yellow: #96780F; --c-yellow-bg: rgba(150,120,15,.10); --c-yellow-bd: rgba(150,120,15,.28);
+  --c-red:    #A43333; --c-red-bg:    rgba(164,51,51,.10);  --c-red-bd:    rgba(164,51,51,.28);
+  --c-blue:   #2F5A8C; --c-blue-bg:   rgba(47,90,140,.10);  --c-blue-bd:   rgba(47,90,140,.28);
+
+  --ch-1:#3A3A42; --ch-2:#7A7A85; --ch-3:#AFAFB8; --ch-4:#D2D2D9;
+  --ch-linha:rgba(21,21,26,.55);
+  --ch-bar:#E4E4E9; --ch-barH:#2E2E36; --ch-lbl:#9A9AA4; --ch-lbl2:#55555E; --ch-fundo:#ECECF1;
+  --ouro:#9A7A14;
+
+  --sh-sm:  0 1px 2px rgba(17,17,20,.07);
+  --sh-md:  0 4px 14px rgba(17,17,20,.09);
+  --sh-lg:  0 12px 32px rgba(17,17,20,.12);
+  --sh-modal: 0 24px 56px rgba(17,17,20,.20);
+}
+:root[data-tema="claro"] body{
+  background: var(--bg-base) !important;
+  color: var(--tx-1);
+}
+/* superfícies que usavam branco translúcido precisam inverter */
+:root[data-tema="claro"] .HC,
+:root[data-tema="claro"] .CMD-K,
+:root[data-tema="claro"] .CMD-CW,
+:root[data-tema="claro"] .CMD-SW,
+:root[data-tema="claro"] .CMD-KSTRIP,
+:root[data-tema="claro"] .EQ-CARD,
+:root[data-tema="claro"] .EQ-CW,
+:root[data-tema="claro"] .CRM-CARD,
+:root[data-tema="claro"] .CRM-KPIS .CRM-K,
+:root[data-tema="claro"] .SV-ROW,
+:root[data-tema="claro"] .SV-K,
+:root[data-tema="claro"] .card-pm,
+:root[data-tema="claro"] .ES,
+:root[data-tema="claro"] .HAC,
+:root[data-tema="claro"] .HACHC,
+:root[data-tema="claro"] .HFI,
+:root[data-tema="claro"] .HPI,
+:root[data-tema="claro"] .HCCO,
+:root[data-tema="claro"] .HCONSI,
+:root[data-tema="claro"] .HMB,
+:root[data-tema="claro"] .HST,
+:root[data-tema="claro"] .HMETA,
+:root[data-tema="claro"] .CX-LIST,
+:root[data-tema="claro"] .CX-PANEL,
+:root[data-tema="claro"] .md{
+  background: #FFFFFF !important;
+  border-color: rgba(17,17,20,.11) !important;
+  box-shadow: 0 1px 2px rgba(17,17,20,.05), 0 4px 14px rgba(17,17,20,.05) !important;
+}
+:root[data-tema="claro"] .CMD-PI{ background: rgba(17,17,20,.035) !important; }
+:root[data-tema="claro"] .HC:hover,
+:root[data-tema="claro"] .EQ-CARD:hover,
+:root[data-tema="claro"] .CRM-CARD:hover,
+:root[data-tema="claro"] .SV-ROW:hover,
+:root[data-tema="claro"] .card-pm:hover{ border-color: rgba(17,17,20,.22) !important; }
+
+:root[data-tema="claro"] .nav{
+  background: #FFFFFF !important;
+  border-right-color: rgba(17,17,20,.10) !important;
+}
+:root[data-tema="claro"] .nav-brand,
+:root[data-tema="claro"] .nav-ft{ border-color: rgba(17,17,20,.10) !important; }
+:root[data-tema="claro"] .nav-brand-ico{ background: rgba(17,17,20,.05) !important; border-color: rgba(17,17,20,.10) !important; }
+:root[data-tema="claro"] .nb{ color: rgba(21,21,26,.62) !important; }
+:root[data-tema="claro"] .nb:hover:not(.on){ background: rgba(17,17,20,.05) !important; color: var(--tx-1) !important; }
+:root[data-tema="claro"] .nb.on{
+  background: rgba(17,17,20,.07) !important;
+  box-shadow: inset 0 0 0 1px rgba(17,17,20,.09) !important;
+  color: var(--tx-1) !important;
+}
+:root[data-tema="claro"] .nb.on .nb-bar{ background: var(--tx-1) !important; }
+:root[data-tema="claro"] .nav-glabel{ color: rgba(21,21,26,.38) !important; }
+:root[data-tema="claro"] .nav-ft-ver > div:first-child{ color:#2A2A32 !important; }
+
+:root[data-tema="claro"] .hdr{
+  background: rgba(255,255,255,.88) !important;
+  border-bottom-color: rgba(17,17,20,.10) !important;
+}
+:root[data-tema="claro"] .hdr-pill,
+:root[data-tema="claro"] .hdr-logo,
+:root[data-tema="claro"] .h-sync,
+:root[data-tema="claro"] .aloco-tema{
+  background: rgba(17,17,20,.05) !important;
+  border-color: rgba(17,17,20,.11) !important;
+  color: var(--tx-2) !important;
+}
+:root[data-tema="claro"] .aloco-tema:hover{ background: rgba(17,17,20,.09) !important; }
+:root[data-tema="claro"] .hdr-ctx{ color: rgba(21,21,26,.45) !important; }
+
+:root[data-tema="claro"] .fi,
+:root[data-tema="claro"] .fs,
+:root[data-tema="claro"] .search-bar{
+  background:#FFFFFF !important; border-color: rgba(17,17,20,.16) !important; color: var(--tx-1) !important;
+}
+:root[data-tema="claro"] .fi::placeholder,
+:root[data-tema="claro"] .search-bar::placeholder{ color: rgba(21,21,26,.35) !important; }
+:root[data-tema="claro"] .fi:focus,
+:root[data-tema="claro"] .search-bar:focus{ border-color: rgba(17,17,20,.42) !important; box-shadow: 0 0 0 3px rgba(17,17,20,.06) !important; }
+
+:root[data-tema="claro"] .sk{
+  background: linear-gradient(90deg, rgba(17,17,20,.05) 0%, rgba(17,17,20,.09) 50%, rgba(17,17,20,.05) 100%) !important;
+}
+:root[data-tema="claro"] .ov{ background: rgba(17,17,20,.38) !important; }
+:root[data-tema="claro"] .ags:hover{ background: rgba(17,17,20,.05) !important; }
+:root[data-tema="claro"] .agh{ background:#F0F0F3 !important; color: var(--tx-2) !important; }
+:root[data-tema="claro"] ::-webkit-scrollbar-thumb{ background: rgba(17,17,20,.18) !important; }
+:root[data-tema="claro"] ::-webkit-scrollbar-thumb:hover{ background: rgba(17,17,20,.3) !important; }
+:root[data-tema="claro"] .EQ-BARBG,
+:root[data-tema="claro"] .SV-BARBG,
+:root[data-tema="claro"] .HMBPBG,
+:root[data-tema="claro"] .bar-w{ background: rgba(17,17,20,.09) !important; }
+
+/* assistente: o bloco verde escuro vira um verde claro */
+:root[data-tema="claro"] .CMD-IA{
+  background: linear-gradient(150deg, rgba(47,132,86,.07) 0%, #FFFFFF 70%) !important;
+  border-color: rgba(47,132,86,.20) !important;
+}
+:root[data-tema="claro"] .CMD-IA-AV{
+  background: linear-gradient(135deg, rgba(47,132,86,.16), rgba(47,132,86,.05)) !important;
+  border-color: rgba(47,132,86,.26) !important;
+}
+:root[data-tema="claro"] .CMD-IA-MSG,
+:root[data-tema="claro"] .CMD-IA-INSIGHT,
+:root[data-tema="claro"] .CMD-IA-STEP{
+  background: rgba(17,17,20,.035) !important; border-color: rgba(17,17,20,.09) !important; color: var(--tx-2) !important;
+}
+
+/* ── Centro Financeiro: folha de estilo própria, cores fixas ──── */
+:root[data-tema="claro"] .FW{ background:#F4F4F6 !important; }
+:root[data-tema="claro"] .FHD{ border-bottom-color:rgba(17,17,20,.10) !important; }
+:root[data-tema="claro"] .FTIT,
+:root[data-tema="claro"] .FHNUM,
+:root[data-tema="claro"] .FHPCT,
+:root[data-tema="claro"] .FKV,
+:root[data-tema="claro"] .FRKVV,
+:root[data-tema="claro"] .FSVCVV,
+:root[data-tema="claro"] .FPAGV,
+:root[data-tema="claro"] .FMTV{ color:#15151A !important; }
+:root[data-tema="claro"] .FSUB,
+:root[data-tema="claro"] .FHMSG,
+:root[data-tema="claro"] .FOPTXT,
+:root[data-tema="claro"] .FINTLM,
+:root[data-tema="claro"] .FVZS{ color:rgba(21,21,26,.55) !important; }
+:root[data-tema="claro"] .FHMSG strong,
+:root[data-tema="claro"] .FINTLM strong{ color:#15151A !important; }
+:root[data-tema="claro"] .FHERO,
+:root[data-tema="claro"] .FK,
+:root[data-tema="claro"] .FG,
+:root[data-tema="claro"] .FOPI,
+:root[data-tema="claro"] .FINTL{
+  background:#FFFFFF !important; border-color:rgba(17,17,20,.11) !important;
+  box-shadow:0 1px 2px rgba(17,17,20,.05), 0 4px 14px rgba(17,17,20,.05) !important;
+}
+:root[data-tema="claro"] .FINTL{ border-left-color:#15151A !important; }
+:root[data-tema="claro"] .FPB,
+:root[data-tema="claro"] .FNB{ background:#FFFFFF !important; border-color:rgba(17,17,20,.14) !important; color:rgba(21,21,26,.6) !important; }
+:root[data-tema="claro"] .FPB.on{ background:#15151A !important; color:#FFFFFF !important; border-color:#15151A !important; }
+:root[data-tema="claro"] .FNL{ color:#15151A !important; }
+:root[data-tema="claro"] .FNH{ color:rgba(21,21,26,.5) !important; }
+:root[data-tema="claro"] .FHB{ border-right-color:rgba(17,17,20,.10) !important; }
+:root[data-tema="claro"] .FHLB,
+:root[data-tema="claro"] .FKLB,
+:root[data-tema="claro"] .FGT,
+:root[data-tema="claro"] .FSECT,
+:root[data-tema="claro"] .FMT th{ color:rgba(21,21,26,.45) !important; }
+:root[data-tema="claro"] .FGT::after,
+:root[data-tema="claro"] .FSECT::before,
+:root[data-tema="claro"] .FSECT::after{ background:rgba(17,17,20,.10) !important; }
+:root[data-tema="claro"] .FHNUM.prev{ color:rgba(21,21,26,.45) !important; }
+:root[data-tema="claro"] .FHPBG,
+:root[data-tema="claro"] .FRKPB,
+:root[data-tema="claro"] .FSVCBAR,
+:root[data-tema="claro"] .FPAGB{ background:rgba(17,17,20,.09) !important; }
+:root[data-tema="claro"] .FHPFILL,
+:root[data-tema="claro"] .FSVCBARF,
+:root[data-tema="claro"] .FRKPF,
+:root[data-tema="claro"] .FPAGBF{ background:linear-gradient(90deg,#55555E,#15151A) !important; }
+:root[data-tema="claro"] .FRKI,
+:root[data-tema="claro"] .FSVCI,
+:root[data-tema="claro"] .FPAGI{ border-bottom-color:rgba(17,17,20,.09) !important; }
+:root[data-tema="claro"] .FRKA{ background:rgba(17,17,20,.05) !important; border-color:rgba(17,17,20,.12) !important; color:#55555E !important; }
+:root[data-tema="claro"] .FRKNM,
+:root[data-tema="claro"] .FSVCNM,
+:root[data-tema="claro"] .FPAGNM,
+:root[data-tema="claro"] .FOPTIT{ color:#24242C !important; }
+:root[data-tema="claro"] .FRKDT,
+:root[data-tema="claro"] .FRKVS,
+:root[data-tema="claro"] .FSVCBD,
+:root[data-tema="claro"] .FSVCPCT,
+:root[data-tema="claro"] .FPAGP,
+:root[data-tema="claro"] .FRKN{ color:rgba(21,21,26,.45) !important; }
+:root[data-tema="claro"] .FMT td{ color:rgba(21,21,26,.72) !important; border-bottom-color:rgba(17,17,20,.07) !important; }
+:root[data-tema="claro"] .FMT tr:hover td{ background:rgba(17,17,20,.03) !important; }
+:root[data-tema="claro"] .FMTF{ border-color:rgba(17,17,20,.14) !important; color:rgba(21,21,26,.55) !important; }
+:root[data-tema="claro"] .FVZT{ color:rgba(21,21,26,.5) !important; }
+:root[data-tema="claro"] .FSP{ border-color:rgba(17,17,20,.12) !important; border-top-color:#15151A !important; }
+:root[data-tema="claro"] .FHDELTA.p,
+:root[data-tema="claro"] .FKD.p,
+:root[data-tema="claro"] .FOPTAG.r,
+:root[data-tema="claro"] .FMTST.ok{ color:#2F8456 !important; background:rgba(47,132,86,.10) !important; }
+:root[data-tema="claro"] .FHDELTA.n,
+:root[data-tema="claro"] .FKD.n{ color:#A43333 !important; background:rgba(164,51,51,.10) !important; }
+:root[data-tema="claro"] .FOPTAG.y,
+:root[data-tema="claro"] .FMTST.pd{ color:#96780F !important; background:rgba(150,120,15,.10) !important; }
+:root[data-tema="claro"] .FOPTAG.b{ color:#2F5A8C !important; background:rgba(47,90,140,.10) !important; }
+:root[data-tema="claro"] .FKD.z{ color:rgba(21,21,26,.5) !important; background:rgba(17,17,20,.05) !important; }
+
+
+/* textos com cor clara escrita na mão precisam escurecer no modo dia */
+:root[data-tema="claro"] .CMD-KL,
+:root[data-tema="claro"] .CMD-KT,
+:root[data-tema="claro"] .CMD-CT,
+:root[data-tema="claro"] .HCT,
+:root[data-tema="claro"] .HACT,
+:root[data-tema="claro"] .HACHTT,
+:root[data-tema="claro"] .HACHST,
+:root[data-tema="claro"] .HBIQ-INAME,
+:root[data-tema="claro"] .HCCON,
+:root[data-tema="claro"] .HCCOD,
+:root[data-tema="claro"] .HCONSN,
+:root[data-tema="claro"] .HCONST,
+:root[data-tema="claro"] .HFIH,
+:root[data-tema="claro"] .HMBL,
+:root[data-tema="claro"] .HPID,
+:root[data-tema="claro"] .nav-brand-sub,
+:root[data-tema="claro"] .nav-ft-row,
+:root[data-tema="claro"] .nav-glabel{ color: rgba(21,21,26,.50) !important; }
+:root[data-tema="claro"] .HACW,
+:root[data-tema="claro"] .HBIQ-IVAL,
+:root[data-tema="claro"] .HFIT,
+:root[data-tema="claro"] .HPIC,
+:root[data-tema="claro"] .CMD-KV,
+:root[data-tema="claro"] .HCONST strong,
+:root[data-tema="claro"] .HFIT strong{ color:#15151A !important; }
+:root[data-tema="claro"] .CMD-TOP-BTN{
+  color: rgba(21,21,26,.70) !important;
+  background: rgba(17,17,20,.05) !important;
+  border-color: rgba(17,17,20,.12) !important;
+}
+:root[data-tema="claro"] .CMD-TOP-BTN:hover{ background: rgba(17,17,20,.09) !important; color:#15151A !important; }
+:root[data-tema="claro"] .FSUB strong,
+:root[data-tema="claro"] .FHMSG strong,
+:root[data-tema="claro"] .FINTLM strong{ color:#15151A !important; }
+:root[data-tema="claro"] .nb{ color: rgba(21,21,26,.62) !important; }
+
+/* as 65 classes que escreviam a cor clara na mão: mesma hierarquia,
+   invertida para fundo claro (alpha recalculado para manter a leitura) */
+:root[data-tema="claro"] .CMD-ACT-D{ color: rgba(21,21,26,0.79) !important; }
+:root[data-tema="claro"] .CMD-ACT-T{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-CS{ color: rgba(21,21,26,0.7) !important; }
+:root[data-tema="claro"] .CMD-CT{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CMD-DATE{ color: rgba(21,21,26,0.67) !important; }
+:root[data-tema="claro"] .CMD-FI-H{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .CMD-FI-T{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-IA-MSG{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-IA-OPP-D{ color: rgba(21,21,26,0.79) !important; }
+:root[data-tema="claro"] .CMD-IA-OPP-T{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-IA-STEP{ color: rgba(21,21,26,0.85) !important; }
+:root[data-tema="claro"] .CMD-KL{ color: rgba(21,21,26,0.63) !important; }
+:root[data-tema="claro"] .CMD-KT{ color: rgba(21,21,26,0.67) !important; }
+:root[data-tema="claro"] .CMD-PIC{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-PID{ color: rgba(21,21,26,0.74) !important; }
+:root[data-tema="claro"] .CMD-RKAV{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-RKDT{ color: rgba(21,21,26,0.7) !important; }
+:root[data-tema="claro"] .CMD-RKN{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CMD-RKNM{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CMD-SWT{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CMD-TOP-BTN{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CX-CARD-AV{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CX-CARD-META{ color: rgba(21,21,26,0.7) !important; }
+:root[data-tema="claro"] .CX-CARD-NM{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CX-CMD-ID{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-CMD-META{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-DESC-LBL{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-EMPTY-D{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .CX-EMPTY-T{ color: rgba(21,21,26,0.74) !important; }
+:root[data-tema="claro"] .CX-ITEM-DEL{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CX-ITEM-NM{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CX-ITEMS-HDR{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CX-LIST-HDR{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CX-PAG-BTN{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .CX-PAG-HDR{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .CX-STAT{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-SUBTOTAL-L{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-TOTAL-ROW{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .CX-VAZIA{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .HACHST{ color: rgba(21,21,26,0.74) !important; }
+:root[data-tema="claro"] .HACHTT{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HACT{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HACW{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .HBIQ-INAME{ color: rgba(21,21,26,0.82) !important; }
+:root[data-tema="claro"] .HBIQ-IVAL{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HCCOD{ color: rgba(21,21,26,0.79) !important; }
+:root[data-tema="claro"] .HCCON{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HCONSN{ color: rgba(21,21,26,0.59) !important; }
+:root[data-tema="claro"] .HCONST{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HCT{ color: rgba(21,21,26,0.6) !important; }
+:root[data-tema="claro"] .HFIH{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .HFIT{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HMBL{ color: rgba(21,21,26,0.63) !important; }
+:root[data-tema="claro"] .HPIC{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .HPID{ color: rgba(21,21,26,0.74) !important; }
+:root[data-tema="claro"] .done{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .h-sync{ color: rgba(21,21,26,0.92) !important; }
+:root[data-tema="claro"] .hdr-pill{ color: rgba(21,21,26,0.74) !important; }
+:root[data-tema="claro"] .nav-brand-sub{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .nav-ft-row{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .nav-ft-ver{ color: rgba(21,21,26,0.36) !important; }
+:root[data-tema="claro"] .nav-glabel{ color: rgba(21,21,26,0.51) !important; }
+:root[data-tema="claro"] .nb{ color: rgba(21,21,26,0.85) !important; }
+:root[data-tema="claro"] .sys-ts{ color: rgba(21,21,26,0.54) !important; }
+:root[data-tema="claro"] .t-label{ color: rgba(21,21,26,0.63) !important; }
+
+/* marca e rodapé da barra lateral no modo dia */
+:root[data-tema="claro"] .nav-brand > div:nth-child(2){ color:#15151A !important; }
+:root[data-tema="claro"] .nav-brand > div:nth-child(2) div{ color:rgba(21,21,26,.45) !important; }
+:root[data-tema="claro"] .nav-ft{ background: rgba(17,17,20,.03) !important; }
+:root[data-tema="claro"] .nav-ft-ver > div:first-child{ color:#15151A !important; }
+:root[data-tema="claro"] .nav-ft-ver > div:first-child div{ color:rgba(21,21,26,.42) !important; }
+:root[data-tema="claro"] .hdr-ctx{ color:rgba(21,21,26,.45) !important; }
+</style>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   BOTÃO DIA / NOITE
+   Guarda a escolha no aparelho, por barbearia. Só cor: nada de
+   estrutura, dado ou comportamento muda.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  if (window._ALOCO_TEMA) return; window._ALOCO_TEMA = 1;
+
+  var CHAVE = 'aloco_tema';
+
+  function lido(){
+    try { var v = localStorage.getItem(CHAVE); if (v === 'claro' || v === 'escuro') return v; } catch(e){}
+    // sem escolha, fica escuro — é como o painel sempre foi. Mudar sozinho
+    // pela preferência do aparelho deixaria o painel branco sem ninguém pedir.
+    return 'escuro';
+  }
+  function aplicar(t){
+    try {
+      if (t === 'claro') document.documentElement.setAttribute('data-tema','claro');
+      else document.documentElement.removeAttribute('data-tema');
+    } catch(e){}
+    var b = document.getElementById('aloco-tema');
+    if (b){
+      var noite = (t !== 'claro');
+      b.querySelector('.ic').textContent = noite ? '☽' : '☀';
+      b.querySelector('.tx').textContent = noite ? 'Noite' : 'Dia';
+      b.title = noite ? 'Mudar para o modo dia' : 'Mudar para o modo noite';
+      b.setAttribute('aria-label', b.title);
+    }
+  }
+  window.alocoTema = function(t){
+    if (!t) t = (document.documentElement.getAttribute('data-tema') === 'claro') ? 'escuro' : 'claro';
+    try { localStorage.setItem(CHAVE, t); } catch(e){}
+    aplicar(t);
+  };
+
+  // aplica o quanto antes, pra não piscar branco
+  aplicar(lido());
+
+  function montar(){
+    var pills = document.querySelector('.hdr-pills');
+    if (!pills || document.getElementById('aloco-tema')) { aplicar(lido()); return; }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'aloco-tema';
+    b.className = 'aloco-tema';
+    b.innerHTML = '<span class="ic">☽</span><span class="tx">Noite</span>';
+    b.onclick = function(){ window.alocoTema(); };
+    pills.insertBefore(b, pills.firstChild);
+    aplicar(lido());
+  }
+  if (document.readyState !== 'loading') montar();
+  else document.addEventListener('DOMContentLoaded', montar);
+})();
+
+</script>
 </body>
 </html>
