@@ -7,31 +7,56 @@
 (function(){
   if(window.__alocoSegMotor) return;
   window.__alocoSegMotor = 1;
+  /* A lembranca do segmento era UMA SO para todo o app.aloco.com.br. Quem
+     abrisse o painel de um salao levava "beauty" junto para qualquer app de
+     barbearia aberto depois no mesmo navegador - a Barbearia do Markim virava
+     "Salao do Markim". Agora a chave e por cliente. */
+  function alocoQuem(){
+    try { var b = new URLSearchParams(location.search).get('b'); if(b) return String(b).toLowerCase(); } catch(e){}
+    var m = String(location.pathname || '').match(/\/clientes\/([^\/]+)/);
+    return m ? String(m[1]).toLowerCase() : '_';
+  }
+  var QUEM  = alocoQuem();
+  var CHAVE = 'aloco_seg_' + QUEM;
+  try { localStorage.removeItem('aloco_seg'); } catch(e){}   // apaga a chave antiga, contaminada
+
   function qualSegmento(){
     try {
       var u = new URLSearchParams(location.search).get('seg');
-      if(u){ try{ localStorage.setItem('aloco_seg', u); }catch(e){} return String(u).toLowerCase(); }
+      if(u){ try{ localStorage.setItem(CHAVE, u); }catch(e){} return String(u).toLowerCase(); }
     } catch(e){}
     try { if(window.ALOCO_SEG) return String(window.ALOCO_SEG).toLowerCase(); } catch(e){}
     try {
       var mt = document.querySelector('meta[name="aloco-seg"]');
       if(mt && mt.content) return String(mt.content).toLowerCase();
     } catch(e){}
-    try { var g = localStorage.getItem('aloco_seg'); if(g) return String(g).toLowerCase(); } catch(e){}
-    return 'barber';
+    try { var g = localStorage.getItem(CHAVE); if(g) return String(g).toLowerCase(); } catch(e){}
+    return '';
   }
-  var SEG = qualSegmento();
+
+  /* Os apps entregues antes do {{SEGMENTO}} nao sabem o que sao. Em vez de
+     chutar, perguntam ao servidor uma vez e guardam a resposta. */
+  var API_SEG = 'https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec';
+  function perguntarSegmento(){
+    if(QUEM === '_' || !window.fetch) return;
+    try {
+      fetch(API_SEG + '?action=disponibilidade&b=' + encodeURIComponent(QUEM))
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          var s = j && j.dados && String(j.dados.segmento || '').toLowerCase();
+          if(s !== 'beauty' && s !== 'barber') return;
+          try { localStorage.setItem(CHAVE, s); } catch(e){}
+          if(s === 'beauty' && window.__alocoSeg !== 'beauty'){
+            window.__alocoSeg = 'beauty';
+            comecar();
+          }
+        })
+        .catch(function(){});
+    } catch(e){}
+  }
+
+  var SEG = qualSegmento() || 'barber';
   window.__alocoSeg = SEG;
-  // O app pode definir ALOCO_SEG depois que este arquivo carrega. Em vez de
-  // desistir na primeira leitura, espiamos mais algumas vezes antes de sair.
-  if(SEG !== 'beauty'){
-    var espiadas = 0;
-    var relogio = setInterval(function(){
-      if(++espiadas > 20){ clearInterval(relogio); return; }
-      if(qualSegmento() === 'beauty'){ clearInterval(relogio); window.__alocoSeg = 'beauty'; comecar(); }
-    }, 250);
-    return;
-  }
 
   // ── frases inteiras primeiro (as mais longas antes) ──────────────────
   var FRASES = [
@@ -206,7 +231,24 @@
     if(document.body) ligar();
     else document.addEventListener('DOMContentLoaded', ligar);
   }
-  comecar();
+
+  /* Antes este arquivo DESISTIA no comeco quando o segmento nao era beauty,
+     e o dicionario nem chegava a existir - a espiada tardia chamava comecar()
+     e quebrava. Agora tudo fica montado e so o acionamento e condicional. */
+  if(SEG === 'beauty'){
+    comecar();
+  } else {
+    // o app pode declarar ALOCO_SEG depois que este arquivo carrega
+    var espiadas = 0;
+    var relogio = setInterval(function(){
+      if(++espiadas > 20){ clearInterval(relogio); return; }
+      if(qualSegmento() === 'beauty'){ clearInterval(relogio); window.__alocoSeg = 'beauty'; comecar(); }
+    }, 250);
+    var sabe = false;
+    try { sabe = !!(window.ALOCO_SEG || document.querySelector('meta[name="aloco-seg"]')
+                    || localStorage.getItem(CHAVE)); } catch(e){}
+    if(!sabe) perguntarSegmento();
+  }
 })();
 /* FIM SEGMENTO */
 // ALOCO - ajustes globais dos apps.
