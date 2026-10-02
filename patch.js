@@ -1129,7 +1129,9 @@
   window.__alocoInstalar = 1;
 
   var CHAVE = 'aloco_instalar_adiado';
-  var ESPERA = 20000;          // 20s de uso antes de convidar
+  // imediato: so espera a abertura (splash) terminar, para nao aparecer
+  // por cima da animacao. Se nao houver splash, entra quase na hora.
+  var ESPERA = 500;
   var DESCANSO = 5 * 24 * 3600 * 1000;   // 5 dias apos dispensar
 
   function jaInstalado(){
@@ -1230,6 +1232,26 @@
     + 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>';
 
+
+  // o app abre com uma animacao (#splash). Convidar por cima dela fica feio
+  // e a pessoa nem le. Entao: assim que o splash sai, convidamos.
+  function quandoPronto(fn){
+    var limite = Date.now() + 6000;      // nunca espera mais que 6s
+    function visivel(el){
+      if (!el) return false;
+      var cs;
+      try { cs = getComputedStyle(el); } catch(e){ return false; }
+      return cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) > 0.02;
+    }
+    function tentar(){
+      var sp = document.getElementById('splash') || document.querySelector('.splash,#alocoSplash');
+      if (!visivel(sp) || Date.now() > limite){ setTimeout(fn, ESPERA); return; }
+      setTimeout(tentar, 150);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tentar);
+    else tentar();
+  }
+
   var pedido = null;      // o beforeinstallprompt guardado
   var caixa = null;
 
@@ -1303,7 +1325,7 @@
     e.preventDefault();
     pedido = e;
     if (jaInstalado() || adiado()) return;
-    setTimeout(function(){ if (pedido && !jaInstalado()) abrir('android'); }, ESPERA);
+    quandoPronto(function(){ if (pedido && !jaInstalado()) abrir('android'); });
   });
 
   window.addEventListener('appinstalled', function(){
@@ -1313,7 +1335,7 @@
 
   // iPhone: nao ha evento nenhum, entao o convite e por conta propria
   if (ehIOS() && ehSafari() && !jaInstalado() && !adiado()){
-    setTimeout(function(){ if (!jaInstalado()) abrir('ios'); }, ESPERA);
+    quandoPronto(function(){ if (!jaInstalado()) abrir('ios'); });
   }
 
   // para testar na hora, sem esperar: alocoInstalar() no console
