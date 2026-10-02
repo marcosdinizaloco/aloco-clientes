@@ -4993,6 +4993,21 @@ function _drawEquipeAcessos(){
     });
     h+='</div>';
   }
+
+  // ── senha do painel ────────────────────────────────────────────────
+  // Quem troca a senha da barbearia e o dono, e so ele chega aqui: esta
+  // tela nao e liberavel para a equipe. Cada pessoa da equipe tem o
+  // proprio codigo, trocado no cartao dela, nao aqui.
+  if (window.ALOCO_PAPEL !== 'equipe'){
+    h+='<div class="card" style="margin-top:18px;max-width:560px">'
+     + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+     + '<div style="flex:1;min-width:180px">'
+     + '<div style="font-size:14px;font-weight:700">Senha do painel</div>'
+     + '<div style="font-size:12px;color:var(--tx-4);margin-top:3px">'
+     + 'É a sua senha de dono. Vale para tudo e não se compartilha com a equipe.</div></div>'
+     + '<button class="btn btn-ghost btn-sm" onclick="alocoTrocarSenha()">Alterar senha</button>'
+     + '</div></div>';
+  }
   h+='</div>';
   document.getElementById('ct').innerHTML=h;
 }
@@ -5159,14 +5174,13 @@ window.onload = function(){
       }
     }).catch(function(){ msg.style.color='var(--c-red)'; msg.textContent='Sem conexao.'; });
   };
+  // A troca de senha NAO fica mais no menu lateral: ali ela aparecia
+  // solta, no meio da marca e do aviso do plano, como se fosse navegacao.
+  // Agora mora dentro de "Equipe e acessos", que e onde se administra
+  // quem entra — e so o dono abre aquela tela.
   function menu(){
-    var nb=document.querySelector('.nav-brand');
-    if(!nb||!nb.parentNode||document.getElementById('alcSenhaLink')) return;
-    var a=document.createElement('div');
-    a.id='alcSenhaLink'; a.textContent='Alterar senha';
-    a.style.cssText='margin:10px 12px;padding:10px 12px;border-radius:var(--r-sm);font-size:13px;color:var(--tx-2);cursor:pointer;border:1px solid var(--bd-subtle)';
-    a.onclick=window.alocoTrocarSenha;
-    nb.parentNode.appendChild(a);
+    var a = document.getElementById('alcSenhaLink');
+    if (a && a.parentNode) a.parentNode.removeChild(a);
   }
   var feito=false, tmr=null;
   function checar(){
@@ -6590,19 +6604,40 @@ window.onload = function(){
 
 </script>
 <style>
-/* ALOCO — a barra lateral comecava abaixo do cabecalho mas media 100vh,
-   entao o rodape (Alterar senha / aviso do plano) caia para fora da tela
-   e o overflow:hidden cortava. Agora ela mede a altura util e rola. */
+/* ALOCO — BARRA LATERAL
+   Ela comecava abaixo do cabecalho mas media 100vh: sobrava altura para
+   fora da tela e o overflow:hidden cortava o rodape. Pior, "Equipe e
+   acessos" — o ultimo item do menu — ficava escondido.
+
+   Agora a barra mede a altura util; so a LISTA DE LINKS rola, e o rodape
+   (status, marca, aviso do plano) fica preso embaixo, sempre visivel. */
 .nav{
   height:calc(100vh - var(--hdr-h)) !important;
   min-height:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+.nav-brand{flex:0 0 auto}
+.nav-links{
+  flex:1 1 auto !important;
+  min-height:0 !important;
   overflow-y:auto !important;
   overflow-x:hidden !important;
-  padding-bottom:18px !important;
+  padding-bottom:6px;
   scrollbar-width:thin;
 }
-.nav::-webkit-scrollbar{width:6px}
-.nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+.nav-links::-webkit-scrollbar{width:6px}
+.nav-links::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+.nav-ft{flex:0 0 auto}
+#alcAssLink{flex:0 0 auto}
+
+/* o rodape ocupava espaco demais e empurrava o menu para fora da tela */
+.nav-ft{padding:9px 14px 10px !important}
+.nav-ft-ver{margin-top:9px !important}
+
+/* ultimo item do menu: destaque leve para nao se perder no fim da lista */
+#nb-eq{margin-bottom:4px}
 </style>
 </body>
 </html>
