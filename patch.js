@@ -158,13 +158,48 @@
     [/\u{1F488}/gu, '\u{1F485}']   // poste de barbearia -> esmalte
   ];
 
+  /* Antes cada pedacinho de texto da tela passava pelas 110 frases e pelas
+     20 expressoes, uma por uma. Numa tela de agenda cheia isso e meio milhao
+     de comparacoes a cada redesenho - era isso que deixava o painel pesado
+     no salao (na barbearia o motor nem liga). Agora ha um portao: uma unica
+     expressao que diz, de primeira, se o texto tem alguma palavra que este
+     motor sabe trocar. Quase tudo ("R$ 45,00", "09:30", "Segunda") sai por
+     ali sem custo. E o que ja foi traduzido fica guardado. */
+  function _chave(txt){
+    var ws = String(txt).toLowerCase().match(/[0-9a-z\u00e0-\u00ff]{4,}/g);
+    if(!ws || !ws.length) return null;
+    var m = ws[0];
+    for(var i = 1; i < ws.length; i++) if(ws[i].length > m.length) m = ws[i];
+    return m;
+  }
+  var F_CH = [], P_CH = [], _chs = {};
+  (function(){
+    var i, k;
+    for(i = 0; i < FRASES.length; i++){ k = _chave(FRASES[i][0]); F_CH.push(k); if(k) _chs[k] = 1; }
+    for(i = 0; i < PALAVRAS.length; i++){
+      k = _chave(String(PALAVRAS[i][0].source)
+            .replace(/\\b/g, '').replace(/\\u\{[^}]*\}/g, '').replace(/[\\\/]/g, ''));
+      P_CH.push(k); if(k) _chs[k] = 1;
+    }
+  })();
+  var PORTAO = new RegExp(Object.keys(_chs).join('|'), 'i');
+  var MEMO = Object.create(null), MEMON = 0;
+
   function traduzir(t){
     if(!t || t.indexOf('') === 0) return t;
-    var s = t, i;
+    if(t.length < 2) return t;   // o emoji sozinho tem 2 - nao pode escapar
+    var pronto = MEMO[t];
+    if(pronto !== undefined) return pronto;
+    var s = t, i, abre = PORTAO.test(t);
     for(i = 0; i < FRASES.length; i++){
+      if(!abre && F_CH[i]) continue;
       if(s.indexOf(FRASES[i][0]) >= 0) s = s.split(FRASES[i][0]).join(FRASES[i][1]);
     }
-    for(i = 0; i < PALAVRAS.length; i++) s = s.replace(PALAVRAS[i][0], PALAVRAS[i][1]);
+    for(i = 0; i < PALAVRAS.length; i++){
+      if(!abre && P_CH[i]) continue;
+      s = s.replace(PALAVRAS[i][0], PALAVRAS[i][1]);
+    }
+    if(MEMON < 5000){ MEMO[t] = s; MEMON++; }
     return s;
   }
   window.alocoTraduzir = traduzir;
@@ -212,18 +247,42 @@
 
   function tudo(){ varrer(document.body); try{ document.title = traduzir(document.title); }catch(e){} }
 
+  /* O observador disparava a cada no inserido, no meio do desenho da tela, e
+     a propria troca de texto gerava um novo disparo. Agora as mudancas sao
+     juntadas e tratadas de uma vez no quadro seguinte, com a escrita marcada
+     para nao se observar a si mesma. Lote grande demais: uma varredura so. */
   function ligar(){
     tudo();
+    var fila = [], marcado = false;
+    function rodar(){
+      marcado = false;
+      var lote = fila; fila = [];
+      try {
+        if(lote.length > 60) tudo();
+        else for(var i = 0; i < lote.length; i++) varrer(lote[i]);
+      } catch(e){}
+    }
+    var depois = window.requestAnimationFrame
+      ? function(f){ window.requestAnimationFrame(f); }
+      : function(f){ setTimeout(f, 16); };
     try {
       new MutationObserver(function(muts){
+        // nao da pra ignorar as mudancas feitas aqui dentro: junto com elas
+        // vinham as mudancas que a tela estava fazendo no mesmo instante, e
+        // essas sumiam sem ser traduzidas. Traduzir duas vezes nao faz mal:
+        // o texto ja traduzido sai igual e nao gera nova mudanca.
         for(var i = 0; i < muts.length; i++){
           var m = muts[i];
-          if(m.type === 'characterData'){ var n = traduzir(m.target.nodeValue); if(n !== m.target.nodeValue) m.target.nodeValue = n; }
-          else for(var j = 0; j < m.addedNodes.length; j++) varrer(m.addedNodes[j]);
+          if(m.type === 'characterData') fila.push(m.target);
+          else for(var j = 0; j < m.addedNodes.length; j++){
+            var no = m.addedNodes[j];
+            if(no.nodeType === 1 || no.nodeType === 3) fila.push(no);
+          }
         }
+        if(fila.length && !marcado){ marcado = true; depois(rodar); }
       }).observe(document.body, { childList:true, subtree:true, characterData:true });
     } catch(e){}
-    [120, 600, 1500, 3000, 6000].forEach(function(ms){ setTimeout(tudo, ms); });
+    [400, 2000].forEach(function(ms){ setTimeout(tudo, ms); });
   }
   function comecar(){
     if(window.__alocoSegLigado) return;
@@ -904,4 +963,147 @@
   window.addEventListener('online', function(){
     try { if (localStorage.getItem(P)) reenviar(); } catch(e){}
   });
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CATÁLOGO: EXEMPLO NUNCA PODE PARECER REAL
+   O app nasce com uma equipe de exemplo no HTML (Lucas Mendes, Rafael
+   Costa, Diego Alves) e troca por quem está cadastrado quando a API
+   responde. So que, se a API FALHA, o carregador do modelo so desiste:
+   os exemplos continuam na tela, clicaveis. O cliente escolhe "Rafael
+   Costa", manda, e o servidor recusa — com razao, porque esse profissional
+   nao existe na casa. O cliente le "escolha um profissional da lista" logo
+   depois de escolher um da lista, e vai embora.
+
+   Aqui o app passa a tratar a falha como falha: tira o exemplo da tela,
+   diz o que aconteceu e oferece tentar de novo.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  if (window.__alocoCatalogo) return;
+  window.__alocoCatalogo = 1;
+
+  var EXEMPLOS = ['lucas mendes','rafael costa','diego alves',
+                  'juliana prado','camila ribeiro','beatriz nunes'];
+
+  function quemSou(){
+    try { var b = new URLSearchParams(location.search).get('b'); if (b) return String(b); } catch(e){}
+    var m = String(location.pathname || '').match(/\/clientes\/([^\/]+)/);
+    return m ? m[1] : '';
+  }
+  var API  = (typeof window.ALOCO_API === 'string' && window.ALOCO_API.indexOf('http') === 0)
+             ? window.ALOCO_API
+             : 'https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec';
+  var SLUG = (typeof window.ALOCO_SLUG === 'string' && window.ALOCO_SLUG) ? window.ALOCO_SLUG : quemSou();
+  if (!SLUG) return;
+  // este arquivo tambem chega em paginas que nao tem catalogo nenhum
+  // (codigos.html, barbeiro.html). Sem isto elas fariam duas chamadas a toa.
+  function temCatalogo(){ return !!(document.querySelector('.barbers') || document.querySelector('.services')); }
+
+  function esc(s){ return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function aspas(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+  function ehExemplo(cont){
+    if (!cont) return false;
+    if (cont.getAttribute('data-aloco') === 'real') return false;
+    var t = (cont.textContent || '').toLowerCase();
+    for (var i=0;i<EXEMPLOS.length;i++) if (t.indexOf(EXEMPLOS[i]) >= 0) return true;
+    return false;
+  }
+
+  function vazio(cont, icone, texto){
+    if (!cont) return;
+    cont.setAttribute('data-aloco','real');
+    cont.innerHTML = '<div class="barber" style="opacity:.55;pointer-events:none">'
+      + '<div class="barber-ava">' + icone + '</div>'
+      + '<div><div class="barber-name">' + esc(texto) + '</div></div></div>';
+  }
+
+  function falhou(cont, oque){
+    if (!cont) return;
+    cont.setAttribute('data-aloco','erro');
+    cont.innerHTML =
+        '<div class="aloco-falhou" style="padding:16px;border:1px dashed rgba(255,255,255,.18);'
+      + 'border-radius:12px;text-align:center">'
+      + '<div style="font-size:13px;line-height:1.5;opacity:.85">Não foi possível carregar '
+      + esc(oque) + '. Tente novamente.</div>'
+      + '<button type="button" class="aloco-retentar" style="margin-top:10px;padding:9px 16px;'
+      + 'min-height:34px;border-radius:999px;border:1px solid currentColor;background:transparent;'
+      + 'color:inherit;font:inherit;font-size:13px;cursor:pointer">Tentar de novo</button>'
+      + '</div>';
+    var b = cont.querySelector('.aloco-retentar');
+    if (b) b.onclick = function(){ b.disabled = true; b.textContent = 'Carregando...'; carregar(); };
+  }
+
+  function pintarEquipe(lista){
+    var cont = document.querySelector('.barbers'); if (!cont) return;
+    if (!lista.length){ vazio(cont, '✂', 'Equipe em breve'); return; }
+    cont.setAttribute('data-aloco','real');
+    cont.innerHTML = lista.map(function(b){
+      var nome = String(b.nome || '').trim();
+      var ini  = (nome.charAt(0) || '?').toUpperCase();
+      return '<div class="barber" onclick="selectBarber(this,\'' + aspas(nome) + '\')">'
+           + '<div class="barber-ava">' + esc(ini) + '</div>'
+           + '<div><div class="barber-name">' + esc(nome) + '</div>'
+           + '<div class="barber-spec">' + esc(b.spec || 'Profissional') + '</div></div>'
+           + '<div class="barber-mark"></div></div>';
+    }).join('');
+  }
+
+  function pintarServicos(lista){
+    var cont = document.querySelector('.services'); if (!cont) return;
+    if (!lista.length){
+      cont.setAttribute('data-aloco','real');
+      cont.innerHTML = '<div class="svc" style="justify-content:center;opacity:.55;pointer-events:none">'
+                     + '<div class="svc-name">Serviços em breve</div></div>';
+      return;
+    }
+    cont.setAttribute('data-aloco','real');
+    window.DUR_SVC = window.DUR_SVC || {};
+    cont.innerHTML = lista.map(function(s){
+      var nome = String(s.nome || '').trim();
+      var preco = 'R$' + String(s.preco).replace('.', ',');
+      var dur = parseInt(s.duracao, 10) || 30;
+      window.DUR_SVC[nome] = dur;
+      return '<div class="svc" onclick="selectSvc(this,\'' + aspas(nome) + '\',\'' + aspas(preco) + '\')">'
+           + '<div><div class="svc-name">' + esc(nome) + '</div>'
+           + '<div class="svc-detail">' + dur + ' minutos</div></div>'
+           + '<div class="svc-price">' + esc(preco) + '</div>'
+           + '<div class="svc-sel-mark"></div></div>';
+    }).join('');
+  }
+
+  function buscar(acao){
+    return fetch(API + '?action=' + acao + '&b=' + encodeURIComponent(SLUG) + '&t=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (!j || !j.ok) throw new Error('resposta nao ok');
+        return Array.isArray(j.dados) ? j.dados : [];
+      });
+  }
+
+  function carregar(){
+    buscar('barbeiros')
+      .then(pintarEquipe)
+      .catch(function(){
+        // so apaga se o que esta na tela ainda for o exemplo do modelo;
+        // se o carregador do proprio app ja trouxe gente de verdade, deixa.
+        var cont = document.querySelector('.barbers');
+        if (ehExemplo(cont) || (cont && cont.getAttribute('data-aloco') === 'erro')) falhou(cont, 'a equipe');
+      });
+    buscar('servicos')
+      .then(pintarServicos)
+      .catch(function(){
+        var cont = document.querySelector('.services');
+        var equipe = document.querySelector('.barbers');
+        // se a equipe tambem falhou, o problema e a API: avisa aqui tambem.
+        if (cont && equipe && equipe.getAttribute('data-aloco') === 'erro'
+            && cont.getAttribute('data-aloco') !== 'real') falhou(cont, 'os serviços');
+      });
+  }
+
+  function comecar(){ if (temCatalogo()) carregar(); }
+  if (document.readyState !== 'loading') comecar();
+  else document.addEventListener('DOMContentLoaded', comecar);
 })();
