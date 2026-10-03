@@ -1,0 +1,85 @@
+# ALOCO — gera o Certificado de Reconhecimento de um cliente.
+#
+# Nao roda sozinho: o gerador (Apps Script) dispara este fluxo pela API do
+# GitHub quando termina de publicar o app. O certificado nasce em
+#   clientes/<slug>/certificado.jpg
+# e fica publico em
+#   https://app.aloco.com.br/clientes/<slug>/certificado.jpg
+#
+# Para testar na mao: aba Actions > Certificado do cliente > Run workflow.
+
+name: Certificado do cliente
+
+on:
+  repository_dispatch:
+    types: [certificado]
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Pasta do cliente (ex.: marcos-barber)'
+        required: true
+      nome:
+        description: 'Nome que aparece no certificado'
+        required: true
+      segmento:
+        description: 'barber ou beauty'
+        required: true
+        default: barber
+
+permissions:
+  contents: write
+
+concurrency:
+  group: certificado-${{ github.event.client_payload.slug || inputs.slug }}
+  cancel-in-progress: false
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ler o pedido
+        id: p
+        run: |
+          echo "slug=${{ github.event.client_payload.slug || inputs.slug }}"         >> $GITHUB_OUTPUT
+          echo "nome=${{ github.event.client_payload.nome || inputs.nome }}"         >> $GITHUB_OUTPUT
+          echo "seg=${{ github.event.client_payload.segmento || inputs.segmento }}"  >> $GITHUB_OUTPUT
+
+      - name: Conferir o pedido
+        run: |
+          set -e
+          SLUG='${{ steps.p.outputs.slug }}'
+          NOME='${{ steps.p.outputs.nome }}'
+          # slug so com letras, numeros e hifen: nao deixa escrever fora da pasta
+          echo "$SLUG" | grep -Eq '^[a-z0-9][a-z0-9-]{0,60}$' || { echo "slug invalido: $SLUG"; exit 1; }
+          [ -n "$NOME" ] || { echo "nome vazio"; exit 1; }
+          [ -d "clientes/$SLUG" ] || { echo "a pasta clientes/$SLUG nao existe"; exit 1; }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install --quiet pillow
+
+      - name: Gerar o certificado
+        run: |
+          python3 certificado/gerar.py \
+            '${{ steps.p.outputs.seg }}' \
+            '${{ steps.p.outputs.nome }}' \
+            'clientes/${{ steps.p.outputs.slug }}/certificado.jpg'
+          ls -lh 'clientes/${{ steps.p.outputs.slug }}/certificado.jpg'
+
+      - name: Publicar
+        run: |
+          git config user.name  'aloco-bot'
+          git config user.email 'aloco-bot@users.noreply.github.com'
+          git add 'clientes/${{ steps.p.outputs.slug }}/certificado.jpg'
+          git diff --cached --quiet && { echo 'nada mudou'; exit 0; }
+          git commit -m 'certificado de ${{ steps.p.outputs.nome }} (${{ steps.p.outputs.slug }})'
+          # outra geracao pode ter entrado no meio: rebase e tenta de novo
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            sleep 5
+          done
+          exit 1
