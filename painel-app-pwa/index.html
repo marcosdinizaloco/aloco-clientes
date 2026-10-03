@@ -746,11 +746,35 @@ body{
 ::-webkit-scrollbar-thumb:hover{background:var(--bd-strong)}
 
 /* ── RESPONSIVO ──────────────────────────────────────────────────── */
+/* botao do menu: so existe no celular */
+#navBt{display:none;flex:0 0 auto;width:36px;height:36px;margin-right:12px;
+  border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);
+  color:var(--tx-1);align-items:center;justify-content:center;padding:0;cursor:pointer}
+#navBt:active{background:rgba(255,255,255,.1)}
+#navBt svg{width:18px;height:18px}
+#navSombra{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8998;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+#navSombra.on{display:block}
+
 @media(max-width:768px){
-  .nav{display:none}
+  /* a barra lateral vira gaveta: mesmo menu do computador, nada duplicado */
+  .nav{
+    display:flex !important;
+    width:280px;max-width:84vw;
+    top:var(--hdr-h);bottom:0;min-height:0;height:auto;
+    transform:translateX(-102%);
+    transition:transform .22s cubic-bezier(.2,.9,.3,1);
+    z-index:8999;overflow:hidden;
+  }
+  .nav.aberta{transform:none}
+  .nav-links{flex:1 1 auto;min-height:0;overflow-y:auto}
+  .nav-ft{flex:0 0 auto}
+  #navBt{display:flex}
   .ct{margin-left:0;padding:var(--sp-5) var(--sp-4)}
   .mh{margin-bottom:var(--sp-5)}
   .HMETA{grid-template-columns:repeat(2,1fr)}
+  .hdr{padding:0 14px}
+  .hdr-pills .hdr-pill:not(.biz){display:none}
 }
 
 /* ╔══════════════════════════════════════════════════════════════╗
@@ -1999,6 +2023,9 @@ body{
 <body>
 
 <div class="hdr">
+  <button id="navBt" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="alcGaveta()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
   <div class="hdr-brand"><span class="hdr-ctx">Centro de Comando</span></div>
   <div class="hdr-pills">
     <div class="hdr-pill ia"><span class="hdr-pill-dot"></span>Ao vivo</div>
@@ -2030,6 +2057,33 @@ body{
     <div class="nav-ft-ver" style="margin-top:14px;text-align:center"><div style="font-weight:800;font-size:15px;letter-spacing:.08em;color:#c9ccd4">BARBER <span style="color:#3d7bff">IA</span></div><div style="font-size:8px;letter-spacing:.24em;color:#6a6a6a;text-transform:uppercase;margin-top:3px">Assistente Inteligente</div></div>
   </div>
 </nav>
+<div id="navSombra" onclick="alcGaveta(false)"></div>
+<script>
+/* ALOCO — menu no celular.
+   No computador nada muda. No celular a mesma barra lateral vira gaveta:
+   um menu so, sem copia, entao qualquer item novo aparece nos dois. */
+function alcGaveta(abrir){
+  var nv = document.querySelector('.nav');
+  var sb = document.getElementById('navSombra');
+  var bt = document.getElementById('navBt');
+  if (!nv || !sb) return;
+  var mostrar = (abrir === undefined) ? !nv.classList.contains('aberta') : !!abrir;
+  nv.classList.toggle('aberta', mostrar);
+  sb.classList.toggle('on', mostrar);
+  if (bt) bt.setAttribute('aria-expanded', mostrar ? 'true' : 'false');
+  document.body.style.overflow = mostrar ? 'hidden' : '';
+}
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest && ev.target.closest('.nav .nb');
+  if (b) alcGaveta(false);                 // escolheu uma tela: fecha a gaveta
+}, true);
+document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Escape') alcGaveta(false);
+});
+window.addEventListener('resize', function(){
+  if (window.innerWidth > 768) alcGaveta(false);
+});
+</script>
 
 <div class="ct" id="ct"></div>
 
