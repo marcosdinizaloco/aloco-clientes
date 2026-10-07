@@ -34,6 +34,87 @@
   'use strict';
   if (window._ALOCO_UI) return; window._ALOCO_UI = 1;
 
+
+  /* ══ 0. QUAL IA ══════════════════════════════════════════════════
+     BARBER IA (barbearia) e BEAUTY IA (salão) são o mesmo produto com
+     paletas diferentes. O painel já trocava as PALAVRAS pelo segmento —
+     "barbearia" vira "salão", "BARBER IA" vira "BEAUTY IA" — mas nunca
+     trocou a COR: o salão lia BEAUTY IA escrito em azul de tecnologia.
+
+     Aqui eu só marco <html data-ia="barber|beauty">. Quem pinta é o
+     ui.css. Leio a MESMA chave que o motor de segmento já grava, para
+     não inventar uma segunda fonte de verdade e as duas divergirem.
+
+     A marca entra antes da primeira pintura quando já se sabe quem é a
+     loja (segunda visita em diante). Na primeira, o segmento chega do
+     servidor alguns instantes depois — por isso fico olhando, e a troca
+     tem transição no CSS para assentar em vez de piscar. */
+
+  function quemSou(){
+    var b = '_';
+    try { b = (new URLSearchParams(location.search).get('b') || '_').toLowerCase(); } catch(e){}
+    if (b === '_'){
+      var m = String(location.pathname || '').match(/\/clientes\/([^\/]+)/);
+      if (m) b = String(m[1]).toLowerCase();
+    }
+    return b;
+  }
+
+  function segmento(){
+    try {
+      var u = new URLSearchParams(location.search).get('seg');
+      if (u) return String(u).toLowerCase();
+    } catch(e){}
+    try { if (window.__alocoSeg) return String(window.__alocoSeg).toLowerCase(); } catch(e){}
+    try { if (window.ALOCO_SEG)  return String(window.ALOCO_SEG).toLowerCase(); } catch(e){}
+    try {
+      var g = localStorage.getItem('aloco_seg_' + quemSou());
+      if (g) return String(g).toLowerCase();
+    } catch(e){}
+    return '';
+  }
+
+  var IA_ATUAL = null, ARTE_PEDIDA = false;
+
+  /* o conjunto de icones do salao e um arquivo a parte, e so o salao o
+     baixa. Injeto o script e, quando ele chega, troco so o src de cada
+     icone — repintar a Home perderia o estado do botao de avisos. */
+  function trazerArteBeauty(){
+    if (ARTE_PEDIDA) return; ARTE_PEDIDA = true;
+    try {
+      if (window.ALOCO_ART_BEAUTY){ avisarArte(); return; }
+      var v = '';
+      var meu = document.querySelector('script[src*="ui.js"]');
+      if (meu){ var m = /\?v=([^"&]+)/.exec(meu.getAttribute('src') || ''); if (m) v = '?v=' + m[1]; }
+      var e = document.createElement('script');
+      e.src = '/painel-app-pwa/arte-beauty.js' + v;
+      e.async = true;
+      e.onload = avisarArte;
+      document.head.appendChild(e);
+    } catch(err){}
+  }
+  function avisarArte(){
+    try { if (typeof window.ALOCO_TROCAR_ARTE === 'function') window.ALOCO_TROCAR_ARTE(); } catch(e){}
+    setTimeout(function(){
+      try { if (typeof window.ALOCO_TROCAR_ARTE === 'function') window.ALOCO_TROCAR_ARTE(); } catch(e){}
+    }, 600);
+  }
+
+  function marcarIA(){
+    var s = segmento();
+    s = (s === 'beauty') ? 'beauty' : 'barber';
+    if (s === IA_ATUAL) return;
+    IA_ATUAL = s;
+    try { document.documentElement.setAttribute('data-ia', s); } catch(e){}
+    if (s === 'beauty') trazerArteBeauty();
+  }
+  marcarIA();
+  /* o segmento pode chegar do servidor depois; paro de olhar em 30s */
+  (function(){
+    var n = 0;
+    var t = setInterval(function(){ marcarIA(); if (++n > 60) clearInterval(t); }, 500);
+  })();
+
   /* ══ 1. CABECALHO ════════════════════════════════════════════════ */
 
   var TELA = null;             /* nome da tela em que a pessoa esta */

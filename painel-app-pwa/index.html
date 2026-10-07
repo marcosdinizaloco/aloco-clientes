@@ -1839,14 +1839,14 @@ body{
     ['Barbeiro pref.', 'Profissional pref.'],
     ['Barber IA', 'Beauty IA'],
 
-    // artigos: o portugues muda o genero junto
+    // artigos: o portugues muda o genero junto.
+    // ATENCAO: estas trocas sao de TEXTO SOLTO, sem fronteira de palavra.
+    // "a barbearia" casava dentro de "sua barbearia" e o painel do salao
+    // escrevia "suo salao". "minha barbearia" virava "minho salao". Por
+    // isso as formas com artigo colado agora sao expressoes com \b, la
+    // embaixo em PALAVRAS, e aqui ficam so as frases inteiras.
     ['da sua barbearia', 'do seu salão'], ['na sua barbearia', 'no seu salão'],
     ['a sua barbearia', 'o seu salão'],   ['A sua barbearia', 'O seu salão'],
-    ['pela barbearia', 'pelo salão'],     ['Pela barbearia', 'Pelo salão'],
-    ['da barbearia', 'do salão'],         ['Da barbearia', 'Do salão'],
-    ['na barbearia', 'no salão'],         ['Na barbearia', 'No salão'],
-    ['à barbearia', 'ao salão'],          ['À barbearia', 'Ao salão'],
-    ['a barbearia', 'o salão'],           ['A barbearia', 'O salão'],
     ['seu barbeiro', 'sua profissional'], ['Seu barbeiro', 'Sua profissional'],
     ['dos barbeiros', 'das profissionais'], ['Dos barbeiros', 'Das profissionais'],
     ['os barbeiros', 'as profissionais'], ['Os barbeiros', 'As profissionais'],
@@ -1858,6 +1858,24 @@ body{
 
   // ── palavras soltas, preservando maiuscula ──────────────────────────
   var PALAVRAS = [
+    /* artigo + barbearia, com fronteira dos dois lados. Tem que vir ANTES
+       da regra solta de "barbearia", senao ela troca a palavra e o artigo
+       fica no feminino. */
+    [/\bda sua barbearia\b/g, 'do seu salão'], [/\bDa sua barbearia\b/g, 'Do seu salão'],
+    [/\bna sua barbearia\b/g, 'no seu salão'], [/\bNa sua barbearia\b/g, 'No seu salão'],
+    [/\bsua barbearia\b/g, 'seu salão'],       [/\bSua barbearia\b/g, 'Seu salão'],
+    [/\bminha barbearia\b/g, 'meu salão'],     [/\bMinha barbearia\b/g, 'Meu salão'],
+    [/\bnossa barbearia\b/g, 'nosso salão'],   [/\bNossa barbearia\b/g, 'Nosso salão'],
+    [/\bdesta barbearia\b/g, 'deste salão'],   [/\bDesta barbearia\b/g, 'Deste salão'],
+    [/\bessa barbearia\b/g, 'esse salão'],     [/\bEssa barbearia\b/g, 'Esse salão'],
+    [/\besta barbearia\b/g, 'este salão'],     [/\bEsta barbearia\b/g, 'Este salão'],
+    [/\buma barbearia\b/g, 'um salão'],        [/\bUma barbearia\b/g, 'Um salão'],
+    [/\bpela barbearia\b/g, 'pelo salão'],     [/\bPela barbearia\b/g, 'Pelo salão'],
+    [/\bda barbearia\b/g, 'do salão'],         [/\bDa barbearia\b/g, 'Do salão'],
+    [/\bna barbearia\b/g, 'no salão'],         [/\bNa barbearia\b/g, 'No salão'],
+    [/\bà barbearia\b/g, 'ao salão'],          [/\bÀ barbearia\b/g, 'Ao salão'],
+    [/\ba barbearia\b/g, 'o salão'],           [/\bA barbearia\b/g, 'O salão'],
+
     [/\bbarbearias\b/g, 'salões'], [/\bBarbearias\b/g, 'Salões'], [/\bBARBEARIAS\b/g, 'SALÕES'],
     [/\bbarbearia\b/g, 'salão'],   [/\bBarbearia\b/g, 'Salão'],   [/\bBARBEARIA\b/g, 'SALÃO'],
     [/\bbarbeiros\b/g, 'profissionais'], [/\bBarbeiros\b/g, 'Profissionais'], [/\bBARBEIROS\b/g, 'PROFISSIONAIS'],
@@ -2019,7 +2037,7 @@ body{
   }
 })();
 /* FIM SEGMENTO */</script>
-<script src="/painel-app-pwa/ui.js?v=20261007d"></script>
+<script src="/painel-app-pwa/ui.js?v=20261007e"></script>
 </head>
 <body>
 
@@ -6702,8 +6720,8 @@ window.onload = function(){
 }
 
 </style>
-<link rel="stylesheet" href="/painel-app-pwa/ui.css?v=20261007d">
-   <script src="/painel-app-pwa/home-apps.js?v=20261007d" defer></script>
-<script src="/painel-app-pwa/ia-voz.js?v=20261007d" defer></script>
+<link rel="stylesheet" href="/painel-app-pwa/ui.css?v=20261007e">
+   <script src="/painel-app-pwa/home-apps.js?v=20261007e" defer></script>
+<script src="/painel-app-pwa/ia-voz.js?v=20261007e" defer></script>
 </body>
 </html>
