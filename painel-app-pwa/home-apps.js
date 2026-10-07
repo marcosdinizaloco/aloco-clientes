@@ -4,22 +4,17 @@
    Para desligar: apague a linha que carrega este arquivo no index.html
    ══════════════════════════════════════════════════════════════════ */
 /* ══════════════════════════════════════════════════════════════════════
-   ALOCO — Home de aplicativos. SOMENTE CELULAR.
+   ALOCO — Home de aplicativos do painel. SOMENTE CELULAR.
 
-   Por que existe: no celular o menu fica escondido atras do botao de
-   gaveta, e quem tem 65 anos nao acha. Esta Home poe os aplicativos na
-   cara, do jeito que o telefone ja ensinou a pessoa a usar.
+   O que este arquivo faz, e so isso:
+     1. corrige a area segura do iPhone no cabecalho que ja existe
+     2. poe a Home de aplicativos no lugar da Central, so em tela estreita
+     3. garante que a saudacao apareca sem ninguem precisar rolar
+     4. acrescenta o acesso ao BARBER IA abaixo de Outros
 
-   O que faz:
-     · so liga em tela estreita. No computador, nada muda.
-     · nao reescreve nada: embrulha o ldHome que ja existe.
-     · os icones chamam o ir() que ja existe. Nenhuma rota nova.
-     · le as telas DO PROPRIO MENU, entao telas injetadas depois
-       (Horarios, Fila, Pacotes) entram sozinhas.
-     · os tres numeros vem do mesmo getDadosHome que a Central usa.
-     · dentro de qualquer tela, poe um "Voltar" no topo.
-
-   Para desfazer: apague este bloco.
+   O que NAO faz: nao reescreve nada do painel. Embrulha o ldHome e o ir
+   que ja existem, do mesmo jeito que Horarios, Fila e Pacotes foram
+   acrescentados. Para desligar, apague a linha que carrega este arquivo.
    ══════════════════════════════════════════════════════════════════════ */
 (function(){
   if (window.__alocoHomeApps) return;
@@ -46,7 +41,6 @@ var ART={
 };
 
 
-  /* nome na Home → como o item aparece no menu lateral (pedaco basta) */
   var GRANDES = [
     ['agenda',   'Agenda',   'agd',  'Agenda'],
     ['caixa',    'Caixa',    'cx',   'Caixa'],
@@ -56,7 +50,6 @@ var ART={
   var PEQUENOS = [
     ['barbeiros',  'Profissionais', 'barb', 'Profissional'],
     ['servicos',   'Serviços',      'svc',  'Serviço'],
-    ['fila',       'Fila',          null,   'Fila'],
     ['horarios',   'Horários',      null,   'Horário'],
     ['pacotes',    'Pacotes',       null,   'Pacote'],
     ['relatorios', 'Financeiro',    'fin',  'Financeiro'],
@@ -68,14 +61,10 @@ var ART={
     var l = [];
     try {
       var ns = document.querySelectorAll('.nav-links .nb, .nav .nb, button.nb');
-      for (var i = 0; i < ns.length; i++){
-        var b = ns[i];
-        l.push({ el: b, txt: (b.textContent || '').trim() });
-      }
+      for (var i = 0; i < ns.length; i++) l.push({ el: ns[i], txt: (ns[i].textContent || '').trim() });
     } catch(e){}
     return l;
   }
-  /* item escondido no menu (ex.: Equipe, so para o dono) nao vira icone */
   function visivel(el){
     try { return !!(el.offsetParent || (el.getClientRects && el.getClientRects().length)); }
     catch(e){ return true; }
@@ -99,7 +88,75 @@ var ART={
   }
   function existe(id, rotulo){ return !!acharBotao(id, rotulo); }
 
-  /* ── os tres numeros: mesma fonte da Central de Controle ──────────── */
+  /* ══ 1. A AREA SEGURA DO IPHONE ═══════════════════════════════════
+     O cabecalho e do painel, nao meu, e eu nao conheco o nome da classe
+     dele. Entao acho pelo botao da gaveta e subo ate o primeiro pai
+     preso no topo. Assim vale para qualquer resolucao e nao quebra se
+     o HTML mudar. */
+  function acharCabecalho(){
+    var bt = document.getElementById('navBt')
+          || document.querySelector('[aria-expanded][aria-controls]')
+          || document.querySelector('[aria-expanded]');
+    if (!bt){
+      var bs = document.querySelectorAll('button,a');
+      for (var i = 0; i < bs.length; i++){
+        var t = (bs[i].textContent || '').trim();
+        if (t === '☰' || t === '≡'){ bt = bs[i]; break; }
+      }
+    }
+    if (!bt) return null;
+    var el = bt;
+    while (el && el !== document.body){
+      var cs;
+      try { cs = getComputedStyle(el); } catch(e){ break; }
+      if ((cs.position === 'fixed' || cs.position === 'sticky')
+          && el.getBoundingClientRect().top < 140)
+        return { el: el, preso: cs.position === 'fixed' };
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  var CAB = null;
+  function medirCabecalho(){
+    if (!CAB || !CAB.el) return;
+    try {
+      var h = Math.round(CAB.el.getBoundingClientRect().height);
+      if (h > 0){
+        document.documentElement.style.setProperty('--alcHdrH', h + 'px');
+        /* o painel usa --hdr-h para calcular a altura do menu lateral */
+        var atual = getComputedStyle(document.documentElement).getPropertyValue('--hdr-h');
+        if (atual && parseInt(atual, 10) !== h)
+          document.documentElement.style.setProperty('--hdr-h', h + 'px');
+      }
+    } catch(e){}
+  }
+  var SAFE = 'var(--alc-safe, env(safe-area-inset-top, 0px))';
+  function ajustarCabecalho(){
+    if (!celular()) return;
+    if (!CAB) CAB = acharCabecalho();
+    if (!CAB){ document.body.classList.add('alcSemCab'); return; }
+    if (!CAB.el.classList.contains('alcCab')){
+      /* mede a altura ANTES de mexer, e devolve ela como minimo somado a
+         area segura. Assim o conteudo do cabecalho nao e esmagado, e a
+         conta vale em qualquer aparelho, nao so no deste print. */
+      var h0 = Math.round(CAB.el.getBoundingClientRect().height) || 52;
+      CAB.el.classList.add('alcCab');
+      try {
+        var st = CAB.el.style;
+        st.setProperty('box-sizing', 'border-box', 'important');
+        st.setProperty('height', 'auto', 'important');
+        st.setProperty('padding-top', 'calc(' + SAFE + ' + 6px)', 'important');
+        st.setProperty('min-height', 'calc(' + h0 + 'px + ' + SAFE + ' + 6px)', 'important');
+      } catch(e){}
+    }
+    if (CAB.preso) document.body.classList.add('alcCabPreso');
+    medirCabecalho();
+    setTimeout(medirCabecalho, 120);
+    setTimeout(medirCabecalho, 600);
+  }
+
+  /* ══ 2. OS TRES NUMEROS ═══════════════════════════════════════════ */
   var NUM = { atend: null, comandas: null, caixa: null };
   function dinheiro(v){
     var n = Number(v);
@@ -130,16 +187,58 @@ var ART={
       if (!window.google || !google.script || !google.script.run) return depois();
       if (typeof google.script.run.getDadosHome !== 'function') return depois();
       google.script.run
-        .withSuccessHandler(function(r){
-          try { if (r && r.ok) lerNumeros(r.dados); } catch(e){}
-          depois();
-        })
+        .withSuccessHandler(function(r){ try { if (r && r.ok) lerNumeros(r.dados); } catch(e){} depois(); })
         .withFailureHandler(function(){ depois(); })
         .getDadosHome({ data: new Date().toISOString() });
     } catch(e){ depois(); }
   }
 
-  /* ── o desenho ────────────────────────────────────────────────────── */
+  /* ══ 3. O BARBER IA ═══════════════════════════════════════════════
+     Nao invento endpoint. Procuro o acesso que o painel ja tem
+     (#alcAssLink, no rodape do menu). Se existir, o botao clica nele.
+     Se nao existir, fica o ponto de integracao preparado:
+         window.ALOCO_IA_ABRIR = function(){ ... }
+     e ate alguem definir isso, o botao avisa em vez de fingir. */
+  function acharIA(){
+    var el = document.getElementById('alcAssLink');
+    if (el && visivel(el)) return el;
+    var cs = document.querySelectorAll('a,button');
+    for (var i = 0; i < cs.length; i++){
+      var t = (cs[i].textContent || '').toLowerCase();
+      if (/barber\s*ia|beauty\s*ia|assistente\s*inteligente/.test(t) && visivel(cs[i])) return cs[i];
+    }
+    return null;
+  }
+  function abrirIA(){
+    if (typeof window.ALOCO_IA_ABRIR === 'function'){
+      try { window.ALOCO_IA_ABRIR(); return; } catch(e){}
+    }
+    var el = acharIA();
+    if (el){ try { el.click(); return; } catch(e){} }
+    if (typeof window.toast === 'function') window.toast('BARBER IA chega em breve nesta tela.', 'ok');
+    else alert('BARBER IA chega em breve nesta tela.');
+  }
+  var ONDA =
+    '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">' +
+      '<defs>' +
+        '<linearGradient id="alcIaF" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0" stop-color="#15233A"/><stop offset=".55" stop-color="#0A1222"/>' +
+          '<stop offset="1" stop-color="#05080F"/></linearGradient>' +
+        '<linearGradient id="alcIaT" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#9FD4FF"/><stop offset="1" stop-color="#0A6AD8"/></linearGradient>' +
+      '</defs>' +
+      '<rect width="64" height="64" rx="18" fill="url(#alcIaF)"/>' +
+      '<rect x="1" y="1" width="62" height="62" rx="17.5" fill="none" ' +
+        'stroke="#2A9BFF" stroke-opacity=".3"/>' +
+      '<g fill="url(#alcIaT)">' +
+        '<rect x="14" y="27" width="5" height="10" rx="2.5"/>' +
+        '<rect x="23" y="21" width="5" height="22" rx="2.5"/>' +
+        '<rect x="32" y="15" width="5" height="34" rx="2.5"/>' +
+        '<rect x="41" y="23" width="5" height="18" rx="2.5"/>' +
+        '<rect x="50" y="29" width="5" height="6"  rx="2.5"/>' +
+      '</g></svg>';
+
+  /* ══ 4. O DESENHO ═════════════════════════════════════════════════ */
   function saudacao(){
     var h = new Date().getHours();
     return h < 12 ? 'Bom dia' : (h < 18 ? 'Boa tarde' : 'Boa noite');
@@ -152,7 +251,6 @@ var ART={
     return String(s === null || s === undefined ? '—' : s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
   function app(linha, grande){
     var k = linha[0], nome = linha[1], tela = linha[2], rotulo = linha[3];
     if (!existe(tela, rotulo)) return '';
@@ -166,30 +264,42 @@ var ART={
     var h = '<div class="alcHome">';
     h += '<div class="alcOla"><h1>' + tapar(saudacao()) +
          (nomeLoja() ? ', <em>' + tapar(nomeLoja()) + '</em>' : '') + '</h1></div>';
-
     h += '<div class="alcDia">' +
          '<div><b id="alcN1">' + tapar(NUM.atend) + '</b><span>ATENDIMENTOS</span></div>' +
          '<div><b id="alcN2" class="az">' + tapar(NUM.comandas) + '</b><span>COMANDAS ABERTAS</span></div>' +
          '<div><b id="alcN3" class="vd">' + tapar(NUM.caixa) + '</b><span>NO CAIXA</span></div>' +
          '</div>';
-
     var g = GRANDES.map(function(x){ return app(x, true); }).join('');
     var p = PEQUENOS.map(function(x){ return app(x, false); }).join('');
-    if (g){ h += '<div class="alcSec"><h2>Aplicativos</h2><i></i></div><div class="alcQ">' + g + '</div>'; }
-    if (p){ h += '<div class="alcSec"><h2>Outros</h2><i></i></div><div class="alcO">' + p + '</div>'; }
+    if (g) h += '<div class="alcSec"><h2>Aplicativos</h2><i></i></div><div class="alcQ">' + g + '</div>';
+    if (p) h += '<div class="alcSec"><h2>Outros</h2><i></i></div><div class="alcO">' + p + '</div>';
+
+    h += '<button class="alcIA" id="alcIaBt" type="button">' +
+           '<span class="alcIaIc">' + ONDA + '</span>' +
+           '<span class="alcIaTx"><b>BARBER IA</b><span>Seu assistente inteligente</span></span>' +
+           '<span class="alcIaSeta">&#8250;</span>' +
+         '</button>';
     h += '</div>';
     ct.innerHTML = h;
 
     var bs = ct.querySelectorAll('.alcAp');
     for (var i = 0; i < bs.length; i++){
       bs[i].addEventListener('click', function(){
-        var t = this.getAttribute('data-tela') || null;
-        abrir(t, this.getAttribute('data-rot'));
+        abrir(this.getAttribute('data-tela') || null, this.getAttribute('data-rot'));
       });
     }
+    var bi = ct.querySelector('#alcIaBt');
+    if (bi) bi.addEventListener('click', abrirIA);
+
+    /* a saudacao tem que estar na primeira tela, sem ninguem rolar */
+    try {
+      window.scrollTo(0, 0);
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+      ct.scrollTop = 0;
+    } catch(e){}
+    medirCabecalho();
   }
 
-  /* ── o Voltar que aparece dentro das outras telas ─────────────────── */
   function voltar(ct){
     if (!ct || ct.querySelector('.alcVoltar')) return;
     var b = document.createElement('button');
@@ -200,33 +310,40 @@ var ART={
     ct.insertBefore(b, ct.firstChild);
   }
 
-  /* ── o estilo ─────────────────────────────────────────────────────── */
+  /* ══ 5. O ESTILO ══════════════════════════════════════════════════
+     --alc-safe existe so para o teste conseguir simular o iPhone.
+     No aparelho de verdade ela nao esta definida e vale o env(). */
   function estilo(){
     if (document.getElementById('alcHomeCss')) return;
+    var SAFEB = 'var(--alc-safe-b, env(safe-area-inset-bottom, 0px))';
     var s = document.createElement('style');
     s.id = 'alcHomeCss';
     s.textContent =
       '@media (max-width:' + LARGURA + 'px){' +
-      '.alcHome{padding:4px 2px 40px}' +
-      '.alcOla{padding:6px 2px 18px}' +
-      '.alcOla h1{font-size:26px;font-weight:800;letter-spacing:-.8px;line-height:1.15;margin:0}' +
+      /* ── area segura: o cabecalho desce para baixo do relogio ── */
+      'body.alcSemCab{padding-top:' + SAFE + ' !important}' +
+      'body.alcCabPreso #ct{padding-top:calc(var(--alcHdrH,56px) + 8px) !important}' +
+      /* ── a Home ── */
+      '.alcHome{padding:0 2px calc(36px + ' + SAFEB + ')}' +
+      '.alcOla{padding:2px 2px 14px}' +
+      '.alcOla h1{font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.15;margin:0}' +
       '.alcOla h1 em{font-style:normal;opacity:.45}' +
       '.alcDia{display:flex;border:1px solid rgba(255,255,255,.09);border-radius:18px;' +
-        'overflow:hidden;margin-bottom:26px;background:rgba(255,255,255,.03)}' +
-      '.alcDia div{flex:1;padding:13px 8px;text-align:center;position:relative}' +
+        'overflow:hidden;margin-bottom:22px;background:rgba(255,255,255,.03)}' +
+      '.alcDia div{flex:1;padding:12px 8px;text-align:center;position:relative}' +
       '.alcDia div+div:before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:1px;' +
         'background:rgba(255,255,255,.09)}' +
       '.alcDia b{display:block;font-size:19px;font-weight:800;letter-spacing:-.6px;line-height:1.1;' +
         'font-variant-numeric:tabular-nums}' +
-      '.alcDia span{display:block;font-size:10.5px;opacity:.6;margin-top:5px;letter-spacing:.3px}' +
+      '.alcDia span{display:block;font-size:10.5px;opacity:.6;margin-top:4px;letter-spacing:.3px}' +
       '.alcDia .az{color:#5FACFF}.alcDia .vd{color:#25D366}' +
-      '.alcSec{display:flex;align-items:baseline;gap:10px;margin:0 2px 14px}' +
+      '.alcSec{display:flex;align-items:baseline;gap:10px;margin:0 2px 13px}' +
       '.alcSec h2{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;' +
         'opacity:.42;margin:0}' +
       '.alcSec i{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.12),transparent)}' +
-      '.alcQ{display:grid;grid-template-columns:1fr 1fr;gap:20px 14px;margin-bottom:30px}' +
-      '.alcO{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px}' +
-      '.alcAp{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;' +
+      '.alcQ{display:grid;grid-template-columns:1fr 1fr;gap:18px 14px;margin-bottom:26px}' +
+      '.alcO{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;margin-bottom:26px}' +
+      '.alcAp{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;' +
         'background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;' +
         'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
       '.alcAp:active{transform:scale(.9)}' +
@@ -237,7 +354,27 @@ var ART={
       '.alcSq img{display:block;width:100%;height:100%}' +
       '.alcNm{font-size:13px;font-weight:650;letter-spacing:-.15px;text-align:center;line-height:1.18}' +
       '.alcAp.g .alcNm{font-size:17px;font-weight:700;letter-spacing:-.25px}' +
-      '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 18px;' +
+      /* ── o BARBER IA ── */
+      '.alcIA{display:flex;align-items:center;gap:15px;width:100%;min-height:98px;' +
+        'padding:16px 18px;border-radius:24px;cursor:pointer;color:inherit;font:inherit;' +
+        'text-align:left;position:relative;overflow:hidden;' +
+        'background:linear-gradient(135deg,rgba(10,132,255,.14),rgba(10,132,255,.03) 56%,transparent),' +
+        'linear-gradient(#07090E,#07090E);' +
+        'border:1px solid rgba(42,155,255,.3);' +
+        'box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 14px 30px -22px rgba(10,132,255,.8);' +
+        'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
+      '.alcIA:active{transform:scale(.985)}' +
+      '.alcIA:before{content:"";position:absolute;right:-40px;top:-60px;width:170px;height:170px;' +
+        'border-radius:50%;pointer-events:none;' +
+        'background:radial-gradient(circle,rgba(10,132,255,.16),transparent 68%)}' +
+      '.alcIaIc{position:relative;flex:0 0 auto;width:62px;height:62px}' +
+      '.alcIaIc svg{display:block;width:100%;height:100%}' +
+      '.alcIaTx{position:relative;flex:1;min-width:0}' +
+      '.alcIaTx b{display:block;font-size:19px;font-weight:800;letter-spacing:.4px}' +
+      '.alcIaTx span{display:block;font-size:13.5px;opacity:.64;margin-top:4px}' +
+      '.alcIaSeta{position:relative;flex:0 0 auto;font-size:26px;line-height:1;color:#5FACFF;opacity:.8}' +
+      /* ── Voltar ── */
+      '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 16px;' +
         'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);' +
         'border-radius:16px;padding:14px 16px;font-size:16px;font-weight:700;text-align:left;' +
         'color:inherit;cursor:pointer}' +
@@ -247,17 +384,19 @@ var ART={
     document.head.appendChild(s);
   }
 
-  /* ── o embrulho: nao reescreve o ldHome, so acrescenta ────────────── */
+  /* ══ 6. O EMBRULHO ════════════════════════════════════════════════ */
   function alvo(){ return document.getElementById('ct'); }
 
   function ligar(){
     if (typeof window.ldHome !== 'function') return false;
     estilo();
+    ajustarCabecalho();
 
     var original = window.ldHome;
     window.ldHome = function(){
       var r;
-      try { r = original.apply(this, arguments); } catch(e){ try{ console.error('[aloco home]', e); }catch(x){} }
+      try { r = original.apply(this, arguments); }
+      catch(e){ try { console.error('[aloco home]', e); } catch(x){} }
       if (!celular()) return r;
       var ct = alvo();
       if (!ct) return r;
@@ -274,21 +413,22 @@ var ART={
       return r;
     };
 
-    /* Voltar dentro das outras telas */
     if (typeof window.ir === 'function'){
       var irOriginal = window.ir;
       window.ir = function(tela, btn){
         var r = irOriginal.apply(this, arguments);
         try {
-          if (celular() && tela && tela !== 'home'){
-            setTimeout(function(){ voltar(alvo()); }, 0);
-          }
+          if (celular() && tela && tela !== 'home') setTimeout(function(){ voltar(alvo()); }, 0);
         } catch(e){}
         return r;
       };
     }
 
-    /* se ja estamos na Home quando o bloco carrega, redesenha */
+    try {
+      window.addEventListener('resize', function(){ ajustarCabecalho(); medirCabecalho(); });
+      window.addEventListener('orientationchange', function(){ setTimeout(medirCabecalho, 300); });
+    } catch(e){}
+
     try {
       if (celular() && alvo() && document.querySelector('.CMD')) window.ldHome();
     } catch(e){}
@@ -297,8 +437,6 @@ var ART={
 
   if (!ligar()){
     var tentou = 0;
-    var t = setInterval(function(){
-      if (ligar() || ++tentou > 40) clearInterval(t);
-    }, 150);
+    var t = setInterval(function(){ if (ligar() || ++tentou > 40) clearInterval(t); }, 150);
   }
 })();
