@@ -217,6 +217,35 @@ var ART={
     alert(m);
   }
 
+  /* icones dos tres indicadores — traço fino, azul, sem preenchimento */
+  function _ic(d){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+           'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" ' +
+           'aria-hidden="true">' + d + '</svg>';
+  }
+  var IC_PESSOAS = _ic('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/>' +
+                       '<path d="M16.5 6.4a3 3 0 0 1 0 5.2"/><path d="M17.5 14.4A5 5 0 0 1 20.5 19"/>');
+  var IC_LISTA   = _ic('<rect x="5" y="3" width="14" height="18" rx="2.4"/>' +
+                       '<path d="M9 8h6M9 12h6M9 16h3.5"/>');
+  var IC_CIFRAO  = _ic('<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2v9.6"/>' +
+                       '<path d="M14.4 9.6a2.4 2.4 0 0 0-2.4-1.5c-1.4 0-2.4.8-2.4 1.9 0 2.6 4.9 1.4 4.9 4 0 1.2-1.1 2-2.5 2a2.5 2.5 0 0 1-2.5-1.6"/>');
+
+  /* fundo de ondas do bloco BARBER IA — duas curvas largas, bem apagadas */
+  var ONDA_FUNDO =
+    '<svg class="alcIaFundo" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">' +
+      '<defs><linearGradient id="alcIaW" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#2A9BFF" stop-opacity="0"/>' +
+        '<stop offset=".45" stop-color="#2A9BFF" stop-opacity=".75"/>' +
+        '<stop offset="1" stop-color="#8FD0FF" stop-opacity=".2"/>' +
+      '</linearGradient></defs>' +
+      '<path d="M0 86 C70 52 130 104 200 76 C268 50 330 92 400 66" ' +
+        'fill="none" stroke="url(#alcIaW)" stroke-width="1.5"/>' +
+      '<path d="M0 100 C80 70 140 116 210 90 C280 66 340 104 400 82" ' +
+        'fill="none" stroke="url(#alcIaW)" stroke-width="1" opacity=".55"/>' +
+      '<path d="M0 70 C90 40 150 86 220 60 C290 36 345 74 400 50" ' +
+        'fill="none" stroke="url(#alcIaW)" stroke-width=".8" opacity=".35"/>' +
+    '</svg>';
+
   var ONDA =
     '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">' +
       '<defs>' +
@@ -247,9 +276,15 @@ var ART={
     '</svg>';
 
   /* ══ 4. O DESENHO ═════════════════════════════════════════════════ */
+  /* faixas definidas pelo Marcos:
+       06:00-11:59  Bom dia
+       12:00-18:59  Boa tarde
+       19:00-05:59  Boa noite   (atravessa a meia-noite) */
   function saudacao(){
     var h = new Date().getHours();
-    return h < 12 ? 'Bom dia' : (h < 18 ? 'Boa tarde' : 'Boa noite');
+    if (h >= 6  && h < 12) return 'Bom dia';
+    if (h >= 12 && h < 19) return 'Boa tarde';
+    return 'Boa noite';
   }
   function nomeLoja(){
     try { if (window.ALOCO && ALOCO.NOME) return ALOCO.NOME; } catch(e){}
@@ -273,16 +308,26 @@ var ART={
     h += '<div class="alcOla"><h1>' + tapar(saudacao()) +
          (nomeLoja() ? ', <em>' + tapar(nomeLoja()) + '</em>' : '') + '</h1></div>';
     h += '<div class="alcDia">' +
-         '<div><b id="alcN1">' + tapar(NUM.atend) + '</b><span>ATENDIMENTOS</span></div>' +
-         '<div><b id="alcN2" class="az">' + tapar(NUM.comandas) + '</b><span>COMANDAS ABERTAS</span></div>' +
-         '<div><b id="alcN3" class="vd">' + tapar(NUM.caixa) + '</b><span>NO CAIXA</span></div>' +
+         '<div><i class="alcDiaIc">' + IC_PESSOAS + '</i>' +
+           '<b id="alcN1">' + tapar(NUM.atend) + '</b>' +
+           '<u>ATENDIMENTOS</u><s class="b1"></s></div>' +
+         '<div><i class="alcDiaIc">' + IC_LISTA + '</i>' +
+           '<b id="alcN2" class="az">' + tapar(NUM.comandas) + '</b>' +
+           '<u>COMANDAS ABERTAS</u><s class="b2"></s></div>' +
+         '<div><i class="alcDiaIc">' + IC_CIFRAO + '</i>' +
+           '<b id="alcN3" class="vd">' + tapar(NUM.caixa) + '</b>' +
+           '<u>NO CAIXA</u><s class="b3"></s></div>' +
          '</div>';
     h += '<div class="alcGrade">' + APPS.map(app).join('') + '</div>';
 
-    h += '<button class="alcIA" id="alcIaBt" type="button">' +
-           '<span class="alcIaIc">' + ONDA + '</span>' +
-           '<span class="alcIaTx"><b>BARBER IA</b>' +
-             '<span>Pergunte por áudio sobre sua barbearia</span></span>' +
+    h += '<button class="alcIA" id="alcIaBt" type="button" ' +
+           'aria-label="Barber IA: perguntar por audio">' +
+           ONDA_FUNDO +
+           '<span class="alcIaAro"><span class="alcIaIc">' + ONDA + '</span></span>' +
+           '<span class="alcIaTx">' +
+             '<em>&#8212; BARBER IA</em>' +
+             '<b>BARBER <span class="alcIaAz">IA</span></b>' +
+             '<span class="alcIaSub">Pergunte por áudio<br>sobre sua barbearia</span></span>' +
            '<span class="alcIaSeta">&#8250;</span>' +
          '</button>';
     h += '</div>';
@@ -345,12 +390,38 @@ var ART={
     if (!home) return;
     var k = 1;
     home.style.setProperty('--alcK', '1');
+    var encolheu = false;
     for (var i = 0; i < 20; i++){
       var sobra = document.documentElement.scrollHeight - window.innerHeight;
       if (sobra <= 1) break;
+      encolheu = true;
       k = Math.round((k - 0.03) * 1000) / 1000;
       if (k <= 0.66){ home.style.setProperty('--alcK', '0.66'); break; }
       home.style.setProperty('--alcK', String(k));
+    }
+
+    /* Se NAO precisou encolher, sobrou tela vazia embaixo. Em telefone
+       grande isso deixava uns 200px de preto morto depois do BARBER IA.
+       Entao cresce, ate encostar no fim da tela. Teto de 1.14 de
+       proposito: passando disso os icones ficam infantis e a Home deixa
+       de parecer tela de iPhone. */
+    if (!encolheu){
+      /* nao da para medir pelo scrollHeight: ele nunca fica menor que a
+         tela. Mede pelo fim do ultimo bloco ate o pe da tela. */
+      var fim = home.querySelector('.alcIA') || home.lastElementChild;
+      for (var j = 0; j < 14 && fim; j++){
+        var folga = window.innerHeight - fim.getBoundingClientRect().bottom;
+        if (folga <= 26) break;
+        var kk = Math.round((k + 0.02) * 1000) / 1000;
+        if (kk > 1.14) break;
+        k = kk;
+        home.style.setProperty('--alcK', String(k));
+        if (document.documentElement.scrollHeight - window.innerHeight > 1){
+          k = Math.round((k - 0.02) * 1000) / 1000;   /* passou: volta um degrau */
+          home.style.setProperty('--alcK', String(k));
+          break;
+        }
+      }
     }
     /* se ainda sobrar, o que sai e ESPACO VAZIO no rodape, nunca conteudo.
        Respeitando a faixa do gesto de casa do iPhone. */
@@ -397,17 +468,39 @@ var ART={
       '.alcOla{padding:0 2px calc(12px * var(--alcK))}' +
       '.alcOla h1{font-size:max(20px, calc(25px * var(--alcK)));font-weight:800;letter-spacing:-.8px;' +
         'line-height:1.15;margin:0}' +
-      '.alcOla h1 em{font-style:normal;opacity:.45}' +
+      '.alcOla h1 em{font-style:normal;color:#2A9BFF}' +
       '.alcDia{display:flex;border:1px solid rgba(255,255,255,.09);' +
         'border-radius:calc(18px * var(--alcK));overflow:hidden;' +
-        'margin-bottom:calc(20px * var(--alcK));background:rgba(255,255,255,.03)}' +
-      '.alcDia div{flex:1;padding:calc(11px * var(--alcK)) 6px;text-align:center;position:relative}' +
-      '.alcDia div+div:before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:1px;' +
+        'margin-bottom:calc(18px * var(--alcK));' +
+        'background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018))}' +
+      '.alcDia div{flex:1;min-width:0;position:relative;text-align:center;' +
+        'display:flex;flex-direction:column;align-items:center;' +
+        'padding:calc(10px * var(--alcK)) calc(5px * var(--alcK)) calc(9px * var(--alcK))}' +
+      '.alcDia div+div:before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1px;' +
         'background:rgba(255,255,255,.09)}' +
-      '.alcDia b{display:block;font-size:max(16px, calc(19px * var(--alcK)));font-weight:800;' +
-        'letter-spacing:-.6px;line-height:1.1;font-variant-numeric:tabular-nums}' +
-      '.alcDia span{display:block;font-size:max(9.5px, calc(10.5px * var(--alcK)));opacity:.6;' +
-        'margin-top:3px;letter-spacing:.3px;line-height:1.25}' +
+      '.alcDia b{display:block;font-size:max(16px, calc(20px * var(--alcK)));font-weight:800;' +
+        'letter-spacing:-.6px;line-height:1.05;font-variant-numeric:tabular-nums}' +
+      /* duas linhas reservadas sempre: "COMANDAS ABERTAS" quebra e, sem
+         isso, a barrinha dela descia e as tres ficavam desalinhadas. */
+      '.alcDia u{display:block;text-decoration:none;' +
+        'font-size:max(8.5px, calc(9.5px * var(--alcK)));opacity:.52;' +
+        'margin-top:calc(3px * var(--alcK));letter-spacing:.04em;line-height:1.2;' +
+        'min-height:calc(2 * 1.2em)}' +
+      /* a linha colorida embaixo diz, sem palavra, que numero e aquele */
+      '.alcDia s{display:block;height:2px;border-radius:2px;text-decoration:none;' +
+        'width:calc(30px * var(--alcK));margin:calc(6px * var(--alcK)) auto 0;margin-top:auto}' +
+      '.alcDia s.b1{background:#2A9BFF}' +
+      '.alcDia s.b2{background:#E8A33D}' +
+      '.alcDia s.b3{background:#25D366}' +
+      /* o icone fica NA LINHA do numero, nao por cima: com "R$ 840" o
+         posicionamento absoluto colidia com o texto. */
+      '.alcDiaIc{order:-1;flex:0 0 auto;' +
+        'width:calc(22px * var(--alcK));height:calc(22px * var(--alcK));' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'border-radius:7px;color:#5FACFF;opacity:.6;' +
+        'margin-bottom:calc(6px * var(--alcK));' +
+        'background:rgba(42,155,255,.09);border:1px solid rgba(42,155,255,.18)}' +
+      '.alcDiaIc svg{width:62%;height:62%}' +
       '.alcDia .az{color:#5FACFF}.alcDia .vd{color:#25D366}' +
       /* ── UMA grade: 3 colunas, 10 aplicativos, o decimo centrado ── */
       '.alcGrade{display:grid;grid-template-columns:repeat(3,1fr);' +
@@ -433,26 +526,49 @@ var ART={
         'text-align:center;line-height:1.16}' +
       '.alcAp.g .alcNm{font-size:max(12px, calc(14px * var(--alcK)));font-weight:700;letter-spacing:-.2px}' +
       /* ── o BARBER IA ── */
-      '.alcIA{display:flex;align-items:center;gap:calc(14px * var(--alcK));width:100%;' +
-        'min-height:calc(104px * var(--alcK));' +
-        'padding:calc(14px * var(--alcK)) 16px;border-radius:calc(22px * var(--alcK));' +
+      /* Este bloco nao e mais um aplicativo da grade: e o diferencial do
+         produto. Por isso tem mais altura, aro luminoso no microfone e
+         um fundo proprio de ondas. O brilho e contido de proposito —
+         pedido explicito: glow moderado, nao exagerado. */
+      '.alcIA{display:flex;align-items:center;gap:calc(15px * var(--alcK));width:100%;' +
+        'min-height:calc(118px * var(--alcK));' +
+        'padding:calc(15px * var(--alcK)) calc(16px * var(--alcK));' +
+        'border-radius:calc(24px * var(--alcK));' +
         'cursor:pointer;color:inherit;font:inherit;' +
         'text-align:left;position:relative;overflow:hidden;' +
-        'background:linear-gradient(135deg,rgba(10,132,255,.14),rgba(10,132,255,.03) 56%,transparent),' +
-        'linear-gradient(#07090E,#07090E);' +
-        'border:1px solid rgba(42,155,255,.3);' +
-        'box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 14px 30px -22px rgba(10,132,255,.8);' +
+        'background:linear-gradient(118deg,rgba(10,132,255,.2),rgba(10,132,255,.045) 52%,transparent 78%),' +
+        'linear-gradient(#070A10,#05070C);' +
+        'border:1px solid rgba(42,155,255,.38);' +
+        'box-shadow:inset 0 1px 0 rgba(255,255,255,.08),' +
+        ' 0 0 0 1px rgba(42,155,255,.06),' +
+        ' 0 18px 38px -24px rgba(10,132,255,.9);' +
         'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
       '.alcIA:active{transform:scale(.985)}' +
-      '.alcIA:before{content:"";position:absolute;right:-40px;top:-60px;width:170px;height:170px;' +
-        'border-radius:50%;pointer-events:none;' +
-        'background:radial-gradient(circle,rgba(10,132,255,.16),transparent 68%)}' +
-      '.alcIaIc{position:relative;flex:0 0 auto;width:calc(58px * var(--alcK));height:calc(58px * var(--alcK))}' +
+      '.alcIaFundo{position:absolute;inset:auto 0 calc(-12px * var(--alcK)) 0;width:100%;' +
+        'height:calc(58px * var(--alcK));pointer-events:none;opacity:.5;' +
+        '-webkit-mask-image:linear-gradient(90deg,transparent,#000 28%,#000);' +
+        'mask-image:linear-gradient(90deg,transparent,#000 28%,#000)}' +
+      /* o aro: dois circulos de luz em volta do microfone */
+      '.alcIaAro{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;' +
+        'width:calc(74px * var(--alcK));height:calc(74px * var(--alcK));border-radius:50%;' +
+        'background:radial-gradient(circle,rgba(10,132,255,.28),rgba(10,132,255,.05) 62%,transparent 72%);' +
+        'box-shadow:0 0 0 1px rgba(42,155,255,.34), 0 0 22px -4px rgba(42,155,255,.45)}' +
+      '.alcIaAro:before{content:"";position:absolute;inset:calc(-5px * var(--alcK));' +
+        'border-radius:50%;border:1px solid rgba(42,155,255,.16)}' +
+      '.alcIaIc{position:relative;display:block;' +
+        'width:calc(58px * var(--alcK));height:calc(58px * var(--alcK))}' +
       '.alcIaIc svg{display:block;width:100%;height:100%}' +
       '.alcIaTx{position:relative;flex:1;min-width:0}' +
-      '.alcIaTx b{display:block;font-size:max(16px, calc(18px * var(--alcK)));font-weight:800;letter-spacing:.4px}' +
-      '.alcIaTx span{display:block;font-size:max(11.5px, calc(12.5px * var(--alcK)));opacity:.64;margin-top:3px;line-height:1.3}' +
-      '.alcIaSeta{position:relative;flex:0 0 auto;font-size:calc(24px * var(--alcK));line-height:1;color:#5FACFF;opacity:.8}' +
+      '.alcIaTx em{display:block;font-style:normal;' +
+        'font-size:max(9px, calc(10px * var(--alcK)));letter-spacing:.22em;' +
+        'color:rgba(237,240,245,.42);margin-bottom:calc(3px * var(--alcK))}' +
+      '.alcIaTx b{display:block;font-size:max(20px, calc(25px * var(--alcK)));' +
+        'font-weight:800;letter-spacing:-.3px;line-height:1}' +
+      '.alcIaAz{color:#2A9BFF}' +
+      '.alcIaSub{display:block;font-size:max(11px, calc(12.5px * var(--alcK)));' +
+        'opacity:.6;margin-top:calc(5px * var(--alcK));line-height:1.28}' +
+      '.alcIaSeta{position:relative;flex:0 0 auto;font-size:calc(26px * var(--alcK));' +
+        'line-height:1;color:#5FACFF;opacity:.75}' +
       /* ── Voltar ── */
       '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 16px;' +
         'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);' +
