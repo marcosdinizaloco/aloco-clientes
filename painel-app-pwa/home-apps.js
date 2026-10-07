@@ -197,32 +197,26 @@ var ART={
   }
 
   /* ══ 3. O BARBER IA ═══════════════════════════════════════════════
-     Nao invento endpoint. Procuro o acesso que o painel ja tem
-     (#alcAssLink, no rodape do menu). Se existir, o botao clica nele.
-     Se nao existir, fica o ponto de integracao preparado:
+     O ponto de integracao e UM SO, e e declarado:
          window.ALOCO_IA_ABRIR = function(){ ... }
-     e ate alguem definir isso, o botao avisa em vez de fingir. */
-  function acharIA(){
-    var el = document.getElementById('alcAssLink');
-    if (el && visivel(el)) return el;
-    var cs = document.querySelectorAll('a,button');
-    for (var i = 0; i < cs.length; i++){
-      var t = (cs[i].textContent || '').toLowerCase();
-      if (/barber\s*ia|beauty\s*ia|assistente\s*inteligente/.test(t) && visivel(cs[i])) return cs[i];
-    }
-    return null;
-  }
+     Enquanto ninguem definir isso, o botao avisa. Nunca navega. */
+  /* ATENCAO — nao adivinhar nada aqui.
+     Eu tinha ligado este botao no #alcAssLink, achando que "Ass" era
+     ASSISTENTE. E ASSINATURA: o link de cobranca. O botao mandava o
+     barbeiro para a pagina de pagamento no meio dos 15 dias de teste.
+     Agora o botao NAO navega para lugar nenhum. Ele chama o ponto de
+     integracao quando existir, e enquanto nao existir, avisa. */
   function abrirIA(){
     if (typeof window.ALOCO_IA_ABRIR === 'function'){
-      try { window.ALOCO_IA_ABRIR(); return; } catch(e){}
+      try { window.ALOCO_IA_ABRIR(); return; } catch(e){
+        try { console.error('[aloco ia]', e); } catch(x){}
+      }
     }
-    var el = acharIA();
-    if (el){ try { el.click(); return; } catch(e){} }
-    if (typeof window.toast === 'function') window.toast('BARBER IA chega em breve nesta tela.', 'ok');
-    else alert('BARBER IA chega em breve nesta tela.');
+    var m = 'BARBER IA está sendo preparado. Em breve você vai poder falar com ele aqui.';
+    try { if (typeof window.toast === 'function'){ window.toast(m, 'ok'); return; } } catch(e){}
+    alert(m);
   }
-  /* microfone com ondas de audio. Azul eletrico, sem emoji, sem robo.
-     Traco grosso o bastante para ler em 62px. */
+
   var ONDA =
     '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">' +
       '<defs>' +
