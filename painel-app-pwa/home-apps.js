@@ -218,6 +218,8 @@ var ART={
     if (typeof window.toast === 'function') window.toast('BARBER IA chega em breve nesta tela.', 'ok');
     else alert('BARBER IA chega em breve nesta tela.');
   }
+  /* microfone com ondas de audio. Azul eletrico, sem emoji, sem robo.
+     Traco grosso o bastante para ler em 62px. */
   var ONDA =
     '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">' +
       '<defs>' +
@@ -225,18 +227,27 @@ var ART={
           '<stop offset="0" stop-color="#15233A"/><stop offset=".55" stop-color="#0A1222"/>' +
           '<stop offset="1" stop-color="#05080F"/></linearGradient>' +
         '<linearGradient id="alcIaT" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0" stop-color="#9FD4FF"/><stop offset="1" stop-color="#0A6AD8"/></linearGradient>' +
+          '<stop offset="0" stop-color="#BFE2FF"/><stop offset=".45" stop-color="#2A9BFF"/>' +
+          '<stop offset="1" stop-color="#0A5FC8"/></linearGradient>' +
       '</defs>' +
       '<rect width="64" height="64" rx="18" fill="url(#alcIaF)"/>' +
       '<rect x="1" y="1" width="62" height="62" rx="17.5" fill="none" ' +
         'stroke="#2A9BFF" stroke-opacity=".3"/>' +
-      '<g fill="url(#alcIaT)">' +
-        '<rect x="14" y="27" width="5" height="10" rx="2.5"/>' +
-        '<rect x="23" y="21" width="5" height="22" rx="2.5"/>' +
-        '<rect x="32" y="15" width="5" height="34" rx="2.5"/>' +
-        '<rect x="41" y="23" width="5" height="18" rx="2.5"/>' +
-        '<rect x="50" y="29" width="5" height="6"  rx="2.5"/>' +
-      '</g></svg>';
+      /* ondas de audio dos dois lados */
+      '<g fill="none" stroke="#5FACFF" stroke-width="2.9" stroke-linecap="round" opacity=".68">' +
+        '<path d="M13 25a16 16 0 0 0 0 15"/>' +
+        '<path d="M51 25a16 16 0 0 1 0 15"/>' +
+      '</g>' +
+      /* suporte, haste e base */
+      '<g fill="none" stroke="url(#alcIaT)" stroke-width="3.6" stroke-linecap="round">' +
+        '<path d="M21 30v2a11 11 0 0 0 22 0v-2"/>' +
+        '<path d="M32 44v6"/>' +
+        '<path d="M25 50h14"/>' +
+      '</g>' +
+      /* a capsula do microfone */
+      '<rect x="25" y="12" width="14" height="25" rx="7" fill="url(#alcIaT)"/>' +
+      '<rect x="28" y="15" width="3.4" height="13" rx="1.7" fill="#FFFFFF" opacity=".5"/>' +
+    '</svg>';
 
   /* ══ 4. O DESENHO ═════════════════════════════════════════════════ */
   function saudacao(){
@@ -276,7 +287,8 @@ var ART={
 
     h += '<button class="alcIA" id="alcIaBt" type="button">' +
            '<span class="alcIaIc">' + ONDA + '</span>' +
-           '<span class="alcIaTx"><b>BARBER IA</b><span>Seu assistente inteligente</span></span>' +
+           '<span class="alcIaTx"><b>BARBER IA</b>' +
+             '<span>Pergunte por áudio sobre sua barbearia</span></span>' +
            '<span class="alcIaSeta">&#8250;</span>' +
          '</button>';
     h += '</div>';
@@ -298,6 +310,32 @@ var ART={
       ct.scrollTop = 0;
     } catch(e){}
     medirCabecalho();
+    encaixar();
+    setTimeout(encaixar, 60);
+    setTimeout(encaixar, 400);
+  }
+
+  /* O painel usa --hdr-h TAMBEM no padding do conteudo. Como eu preciso
+     atualizar essa variavel para a gaveta ficar na altura certa, o espaco
+     passou a contar duas vezes. Em vez de chutar um valor, eu meco onde a
+     saudacao caiu e acerto o padding ate o vao ser VAO px. Autocorrige em
+     qualquer aparelho. */
+  var VAO = 24;
+  function encaixar(){
+    if (!celular()) return;
+    var ct = alvo();
+    if (!ct) return;
+    var ola = ct.querySelector('.alcOla h1');
+    if (!ola) return;
+    var base = 0;
+    try { if (CAB && CAB.el && CAB.preso) base = CAB.el.getBoundingClientRect().bottom; } catch(e){}
+    for (var i = 0; i < 3; i++){
+      var topo = ola.getBoundingClientRect().top;
+      var erro = topo - (base + VAO);
+      if (Math.abs(erro) < 1.5) break;
+      var atual = parseFloat(getComputedStyle(ct).paddingTop) || 0;
+      ct.style.setProperty('padding-top', Math.max(0, Math.round(atual - erro)) + 'px', 'important');
+    }
   }
 
   function voltar(ct){
@@ -322,7 +360,7 @@ var ART={
       '@media (max-width:' + LARGURA + 'px){' +
       /* ── area segura: o cabecalho desce para baixo do relogio ── */
       'body.alcSemCab{padding-top:' + SAFE + ' !important}' +
-      'body.alcCabPreso #ct{padding-top:calc(var(--alcHdrH,56px) + 8px) !important}' +
+
       /* ── a Home ── */
       '.alcHome{padding:0 2px calc(36px + ' + SAFEB + ')}' +
       '.alcOla{padding:2px 2px 14px}' +
@@ -371,7 +409,7 @@ var ART={
       '.alcIaIc svg{display:block;width:100%;height:100%}' +
       '.alcIaTx{position:relative;flex:1;min-width:0}' +
       '.alcIaTx b{display:block;font-size:19px;font-weight:800;letter-spacing:.4px}' +
-      '.alcIaTx span{display:block;font-size:13.5px;opacity:.64;margin-top:4px}' +
+      '.alcIaTx span{display:block;font-size:12.5px;opacity:.64;margin-top:4px;line-height:1.3}' +
       '.alcIaSeta{position:relative;flex:0 0 auto;font-size:26px;line-height:1;color:#5FACFF;opacity:.8}' +
       /* ── Voltar ── */
       '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 16px;' +
@@ -425,8 +463,9 @@ var ART={
     }
 
     try {
-      window.addEventListener('resize', function(){ ajustarCabecalho(); medirCabecalho(); });
-      window.addEventListener('orientationchange', function(){ setTimeout(medirCabecalho, 300); });
+      window.addEventListener('resize', function(){ ajustarCabecalho(); medirCabecalho(); encaixar(); });
+      window.addEventListener('orientationchange', function(){
+        setTimeout(function(){ medirCabecalho(); encaixar(); }, 300); });
     } catch(e){}
 
     try {
