@@ -41,19 +41,19 @@ var ART={
 };
 
 
-  var GRANDES = [
-    ['agenda',   'Agenda',   'agd',  'Agenda'],
-    ['caixa',    'Caixa',    'cx',   'Caixa'],
-    ['clientes', 'Clientes', 'cli',  'Clientes'],
-    ['comandas', 'Comandas', 'cx',   'Caixa']
-  ];
-  var PEQUENOS = [
-    ['barbeiros',  'Profissionais', 'barb', 'Profissional'],
-    ['servicos',   'Serviços',      'svc',  'Serviço'],
-    ['horarios',   'Horários',      null,   'Horário'],
-    ['pacotes',    'Pacotes',       null,   'Pacote'],
-    ['relatorios', 'Financeiro',    'fin',  'Financeiro'],
-    ['ajustes',    'Ajustes',       'eq',   'Equipe']
+  /* UMA grade de 10, 3+3+3+1. Os quatro primeiros sao os principais e
+     ficam 20% maiores. Nada de titulo de secao. */
+  var APPS = [
+    ['agenda',     'Agenda',        'agd',  'Agenda',       1],
+    ['caixa',      'Caixa',         'cx',   'Caixa',        1],
+    ['clientes',   'Clientes',      'cli',  'Clientes',     1],
+    ['comandas',   'Comandas',      'cx',   'Caixa',        1],
+    ['barbeiros',  'Profissionais', 'barb', 'Profissional', 0],
+    ['servicos',   'Serviços',      'svc',  'Serviço',      0],
+    ['horarios',   'Horários',      null,   'Horário',      0],
+    ['pacotes',    'Pacotes',       null,   'Pacote',       0],
+    ['relatorios', 'Financeiro',    'fin',  'Financeiro',   0],
+    ['ajustes',    'Ajustes',       'eq',   'Equipe',       0]
   ];
 
   /* ── achar o botao do menu que corresponde a cada aplicativo ──────── */
@@ -86,7 +86,10 @@ var ART={
     if (id && typeof window.ir === 'function'){ try { window.ir(id, b || null); return true; } catch(e){} }
     return false;
   }
-  function existe(id, rotulo){ return !!acharBotao(id, rotulo); }
+  /* NAO existe mais gate na pintura. O menu lateral e montado por outro
+     script que roda depois do meu: se eu esperasse por ele, a grade
+     aparecia incompleta e completava sozinha segundos depois. Era esse o
+     bug. Agora pinto os dez de uma vez e resolvo a rota no toque. */
 
   /* ══ 1. A AREA SEGURA DO IPHONE ═══════════════════════════════════
      O cabecalho e do painel, nao meu, e eu nao conheco o nome da classe
@@ -262,12 +265,12 @@ var ART={
     return String(s === null || s === undefined ? '—' : s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function app(linha, grande){
-    var k = linha[0], nome = linha[1], tela = linha[2], rotulo = linha[3];
-    if (!existe(tela, rotulo)) return '';
+  function app(linha){
+    var k = linha[0], nome = linha[1], tela = linha[2], rotulo = linha[3], grande = linha[4];
     return '<button class="alcAp' + (grande ? ' g' : '') + '" data-tela="' + tapar(tela || '') +
            '" data-rot="' + tapar(rotulo) + '" type="button">' +
-           '<span class="alcSq"><img alt="" src="' + ART[k] + '"></span>' +
+           '<span class="alcSq"><img alt="" src="' + ART[k] + '" ' +
+             'decoding="sync" loading="eager"></span>' +
            '<span class="alcNm">' + tapar(nome) + '</span></button>';
   }
 
@@ -280,10 +283,7 @@ var ART={
          '<div><b id="alcN2" class="az">' + tapar(NUM.comandas) + '</b><span>COMANDAS ABERTAS</span></div>' +
          '<div><b id="alcN3" class="vd">' + tapar(NUM.caixa) + '</b><span>NO CAIXA</span></div>' +
          '</div>';
-    var g = GRANDES.map(function(x){ return app(x, true); }).join('');
-    var p = PEQUENOS.map(function(x){ return app(x, false); }).join('');
-    if (g) h += '<div class="alcSec"><h2>Aplicativos</h2><i></i></div><div class="alcQ">' + g + '</div>';
-    if (p) h += '<div class="alcSec"><h2>Outros</h2><i></i></div><div class="alcO">' + p + '</div>';
+    h += '<div class="alcGrade">' + APPS.map(app).join('') + '</div>';
 
     h += '<button class="alcIA" id="alcIaBt" type="button">' +
            '<span class="alcIaIc">' + ONDA + '</span>' +
@@ -311,8 +311,9 @@ var ART={
     } catch(e){}
     medirCabecalho();
     encaixar();
-    setTimeout(encaixar, 60);
-    setTimeout(encaixar, 400);
+    caber();
+    setTimeout(function(){ encaixar(); caber(); }, 60);
+    setTimeout(function(){ encaixar(); caber(); }, 400);
   }
 
   /* O painel usa --hdr-h TAMBEM no padding do conteudo. Como eu preciso
@@ -320,7 +321,7 @@ var ART={
      passou a contar duas vezes. Em vez de chutar um valor, eu meco onde a
      saudacao caiu e acerto o padding ate o vao ser VAO px. Autocorrige em
      qualquer aparelho. */
-  var VAO = 24;
+  function vao(){ return (window.innerHeight || 800) < 700 ? 20 : 24; }
   function encaixar(){
     if (!celular()) return;
     var ct = alvo();
@@ -331,10 +332,46 @@ var ART={
     try { if (CAB && CAB.el && CAB.preso) base = CAB.el.getBoundingClientRect().bottom; } catch(e){}
     for (var i = 0; i < 3; i++){
       var topo = ola.getBoundingClientRect().top;
-      var erro = topo - (base + VAO);
+      var erro = topo - (base + vao());
       if (Math.abs(erro) < 1.5) break;
       var atual = parseFloat(getComputedStyle(ct).paddingTop) || 0;
       ct.style.setProperty('padding-top', Math.max(0, Math.round(atual - erro)) + 'px', 'important');
+    }
+  }
+
+  /* A Home tem que caber no iPhone sem rolagem, do SE de 568 ao Pro Max
+     de 932. Em vez de chutar tamanhos para um aparelho, eu meco a sobra e
+     encolho a escala em passos de 3% ate caber. Sem overflow:hidden, sem
+     esconder nada: o que muda e o tamanho, e proporcionalmente. */
+  function caber(){
+    if (!celular()) return;
+    var ct = alvo();
+    if (!ct) return;
+    var home = ct.querySelector('.alcHome');
+    if (!home) return;
+    var k = 1;
+    home.style.setProperty('--alcK', '1');
+    for (var i = 0; i < 20; i++){
+      var sobra = document.documentElement.scrollHeight - window.innerHeight;
+      if (sobra <= 1) break;
+      k = Math.round((k - 0.03) * 1000) / 1000;
+      if (k <= 0.66){ home.style.setProperty('--alcK', '0.66'); break; }
+      home.style.setProperty('--alcK', String(k));
+    }
+    /* se ainda sobrar, o que sai e ESPACO VAZIO no rodape, nunca conteudo.
+       Respeitando a faixa do gesto de casa do iPhone. */
+    var resto = document.documentElement.scrollHeight - window.innerHeight;
+    if (resto > 1){
+      var pb = parseFloat(getComputedStyle(home).paddingBottom) || 0;
+      var piso = 0;
+      try {
+        var m = document.createElement('div');
+        m.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px)';
+        document.body.appendChild(m);
+        piso = m.getBoundingClientRect().height || 0;
+        document.body.removeChild(m);
+      } catch(e){}
+      home.style.setProperty('padding-bottom', Math.max(piso, pb - resto) + 'px', 'important');
     }
   }
 
@@ -362,39 +399,50 @@ var ART={
       'body.alcSemCab{padding-top:' + SAFE + ' !important}' +
 
       /* ── a Home ── */
-      '.alcHome{padding:0 2px calc(36px + ' + SAFEB + ')}' +
-      '.alcOla{padding:2px 2px 14px}' +
-      '.alcOla h1{font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.15;margin:0}' +
+      '.alcHome{--alcK:1;padding:0 2px calc(12px + ' + SAFEB + ')}' +
+      '.alcOla{padding:0 2px calc(12px * var(--alcK))}' +
+      '.alcOla h1{font-size:max(20px, calc(25px * var(--alcK)));font-weight:800;letter-spacing:-.8px;' +
+        'line-height:1.15;margin:0}' +
       '.alcOla h1 em{font-style:normal;opacity:.45}' +
-      '.alcDia{display:flex;border:1px solid rgba(255,255,255,.09);border-radius:18px;' +
-        'overflow:hidden;margin-bottom:22px;background:rgba(255,255,255,.03)}' +
-      '.alcDia div{flex:1;padding:12px 8px;text-align:center;position:relative}' +
+      '.alcDia{display:flex;border:1px solid rgba(255,255,255,.09);' +
+        'border-radius:calc(18px * var(--alcK));overflow:hidden;' +
+        'margin-bottom:calc(20px * var(--alcK));background:rgba(255,255,255,.03)}' +
+      '.alcDia div{flex:1;padding:calc(11px * var(--alcK)) 6px;text-align:center;position:relative}' +
       '.alcDia div+div:before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:1px;' +
         'background:rgba(255,255,255,.09)}' +
-      '.alcDia b{display:block;font-size:19px;font-weight:800;letter-spacing:-.6px;line-height:1.1;' +
-        'font-variant-numeric:tabular-nums}' +
-      '.alcDia span{display:block;font-size:10.5px;opacity:.6;margin-top:4px;letter-spacing:.3px}' +
+      '.alcDia b{display:block;font-size:max(16px, calc(19px * var(--alcK)));font-weight:800;' +
+        'letter-spacing:-.6px;line-height:1.1;font-variant-numeric:tabular-nums}' +
+      '.alcDia span{display:block;font-size:max(9.5px, calc(10.5px * var(--alcK)));opacity:.6;' +
+        'margin-top:3px;letter-spacing:.3px;line-height:1.25}' +
       '.alcDia .az{color:#5FACFF}.alcDia .vd{color:#25D366}' +
-      '.alcSec{display:flex;align-items:baseline;gap:10px;margin:0 2px 13px}' +
-      '.alcSec h2{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;' +
-        'opacity:.42;margin:0}' +
-      '.alcSec i{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.12),transparent)}' +
-      '.alcQ{display:grid;grid-template-columns:1fr 1fr;gap:18px 14px;margin-bottom:26px}' +
-      '.alcO{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;margin-bottom:26px}' +
-      '.alcAp{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;' +
-        'background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;' +
+      /* ── UMA grade: 3 colunas, 10 aplicativos, o decimo centrado ── */
+      '.alcGrade{display:grid;grid-template-columns:repeat(3,1fr);' +
+        'gap:calc(13px * var(--alcK)) 8px;margin-bottom:calc(16px * var(--alcK))}' +
+      '.alcGrade .alcAp:nth-child(10){grid-column:2}' +
+      /* so a linha 2 mistura tamanhos: os dois vizinhos do Comandas descem
+         os 12px da diferenca, para o nome ficar na mesma altura. Margem,
+         nao elemento: assim nao entra no gap e nao muda a altura da grade. */
+      '.alcGrade .alcAp:nth-child(5) .alcSq,.alcGrade .alcAp:nth-child(6) .alcSq'
+        + '{margin-top:calc(12px * var(--alcK))}' +
+      '.alcAp{display:flex;flex-direction:column;align-items:center;' +
+        'gap:calc(8px * var(--alcK));width:100%;background:none;border:0;padding:0;' +
+        'cursor:pointer;color:inherit;font:inherit;' +
         'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
       '.alcAp:active{transform:scale(.9)}' +
-      '.alcSq{display:block;width:62px;height:62px;border-radius:30%;flex:0 0 auto;' +
+      '.alcSq{display:block;width:calc(60px * var(--alcK));height:calc(60px * var(--alcK));' +
+        'border-radius:28%;flex:0 0 auto;' +
         'box-shadow:0 8px 16px -10px rgba(0,0,0,.85), 0 0 16px -5px rgba(10,132,255,.3)}' +
-      '.alcAp.g .alcSq{width:104px;height:104px;border-radius:28%;' +
-        'box-shadow:0 10px 22px -12px rgba(0,0,0,.85), 0 0 24px -6px rgba(10,132,255,.38)}' +
+      '.alcAp.g .alcSq{width:calc(72px * var(--alcK));height:calc(72px * var(--alcK));' +
+        'box-shadow:0 10px 20px -12px rgba(0,0,0,.85), 0 0 22px -6px rgba(10,132,255,.38)}' +
       '.alcSq img{display:block;width:100%;height:100%}' +
-      '.alcNm{font-size:13px;font-weight:650;letter-spacing:-.15px;text-align:center;line-height:1.18}' +
-      '.alcAp.g .alcNm{font-size:17px;font-weight:700;letter-spacing:-.25px}' +
+      '.alcNm{font-size:max(10.5px, calc(12px * var(--alcK)));font-weight:650;letter-spacing:-.1px;' +
+        'text-align:center;line-height:1.16}' +
+      '.alcAp.g .alcNm{font-size:max(12px, calc(14px * var(--alcK)));font-weight:700;letter-spacing:-.2px}' +
       /* ── o BARBER IA ── */
-      '.alcIA{display:flex;align-items:center;gap:15px;width:100%;min-height:98px;' +
-        'padding:16px 18px;border-radius:24px;cursor:pointer;color:inherit;font:inherit;' +
+      '.alcIA{display:flex;align-items:center;gap:calc(14px * var(--alcK));width:100%;' +
+        'min-height:calc(104px * var(--alcK));' +
+        'padding:calc(14px * var(--alcK)) 16px;border-radius:calc(22px * var(--alcK));' +
+        'cursor:pointer;color:inherit;font:inherit;' +
         'text-align:left;position:relative;overflow:hidden;' +
         'background:linear-gradient(135deg,rgba(10,132,255,.14),rgba(10,132,255,.03) 56%,transparent),' +
         'linear-gradient(#07090E,#07090E);' +
@@ -405,12 +453,12 @@ var ART={
       '.alcIA:before{content:"";position:absolute;right:-40px;top:-60px;width:170px;height:170px;' +
         'border-radius:50%;pointer-events:none;' +
         'background:radial-gradient(circle,rgba(10,132,255,.16),transparent 68%)}' +
-      '.alcIaIc{position:relative;flex:0 0 auto;width:62px;height:62px}' +
+      '.alcIaIc{position:relative;flex:0 0 auto;width:calc(58px * var(--alcK));height:calc(58px * var(--alcK))}' +
       '.alcIaIc svg{display:block;width:100%;height:100%}' +
       '.alcIaTx{position:relative;flex:1;min-width:0}' +
-      '.alcIaTx b{display:block;font-size:19px;font-weight:800;letter-spacing:.4px}' +
-      '.alcIaTx span{display:block;font-size:12.5px;opacity:.64;margin-top:4px;line-height:1.3}' +
-      '.alcIaSeta{position:relative;flex:0 0 auto;font-size:26px;line-height:1;color:#5FACFF;opacity:.8}' +
+      '.alcIaTx b{display:block;font-size:max(16px, calc(18px * var(--alcK)));font-weight:800;letter-spacing:.4px}' +
+      '.alcIaTx span{display:block;font-size:max(11.5px, calc(12.5px * var(--alcK)));opacity:.64;margin-top:3px;line-height:1.3}' +
+      '.alcIaSeta{position:relative;flex:0 0 auto;font-size:calc(24px * var(--alcK));line-height:1;color:#5FACFF;opacity:.8}' +
       /* ── Voltar ── */
       '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 16px;' +
         'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);' +
@@ -463,9 +511,10 @@ var ART={
     }
 
     try {
-      window.addEventListener('resize', function(){ ajustarCabecalho(); medirCabecalho(); encaixar(); });
+      window.addEventListener('resize', function(){
+        ajustarCabecalho(); medirCabecalho(); encaixar(); caber(); });
       window.addEventListener('orientationchange', function(){
-        setTimeout(function(){ medirCabecalho(); encaixar(); }, 300); });
+        setTimeout(function(){ medirCabecalho(); encaixar(); caber(); }, 300); });
     } catch(e){}
 
     try {
