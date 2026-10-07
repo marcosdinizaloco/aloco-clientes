@@ -1,152 +1,297 @@
 /* ══════════════════════════════════════════════════════════════════════
-   BARBER IA — CAMADA VISUAL COMPARTILHADA
+   BARBER IA — DESIGN SYSTEM DO PAINEL
 
-   Este arquivo NAO cria tela, NAO muda estrutura e NAO toca em logica.
-   Ele so afina o que ja existe, para que toda tela interna pareca a
-   mesma coisa que a Home.
+   Uma camada. Nao cria tela, nao muda estrutura, nao toca em logica.
+   Tudo que define a identidade mora aqui e some tirando uma linha.
 
-   Por que uma camada e nao edicao espalhada: o index.html tem 106 KB de
-   CSS em 6 blocos. Mexer la dentro multiplicaria o risco por nada. Aqui
-   tudo que padroniza a identidade fica em UM lugar, e some tirando uma
-   linha se der errado.
+   POR QUE UMA CAMADA, E NAO EDICAO ESPALHADA
+   O index.html tem 108 KB de CSS em 6 blocos. Ele JA TEM um sistema de
+   tokens no :root (--r-sm, --r-lg, --sp-4, --tx-1...). O problema nunca
+   foi falta de sistema: foi que metade das telas escrevia valor na mao
+   em vez de usar o token. Entao o primeiro movimento daqui e REDEFINIR
+   os tokens que ja existem — isso conserta de uma vez toda regra que
+   ja os usava — e so depois alcancar, classe por classe, as que
+   escreveram valor fixo.
 
-   O QUE A AUDITORIA ENCONTROU, e o que cada parte daqui conserta:
-     1. .btn-primary era CREME (#EDEAE6) com texto preto. A acao
-        principal da Home e azul eletrico. Viravam dois produtos.
-     2. Raio de botao: 8px, 5px e 4px conforme a tela.
-     3. Raio de card: 8px, 11px, 12px e 14px conforme a tela.
-     4. O Centro Financeiro usa cinzas proprios (#050505, #0a0a0a,
-        #141414, #a3a3a3) fora dos tokens, e um botao BRANCO PURO.
-     5. Estados vazios com tratamentos diferentes.
+   O QUE A AUDITORIA MEDIU (Chromium, 430x932, backend respondendo)
+     raio de card, por tela: 16 · 14 · 12 · 11 · 10 · 8 · 7 · 6 · 5 · 3 · 2
+     raio de botao, por tela: 12 · 11 · 9 · 8 · 7 · 5 · 4
+     altura de botao no Caixa: 20 · 32 · 36 · 39 · 47 · 50  (seis)
+     corpo de botao: 11 · 12 · 13 · 14 · 15 · 16px
+     fonte: a pagina usa a do sistema, mas hora e id caiam em monospace
+     dois sistemas de estado vazio convivendo: .es e .ES
+     esqueleto (.sk) existia no CSS e nenhuma tela usava
 
-   IDENTIDADE (nao ha outra):
-     PRETO de fundo · AZUL ELETRICO de destaque · BRANCO de leitura
-     VERDE so em valor positivo e confirmacao.
-     VERMELHO nunca e identidade — fica para o que e de fato critico.
+   IDENTIDADE (nao ha outra)
+     PRETO de fundo · AZUL ELETRICO de acao · BRANCO de leitura
+     VERDE so em valor positivo e confirmacao
+     AMBAR para atencao
+     VERMELHO nunca e identidade — so para o que e de fato critico
    ══════════════════════════════════════════════════════════════════════ */
 
+/* ── 0. OS TOKENS QUE JA EXISTIAM, REAPONTADOS ────────────────────────
+   Tres tamanhos de raio no produto inteiro: controle, card, bloco.
+   Como as regras do index.html ja chamam --r-sm e --r-lg, mudar aqui
+   alinha de graca tudo que foi escrito direito desde o comeco. */
 :root{
+  --r-xs:  11px;   --r-sm:  11px;   --r-md:  11px;
+  --r-lg:  14px;   --r-xl:  14px;   --r-2xl: 18px;
+
   /* o azul da Home passa a ser o azul do produto inteiro.
-     Antes: --alc-ac #3D7BFF (mais apagado, so no painel). */
+     Antes: --alc-ac #3D7BFF, mais apagado, so na tela de assinatura. */
   --alc-ac:      #2A9BFF;
   --alc-ac-2:    #5FACFF;
   --alc-ac-bg:   rgba(42,155,255,.12);
   --alc-ac-bd:   rgba(42,155,255,.32);
 
-  /* um raio por tamanho de coisa, usado por todo mundo */
-  --alc-r-ctrl:  11px;   /* botoes e campos  */
-  --alc-r-card:  14px;   /* cards            */
-  --alc-r-grande:18px;   /* blocos e modais  */
+  --alc-r-ctrl:   11px;
+  --alc-r-card:   14px;
+  --alc-r-bloco:  18px;
+  --alc-r-pilula: 999px;
 
   --alc-sombra-card: 0 10px 26px -20px rgba(0,0,0,.9);
   --alc-glow:        0 0 20px -8px rgba(42,155,255,.55);
+
+  /* altura unica de controle: alvo de toque confortavel no celular */
+  --alc-alt-ctrl: 42px;
 }
 
-/* ── 1. ACAO PRINCIPAL ────────────────────────────────────────────────
-   Era creme. A Home ensina que o que avanca e azul; a tela interna
-   precisa ensinar a mesma coisa. */
-.btn.btn-primary,
-button.btn-primary{
+/* ── 1. CARDS ─────────────────────────────────────────────────────────
+   Um raio, uma borda, uma sombra, um fundo. Vale para o card de KPI da
+   Agenda, o da equipe, o do CRM, a linha de servico e o grafico do
+   Financeiro — eram seis aparencias para a mesma ideia. */
+.card-pm, .HC, .HMETA, .HSTRIP, .HCCO, .HACHC, .HCONSI,
+.EQ-CARD, .EQ-K, .EQ-CW, .CRM-CARD, .CRM-KPIS .CRM-K,
+.SV-ROW, .SV-K, .FG, .FK, .FHERO, .FCARD, .sk-card,
+.adn, .avt, .agr, .al .ac, .CX-LIST, .CX-PANEL, .card, .cx-card,
+#ag-strip > div > div{
+  border-radius: var(--alc-r-card) !important;
+  border:1px solid var(--bd-default) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.042), rgba(255,255,255,.014)) !important;
+  box-shadow: var(--alc-sombra-card) !important;
+}
+/* o Financeiro pode continuar com destaque — mas dentro das regras */
+.FHERO{
+  background: linear-gradient(150deg, rgba(42,155,255,.1), rgba(255,255,255,.02) 60%) !important;
+  border-color: var(--alc-ac-bd) !important;
+  box-shadow: var(--alc-sombra-card), var(--alc-glow) !important;
+}
+.md{ border-radius: var(--alc-r-bloco) !important; }
+
+/* ── 2. BOTOES ────────────────────────────────────────────────────────
+   2.1  a acao principal e AZUL. Era creme (#EDEAE6) com texto preto em
+        telas inteiras; a Home ensina azul e a tela interna desensinava. */
+/* "Fechar comanda" era um retangulo BRANCO no meio da tela escura — a
+   acao mais importante do Caixa parecendo de outro produto. */
+.btn.btn-primary, button.btn-primary, .btn.bp, .HACBTN.prim, .CX-FECHAR-BTN{
   background: linear-gradient(170deg,#3FA8FF,#1878E0) !important;
   color:#fff !important;
   border:1px solid rgba(120,200,255,.42) !important;
-  border-radius: var(--alc-r-ctrl) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 18px -12px rgba(42,155,255,.9) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2),
+              0 8px 18px -12px rgba(42,155,255,.9) !important;
   font-weight:650 !important;
 }
-.btn.btn-primary:active, button.btn-primary:active{ transform:scale(.97); }
-
-/* ── 2. OS OUTROS BOTOES: mesmo raio, mesma borda ──────────────────── */
-.btn, .btn-ghost, .btn-sm, .bsm,
-.adb, .avb, .FPB, .FNB{
+.CX-FECHAR-BTN{ border-radius: var(--alc-r-ctrl) !important;
+  min-height: var(--alc-alt-ctrl) !important; font-size:14px !important; }
+/* 2.2  todo botao: mesmo raio, mesma altura minima, mesmo corpo.
+       Seis alturas numa unica tela nao e estilo, e descuido. */
+.btn, .btn-primary, .btn-ghost, .btn-sm, .bsm, .bp, .bg,
+.adb, .avb, .FPB, .FNB, .HACBTN, .h-sync, .nb, .FOPI, .FRKI{
   border-radius: var(--alc-r-ctrl) !important;
-  transition: transform .12s cubic-bezier(.3,.8,.4,1), background .15s;
+  font-family: inherit !important;
+  transition: transform .12s cubic-bezier(.3,.8,.4,1), background .15s, border-color .15s;
 }
-.btn:not(.btn-primary), .btn-ghost{
+#ct .btn, #ct .bsm, #ct .adb, #ct .avb, #ct .FPB, #ct .HACBTN, #ct .h-sync{
+  min-height: var(--alc-alt-ctrl) !important;
+  font-size: 14px !important;
+  padding-left: 16px !important; padding-right: 16px !important;
+  display:inline-flex !important; align-items:center !important;
+  justify-content:center !important; gap:7px;
+}
+/* o botao pequeno de dentro de card continua pequeno — mas um so pequeno */
+#ct .btn.btn-sm, #ct .btn.bsm{ min-height:34px !important; font-size:13px !important;
+  padding-left:12px !important; padding-right:12px !important; }
+.btn:not(.btn-primary):not(.bp), .btn-ghost{
   border:1px solid var(--bd-default) !important;
   background: rgba(255,255,255,.035) !important;
+  color: var(--tx-1) !important;
 }
-.btn:active, .adb:active, .avb:active, .FPB:active, .FNB:active{ transform:scale(.96); }
+.btn:active, .bp:active, .adb:active, .avb:active,
+.FPB:active, .FNB:active, .HACBTN:active{ transform:scale(.96); }
 
-/* o segmentado "Lista / Grade", "Hoje / Mes / 30 dias": o escolhido
-   fica azul, nao branco puro */
-.avb.on, .FPB.on, .adb.on{
+/* 2.3  segmentado (Lista/Grade, Hoje/Mes/30 dias): o escolhido fica
+        azul, nao branco puro — branco puro competia com o conteudo */
+.avb.on, .FPB.on, .adb.on, .nb.on, .CRM-SEG.on, .CX-PAG-BTN.sel{
   background: var(--alc-ac-bg) !important;
   border:1px solid var(--alc-ac-bd) !important;
   color: var(--alc-ac-2) !important;
   font-weight:650 !important;
 }
 
-/* ── 3. CARDS: um raio, uma borda, uma sombra ──────────────────────── */
-.adn, .avt, .CX-LIST, .CX-PANEL, .EQ-K, .EQ-CW, .EQ-CARD,
-.FK, .FHERO, .FCARD, .card, .cx-card{
-  border-radius: var(--alc-r-card) !important;
-  border:1px solid var(--bd-default) !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)) !important;
-  box-shadow: var(--alc-sombra-card) !important;
+/* ── 2.4  O CAIXA ─────────────────────────────────────────────────────
+   Era a tela mais fora do padrao: seis alturas de botao (20, 32, 36, 39,
+   47 e 50px) e cinco raios (4, 8, 9, 10, 12px) numa tela so. */
+.CX-CARD, .CX-ITEM, .CX-BOX{ border-radius: var(--alc-r-card) !important; }
+.CX-PAG-BTN, .CX-ADD-BTN, .CX-DEL-BTN, .CX-BTN{
+  border-radius: var(--alc-r-ctrl) !important;
+  min-height: var(--alc-alt-ctrl) !important;
+  font-size:14px !important;
 }
-
-/* ── 4. CENTRO FINANCEIRO ─────────────────────────────────────────────
-   E a tela mais fora do padrao: tem a propria escala de cinzas. Aqui
-   ela volta para os tokens, sem mexer em uma linha da logica dela. */
-.FHERO{
-  background: linear-gradient(150deg, rgba(42,155,255,.1), rgba(255,255,255,.02) 60%) !important;
+.CX-PAG-BTN.sel, .CX-CARD.active{
   border-color: var(--alc-ac-bd) !important;
+  background: var(--alc-ac-bg) !important;
 }
-.FNB{ background: rgba(255,255,255,.04) !important; color: var(--tx-2) !important; }
-.FNH{ color: var(--alc-ac-2) !important; font-weight:650; }
+.CX-CMD-ID, .CX-ITEM-DEL, .CRM-SI{ border-radius: var(--alc-r-pilula) !important; }
+.CRM-SI{ border-radius: var(--alc-r-card) !important; }
 
-/* ── 5. CAMPOS ────────────────────────────────────────────────────── */
-input:not([type=checkbox]):not([type=radio]), select, textarea{
+/* ── 2.5  BARRAS DE PROGRESSO ─────────────────────────────────────────
+   Tinham raio 1, 2, 3 e 5px conforme a tela. Barra fina e pilula: o
+   raio acompanha a altura, nao um numero escolhido na hora. */
+.SV-BARBG, .SV-BARF, .EQ-BARBG, .EQ-BARF, .EQ-PRBG, .EQ-PRFILL,
+.EQ-RPB, .EQ-RPBF, .FHPBG, .FHPFILL, .HMBPBG, .HMBPF,
+.HBIQ-IBAR, .HBIQ-IBARF, .nb-bar, .barra, .bar, .prog, .progbg{
+  border-radius: var(--alc-r-pilula) !important;
+}
+.SV-BARF, .EQ-BARF, .EQ-PRFILL, .FHPFILL, .HMBPF, .HBIQ-IBARF{
+  background: linear-gradient(90deg, var(--alc-ac), var(--alc-ac-2)) !important;
+}
+
+/* ── 2.6  OS ULTIMOS FORA DA REGUA ───────────────────────────────────
+   Medidos um a um depois da primeira passada: o ✕ de apagar item tinha
+   20px de altura (alvo de toque menor que a ponta do dedo), as abas do
+   CRM 32px/12px contra 34px/13px do resto, e o seletor de pagamento
+   54px. */
+.CX-ITEM-DEL{ min-height:32px !important; min-width:32px !important;
+  font-size:14px !important; border-radius: var(--alc-r-pilula) !important; }
+.CX-PAG-BTN{ min-height:48px !important; }
+.CRM-SEG{ min-height:34px !important; font-size:13px !important;
+  border-radius: var(--alc-r-ctrl) !important; padding:0 12px !important;
+  display:inline-flex !important; align-items:center !important; }
+.FNH, .FNB{ font-family: inherit !important;   /* a .FNH caia em Arial */
+  min-height:34px !important; font-size:13px !important;
+  border-radius: var(--alc-r-ctrl) !important; padding:0 12px !important;
+  display:inline-flex !important; align-items:center !important; }
+
+/* ── 3. PILULAS E ETIQUETAS ──────────────────────────────────────── */
+.bx, .hdr-pill, .sk-badge, .ax-badge, .tag, .pill{
+  border-radius: var(--alc-r-pilula) !important;
+  font-size:11px !important; letter-spacing:.02em;
+}
+
+/* ── 4. CAMPOS ────────────────────────────────────────────────────── */
+#ct input:not([type=checkbox]):not([type=radio]),
+#ct select, #ct textarea, .fi, .fs, .search-bar{
   border-radius: var(--alc-r-ctrl) !important;
   background: var(--bg-input) !important;
   border:1px solid var(--bd-default) !important;
   color: var(--tx-1) !important;
+  font-family: inherit !important;
+  font-size:15px !important;          /* 16px- evita o zoom automatico do iOS */
 }
-input:focus, select:focus, textarea:focus{
-  outline:2px solid var(--alc-ac) !important;
-  outline-offset:1px;
+#ct input:not([type=checkbox]):not([type=radio]), #ct select{
+  min-height: var(--alc-alt-ctrl) !important;
+}
+#ct input:focus, #ct select:focus, #ct textarea:focus{
+  outline:2px solid var(--alc-ac) !important; outline-offset:1px;
   border-color: var(--alc-ac-bd) !important;
 }
+.fl{ font-size:11px !important; letter-spacing:.07em !important;
+     text-transform:uppercase !important; color:var(--tx-3) !important; }
 
-/* ── 6. ESTADO VAZIO ──────────────────────────────────────────────── */
-.vazio, .empty, .sem-dados, .EQ-EMPTY, .CX-EMPTY{
+/* ── 5. NUMEROS ───────────────────────────────────────────────────────
+   Hora, id e valor caiam no monospace padrao do navegador — outra
+   familia, outro peso, outro produto. Ficam na fonte do sistema com
+   algarismo de largura fixa, que e o que faz coluna de numero alinhar. */
+.bi, .ah, .aghr, .cc-id,
+.FHNUM, .FCTR, .EQ-KN, .CRM-KN, .SV-KN, .alcDia b{
+  font-family: inherit !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings:'tnum' 1 !important;
+}
+
+/* ── 6. ESTADO VAZIO ──────────────────────────────────────────────────
+   Havia dois sistemas: .es (minusculo, do modulo de Horarios/Pacotes/
+   Fila) e .ES (maiusculo, premium, do resto). Os dois passam a ter a
+   mesma cara — a .ES, que e a boa. */
+#ct .es, #ct .ES, .vazio, .empty, .sem-dados, .EQ-EMPTY, .CX-EMPTY{
+  display:flex !important; flex-direction:column !important;
+  align-items:center !important; text-align:center !important;
+  padding:38px 20px !important;
   border-radius: var(--alc-r-card) !important;
   border:1px dashed var(--bd-default) !important;
   background: rgba(255,255,255,.015) !important;
 }
+#ct .ei, #ct .ES-ICO{ font-size:26px !important; margin-bottom:12px !important;
+  opacity:.5 !important; display:block !important; }
+#ct .es-title, #ct .ES-T{ font-size:14px !important; font-weight:650 !important;
+  color:var(--tx-2) !important; letter-spacing:-.01em !important; margin-bottom:6px !important; }
+#ct .es-sub, #ct .ES-S{ font-size:12.5px !important; color:var(--tx-3) !important;
+  line-height:1.6 !important; max-width:300px !important; margin:0 auto !important; }
 
-/* ── 7. AVISOS ────────────────────────────────────────────────────────
-   Verde para o que deu certo, ambar para atencao. Vermelho fica so para
-   o que e de fato critico — nunca como cor da marca. */
-.ok, .sucesso, .toast.ok{
-  color: var(--c-green) !important;
-  background: var(--c-green-bg) !important;
-  border:1px solid var(--c-green-bd) !important;
-  border-radius: var(--alc-r-ctrl) !important;
-}
-.aviso, .atencao{
-  color: var(--c-yellow) !important;
-  background: var(--c-yellow-bg) !important;
-  border:1px solid var(--c-yellow-bd) !important;
-  border-radius: var(--alc-r-ctrl) !important;
-}
+/* ── 7. ESQUELETO ─────────────────────────────────────────────────────
+   O .sk ja existia e nenhuma tela usava: elas trocavam a pagina inteira
+   por um disco girando, e quem olhava nao fazia ideia do que viria.
+   O ui.js troca o disco por este desenho, com a forma do conteudo. */
+.alcSk{ padding:4px 0 }
+.alcSkTopo{ margin-bottom:16px }
+.alcSkNum{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px }
+.alcSkK{ border:1px solid var(--bd-subtle); border-radius:var(--alc-r-card);
+         background:rgba(255,255,255,.02); padding:14px 12px; }
+.alcSkK .sk-line{ margin-bottom:10px }
+.alcSkK .sk-num{ width:70% !important; height:22px !important; margin:0 }
+.alcSkLista{ display:flex; flex-direction:column; gap:8px }
+.alcSkIt{ display:flex; align-items:center; gap:12px;
+          border:1px solid var(--bd-subtle); border-radius:var(--alc-r-card);
+          background:rgba(255,255,255,.02); padding:14px; }
+.alcSkTx{ flex:1; min-width:0 }
+.alcSkTx .sk-line:last-child{ margin-bottom:0 }
+@media (max-width:420px){ .alcSkNum{ grid-template-columns:repeat(3,1fr); gap:7px }
+  .alcSkK{ padding:11px 9px } }
 
-/* ── 8. TITULO DE SECAO DENTRO DA TELA ────────────────────────────────
-   O nome da tela agora fica no cabecalho, ao lado do Voltar. O titulo
-   repetido dentro do conteudo vira sobrancelha, para nao dizer a mesma
-   coisa duas vezes em tamanhos diferentes. */
+/* ── 8. AVISOS ────────────────────────────────────────────────────── */
+.ok, .sucesso, .toast.ok{ color:var(--c-green) !important;
+  background:var(--c-green-bg) !important; border:1px solid var(--c-green-bd) !important;
+  border-radius:var(--alc-r-ctrl) !important; }
+.aviso, .atencao{ color:var(--c-yellow) !important;
+  background:var(--c-yellow-bg) !important; border:1px solid var(--c-yellow-bd) !important;
+  border-radius:var(--alc-r-ctrl) !important; }
+.tos{ border-radius: var(--alc-r-ctrl) !important; }
+
+/* ── 9. HIERARQUIA DENTRO DA TELA ─────────────────────────────────────
+   O nome da secao vive no cabecalho, ao lado do Voltar. O titulo que a
+   tela repetia logo abaixo vira sobrancelha: dizer a mesma coisa duas
+   vezes, em dois tamanhos, e o contrario de hierarquia. */
+#ct .mh{ margin-bottom:16px !important; align-items:flex-start !important; }
+#ct .mt{ font-size:13px !important; letter-spacing:.14em !important;
+         text-transform:uppercase !important; color:var(--tx-3) !important;
+         font-weight:700 !important; }
+#ct .FTIT{ font-size:13px !important; letter-spacing:.14em !important;
+           text-transform:uppercase !important; color:var(--tx-3) !important; }
+#ct .FSECT{ font-size:11px !important; letter-spacing:.12em !important;
+            text-transform:uppercase !important; color:var(--tx-3) !important;
+            margin:20px 0 10px !important; }
+
+/* ── 10. RESPIRO E CELULAR ────────────────────────────────────────────
+   Mesma margem lateral da Home em toda tela interna, e nada encostando
+   na borda do aparelho. */
 @media (max-width:860px){
-  #ct > h1:first-of-type, #ct > .tit > h1{
-    font-size:13px !important;
-    letter-spacing:.14em !important;
-    text-transform:uppercase !important;
-    color: var(--tx-3) !important;
-    font-weight:700 !important;
-  }
+  #ct{ padding-left:16px !important; padding-right:16px !important; }
+  #ct .mh{ flex-direction:column; gap:10px; }
+  #ct .mh > div:last-child{ width:100%; }
+  #ct .mh > div:last-child .btn{ flex:1; }
+  /* tabela larga rola dentro do proprio bloco, nunca empurra a pagina */
+  #ct table{ width:100% !important; }
+  #ct .tbl, #ct .tabela, #ct .FTBL{ overflow-x:auto !important; -webkit-overflow-scrolling:touch; }
 }
+html, body{ overflow-x:hidden; }
 
-/* ── 9. a barra de rolagem, quando aparece ────────────────────────── */
+/* ── 11. BARRA DE ROLAGEM ─────────────────────────────────────────── */
 ::-webkit-scrollbar{ width:6px; height:6px; }
-::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.14); border-radius:999px; }
-::-webkit-scrollbar-track{ background: transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.14); border-radius:999px; }
+::-webkit-scrollbar-track{ background:transparent; }
+
+/* ── 12. MENOS MOVIMENTO, PARA QUEM PEDE ──────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  .sk{ animation:none !important; }
+  *{ transition-duration:.01ms !important; }
+}

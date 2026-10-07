@@ -1,0 +1,30 @@
+{"ok":true,"papel":"dono","telas":null,
+"assinatura":{"estado":"ativa","dias":120},
+"home":{"receitaBruta":1840,"receitaLiquida":1380,"receitaPrevista":2200,"deltaReceita":18.5,
+ "ticketMedio":92,"ticketMedioOntem":78,"ticketMedioMes":85,"atendimentos":20,"clientesAtendidos":18,
+ "comissoes":460,"meta":{"meta":2000,"atual":1840},"mediaFaturamentoDia":1200,"emAtendimento":2,
+ "aguardando":3,"confirmacoesPendentes":2,"horariosVagos":3,"clientesInativos":5,"totalClientes":97,
+ "frequenciaMedia":21,"aniversariantes":1,"clientesVIPsemAgend":0,"taxaOcupacao":82,"taxaRetencao":71,
+ "taxaPontualidade":88,"diasSemCancelamento":12,"recordDia":1700,"recordTicket":88,"diasSemRecord":5,
+ "receita7d":[980,1240,1560,1120,1780,1450,1840],"servicosTop":[],"ranking":[],"feed":[],"proximos":[]},
+"fin":{"receitaDia":1840,"receitaPrevista":2200,"receitaLiquida":1380,"meta":2000,
+ "receita7d":[980,1240,1560,1120,1780,1450,1840],"porBarbeiro":[],"porServico":[],"porPagamento":[],
+ "ticket30d":[],"receita30d":[],"ranking":[],"rankingSvc":[],"oportunidades":[],"movimento":[]},
+"agendamentos":[
+ {"id":"AG1","data":"2026-10-07","horario":"09:00","horaInicio":"09:00","cliente":"Joao Pedro","telefone":"79999990001","servico":"Corte","idServico":"SV1","barbeiro":"Tony","idBarbeiro":"BB1","valor":35,"status":"CONFIRMADO"},
+ {"id":"AG2","data":"2026-10-07","horario":"10:30","horaInicio":"10:30","cliente":"Rafael Lima","telefone":"79999990002","servico":"Corte + Barba","idServico":"SV2","barbeiro":"Tony","idBarbeiro":"BB1","valor":55,"status":"PENDENTE"},
+ {"id":"AG3","data":"2026-10-07","horario":"14:00","horaInicio":"14:00","cliente":"Bruno Sa","telefone":"79999990003","servico":"Barba","idServico":"SV3","barbeiro":"Caio","idBarbeiro":"BB2","valor":25,"status":"CONFIRMADO"}],
+"clientes":[
+ {"id":"CL1","nome":"Joao Pedro","telefone":"79999990001","nascimento":"1990-03-12","ultimaVisita":"2026-09-28","totalGasto":420,"atendimentos":12},
+ {"id":"CL2","nome":"Rafael Lima","telefone":"79999990002","nascimento":"1986-10-07","ultimaVisita":"2026-10-01","totalGasto":1280,"atendimentos":24},
+ {"id":"CL3","nome":"Bruno Sa","telefone":"79999990003","nascimento":"1998-01-20","ultimaVisita":"2026-05-02","totalGasto":90,"atendimentos":2}],
+"barbeiros":[
+ {"id":"BB1","nome":"Tony","telefone":"79999991111","comissao":40,"status":"ATIVO","foto":""},
+ {"id":"BB2","nome":"Caio","telefone":"79999992222","comissao":35,"status":"ATIVO","foto":""}],
+"servicos":[
+ {"id":"SV1","nome":"Corte","preco":35,"duracao":30,"status":"ATIVO"},
+ {"id":"SV2","nome":"Corte + Barba","preco":55,"duracao":50,"status":"ATIVO"},
+ {"id":"SV3","nome":"Barba","preco":25,"duracao":20,"status":"ATIVO"}],
+"comandas":[
+ {"id":"CX1","cliente":"Joao Pedro","idBarbeiro":"BB1","barbeiro":"Tony","horario":"09:05","itens":[{"nome":"Corte","valor":35,"qtd":1}],"total":35,"status":"ABERTA"}],
+"fila":[],"reativacao":[],"aniversariantes":[]}

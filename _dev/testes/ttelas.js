@@ -1,6 +1,6 @@
 /* consistencia visual das telas internas, contra a Home */
 const { chromium } = require('playwright');
-const B = require('./dados.json');
+const B = require(__dirname+'/dados.json');
 /* Comandas e Caixa sao a MESMA tela ('cx') — por isso o cabecalho de
    Comandas diz "Caixa", e esta certo: e onde a pessoa esta. Nao existe
    tela 'cm'; eu tinha inventado uma no primeiro teste. */
