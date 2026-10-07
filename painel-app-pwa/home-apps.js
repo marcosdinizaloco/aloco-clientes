@@ -518,41 +518,6 @@ var ART={
            '<span class="alcIaSeta">&#8250;</span>' +
          '</button>';
 
-    /* Proximo atendimento — comeca vazio e se preenche quando a agenda
-       chega. Nunca inventa: sem dado, diz que nao ha nada marcado. */
-    h += '<div class="alcProx" id="alcProx">' +
-           '<div class="alcProxTopo">' +
-             '<span class="alcProxTit">' + IC_AGENDA + 'Próximo atendimento</span>' +
-             '<button class="alcProxVer" type="button" data-tela="agd" data-rot="Agenda">' +
-               'Ver agenda &#8250;</button>' +
-           '</div>' +
-           '<div class="alcProxCx" id="alcProxCx">' +
-             '<span class="alcProxIc">' + IC_AGENDA + '</span>' +
-             '<span class="alcProxTx"><b>Nenhum atendimento agendado</b>' +
-               '<span>Seus próximos horários aparecerão aqui.</span></span>' +
-           '</div>' +
-         '</div>';
-
-    /* Tres atalhos. Eles ABREM a tela certa — nao abrem formulario
-       sozinhos, porque isso seria mexer em tela que ja funciona. */
-    h += '<div class="alcAcoes">' +
-           ATALHOS.map(function(a){
-             return '<button class="alcAcao" type="button" data-tela="' + tapar(a[2]) +
-                    '" data-rot="' + tapar(a[3]) + '">' +
-                    '<span class="alcAcaoIc">' + a[1] + '</span>' +
-                    '<span class="alcAcaoTx">' + tapar(a[0]) + '</span></button>';
-           }).join('') +
-         '</div>';
-
-    /* Avisos de agendamento. Usa o MESMO OneSignal que ja esta no painel
-       — nao registra outro SDK, nao cria outro app. */
-    h += '<button class="alcNotif" id="alcNotif" type="button" aria-pressed="false">' +
-           '<span class="alcNotifIc">' + IC_SINO + '</span>' +
-           '<span class="alcNotifTx"><b>Avisos de agendamento</b>' +
-             '<span id="alcNotifSub">verificando…</span></span>' +
-           '<span class="alcChave" aria-hidden="true"><i></i></span>' +
-         '</button>';
-
     h += '</div>';
     ct.innerHTML = h;
 
@@ -564,17 +529,6 @@ var ART={
     }
     var bi = ct.querySelector('#alcIaBt');
     if (bi) bi.addEventListener('click', abrirIA);
-
-    /* atalhos e "Ver agenda": mesma funcao de navegacao da grade */
-    var outros = ct.querySelectorAll('.alcAcao,.alcProxVer');
-    for (var j = 0; j < outros.length; j++){
-      outros[j].addEventListener('click', function(){
-        abrir(this.getAttribute('data-tela') || null, this.getAttribute('data-rot'));
-      });
-    }
-
-    buscarProximo();
-    ligarAvisos();
 
     /* a saudacao tem que estar na primeira tela, sem ninguem rolar */
     try {
