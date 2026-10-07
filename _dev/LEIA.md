@@ -29,6 +29,7 @@ E, só para a suíte de voz, o palco dela:
 
 Então:
 
+    node _dev/testes/tia.js        # BARBER IA x BEAUTY IA: irmãos, cores diferentes
     node _dev/testes/tsistema.js   # as 10 telas internas como UM sistema
     node _dev/testes/ttelas.js     # consistência visual tela a tela
     node _dev/testes/thome.js      # Home: tamanhos, grade, saudação, tesoura
@@ -36,7 +37,7 @@ Então:
     node _dev/testes/tvoz.js       # BARBER IA por voz (usa o 8742)
     node _dev/testes/t404.js       # redirecionamento /painel/<slug>
 
-Esperado: **156 · 45 · 96 · 89 · 38 · 16**, zero falha.
+Esperado: **27 · 156 · 45 · 96 · 89 · 38 · 16**, zero falha.
 
 Os testes leem os arquivos de produção de `painel-app-pwa/`. Não existe
 cópia: se você mudar o produto, o teste mede o produto.
@@ -54,6 +55,22 @@ e corpos de botão, se tem Voltar e qual nome está no cabeçalho.
 
 `LAT=4000 node _dev/testes/auditar.js` simula o Apps Script frio.
 
+## O conjunto de ícones do BEAUTY IA
+
+`_dev/arte/virar.py` é o que gera `painel-app-pwa/arte-beauty.js`. Ele NÃO
+desenha ícone novo: pega os do BARBER IA e troca só o matiz, derrubando a
+saturação para menos da metade.
+
+    cd _dev/arte
+    # extraia os .webp do ART de home-apps.js para esta pasta, depois:
+    python3 virar.py agenda caixa clientes comandas barbeiros servicos \
+                     fila horarios pacotes relatorios ajustes
+
+Se mexer nele, lembre: **sem derrubar a saturação o neon azul vira laranja
+de fogo.** Foi a primeira tentativa e parecia churrascaria, não cosmético.
+Champagne e rosa queimado são cores POUCO saturadas — é disso que vem o ar
+de luxo.
+
 ## Armadilhas que já custaram tempo
 
 **`.css` servido como `text/plain`** parseia para ZERO regras em modo
@@ -70,6 +87,12 @@ para sempre e parecer bug do produto. É o que `bundle.json` resolve.
 cli, cx, fin e eq. Horários, Fila e Pacotes entram por `alocoHorario()`,
 `alocoFila()` e `alocoPacotes()`. Teste que navega só por `ir()` mede meio
 produto.
+
+**"a barbearia" casava dentro de "sua barbearia".** O motor que troca as
+palavras para o salão fazia substituição de texto solto, sem fronteira de
+palavra: "sobre sua barbearia" virava "sobre **suo** salão" e "minha
+barbearia" virava "minho salão". As formas com artigo agora são expressões
+com `\b`, em PALAVRAS, e têm que vir ANTES da regra solta de "barbearia".
 
 **Os arquivos do repositório usam CRLF.** Edição por script precisa
 normalizar `\r\n`→`\n`, editar, e gravar de volta com `newline=''` e

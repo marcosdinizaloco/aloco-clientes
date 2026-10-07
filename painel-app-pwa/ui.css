@@ -56,6 +56,117 @@
   --alc-alt-ctrl: 42px;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════
+   AS DUAS IDENTIDADES — BARBER IA e BEAUTY IA
+
+   Produtos irmãos: mesma estrutura, mesma tipografia, mesmo espaçamento,
+   mesmos componentes, mesma hierarquia, mesma linguagem de IA. O que muda
+   é a cor, e só a cor.
+
+   O painel já sabia, desde antes, se a loja é barbearia ou salão: existe
+   um motor de segmento que troca as PALAVRAS ("barbearia" vira "salão",
+   "BARBER IA" vira "BEAUTY IA"). Ele nunca trocou a cor — o salão lia
+   "BEAUTY IA" escrito em azul de tecnologia. Agora o ui.js marca
+   <html data-ia="beauty"> e a paleta inteira acompanha.
+
+   Por que tanto token de opacidade em vez de rgba(var(--rgb), .3): o
+   rgba com variável dentro só funciona em iPhone mais novo. Cada nível de
+   transparência tem o seu próprio token — é mais verboso e não quebra em
+   aparelho velho, que é o que o dono de salão costuma ter.
+
+   BARBER IA  — preto profundo · azul marinho · azul elétrico · azul neon
+                branco de leitura · glow azul
+                sensação: tecnologia, performance, barbearia premium
+
+   BEAUTY IA  — preto profundo · vinho muito escuro · rosa queimado
+                champagne · dourado suave · off-white de leitura
+                glow bem discreto
+                sensação: luxo, cosmético, elegância
+                NÃO é rosa choque, não é pink neon, não é roxo
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── BARBER IA (padrão) ── */
+  --ia-ac:      #2A9BFF;   /* acento forte: ícone, borda, selecionado   */
+  --ia-ac2:     #5FACFF;   /* acento claro: número, link, legenda       */
+  --ia-ac3:     #BFE2FF;   /* o mais claro: topo de gradiente           */
+  --ia-ac4:     #0A5FC8;   /* o mais fundo: fim de gradiente            */
+  --ia-sobre:   #FFFFFF;   /* texto EM CIMA do acento                   */
+  --ia-pino:    #EDF0F5;   /* o pino da chave liga/desliga              */
+
+  --ia-a06: rgba(42,155,255,.06);  --ia-a10: rgba(42,155,255,.10);
+  --ia-a14: rgba(42,155,255,.14);  --ia-a16: rgba(42,155,255,.16);
+  --ia-a20: rgba(42,155,255,.20);  --ia-a22: rgba(42,155,255,.22);
+  --ia-a30: rgba(42,155,255,.30);  --ia-a38: rgba(42,155,255,.38);
+  --ia-a40: rgba(42,155,255,.40);  --ia-a60: rgba(42,155,255,.60);
+
+  --ia-p045: rgba(10,132,255,.045); --ia-p10: rgba(10,132,255,.10);
+  --ia-p12:  rgba(10,132,255,.12);  --ia-p20: rgba(10,132,255,.20);
+  --ia-p34:  rgba(10,132,255,.34);  --ia-p42: rgba(10,132,255,.42);
+  --ia-p90:  rgba(10,132,255,.90);
+  --ia-br50: rgba(90,185,255,.5);
+
+  --ia-fundo1: #15233A;  --ia-fundo2: #0A1222;  --ia-fundo3: #05080F;
+  --ia-bloco1: #070A10;  --ia-bloco2: #05070C;
+
+  --ia-grad: linear-gradient(170deg,#3FA8FF,#1878E0);
+  --ia-grad-bd: rgba(120,200,255,.42);
+}
+
+:root[data-ia="beauty"]{
+  /* Rosa QUEIMADO, não rosa de brinquedo: puxa para o terracota, como
+     batom nude escuro. O claro é champagne, não branco rosado. */
+  --ia-ac:      #C2836E;
+  --ia-ac2:     #E0C09B;
+  --ia-ac3:     #F0DFC4;
+  --ia-ac4:     #8A4F42;
+  --ia-sobre:   #1A1012;   /* champagne é claro: o texto em cima escurece */
+  --ia-pino:    #F3EEE8;
+
+  --ia-a06: rgba(194,131,110,.06);  --ia-a10: rgba(194,131,110,.10);
+  --ia-a14: rgba(194,131,110,.14);  --ia-a16: rgba(194,131,110,.16);
+  --ia-a20: rgba(194,131,110,.20);  --ia-a22: rgba(194,131,110,.22);
+  --ia-a30: rgba(194,131,110,.30);  --ia-a38: rgba(194,131,110,.38);
+  --ia-a40: rgba(194,131,110,.40);  --ia-a60: rgba(194,131,110,.60);
+
+  /* o glow do salão é MENOS forte que o da barbearia, de propósito:
+     luxo não pisca */
+  --ia-p045: rgba(168,96,74,.04);  --ia-p10: rgba(168,96,74,.08);
+  --ia-p12:  rgba(168,96,74,.10);  --ia-p20: rgba(168,96,74,.16);
+  --ia-p34:  rgba(168,96,74,.26);  --ia-p42: rgba(168,96,74,.32);
+  --ia-p90:  rgba(168,96,74,.70);
+  --ia-br50: rgba(231,211,179,.45);
+
+  --ia-fundo1: #3A1F28;  --ia-fundo2: #26131D;  --ia-fundo3: #12090E;
+  --ia-bloco1: #140B11;  --ia-bloco2: #0A0709;
+
+  --ia-grad: linear-gradient(170deg,#E7D3B3,#B9775F);
+  --ia-grad-bd: rgba(231,211,179,.42);
+}
+
+/* As telas internas seguem a identidade pelo mesmo caminho: elas já usam
+   --alc-ac, que agora é só um apelido do acento da IA em uso. */
+:root{
+  --alc-ac:    var(--ia-ac);
+  --alc-ac-2:  var(--ia-ac2);
+  --alc-ac-bg: var(--ia-a14);
+  --alc-ac-bd: var(--ia-a30);
+  --alc-glow:  0 0 20px -8px var(--ia-a60);
+}
+
+/* ── A TROCA ──────────────────────────────────────────────────────────
+   O segmento chega do servidor depois da tela já estar pintada. Sem isto
+   o painel piscava de azul para champagne num quadro só — parecia erro,
+   não identidade. Com a transição, a cor ASSENTA. Quem pediu menos
+   movimento não vê transição nenhuma (regra 12 lá embaixo). */
+html[data-ia] body *,
+html[data-ia] body *::before,
+html[data-ia] body *::after{
+  transition: background-color .5s ease, border-color .5s ease,
+              color .5s ease, box-shadow .5s ease, fill .5s ease, stroke .5s ease;
+}
+
 /* ── 1. CARDS ─────────────────────────────────────────────────────────
    Um raio, uma borda, uma sombra, um fundo. Vale para o card de KPI da
    Agenda, o da equipe, o do CRM, a linha de servico e o grafico do
@@ -72,7 +183,7 @@
 }
 /* o Financeiro pode continuar com destaque — mas dentro das regras */
 .FHERO{
-  background: linear-gradient(150deg, rgba(42,155,255,.1), rgba(255,255,255,.02) 60%) !important;
+  background: linear-gradient(150deg, var(--ia-a10), rgba(255,255,255,.02) 60%) !important;
   border-color: var(--alc-ac-bd) !important;
   box-shadow: var(--alc-sombra-card), var(--alc-glow) !important;
 }
@@ -84,11 +195,11 @@
 /* "Fechar comanda" era um retangulo BRANCO no meio da tela escura — a
    acao mais importante do Caixa parecendo de outro produto. */
 .btn.btn-primary, button.btn-primary, .btn.bp, .HACBTN.prim, .CX-FECHAR-BTN{
-  background: linear-gradient(170deg,#3FA8FF,#1878E0) !important;
-  color:#fff !important;
-  border:1px solid rgba(120,200,255,.42) !important;
+  background: var(--ia-grad) !important;
+  color: var(--ia-sobre) !important;
+  border:1px solid var(--ia-grad-bd) !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.2),
-              0 8px 18px -12px rgba(42,155,255,.9) !important;
+              0 8px 18px -12px var(--ia-p90) !important;
   font-weight:650 !important;
 }
 .CX-FECHAR-BTN{ border-radius: var(--alc-r-ctrl) !important;
@@ -153,7 +264,7 @@
   border-radius: var(--alc-r-pilula) !important;
 }
 .SV-BARF, .EQ-BARF, .EQ-PRFILL, .FHPFILL, .HMBPF, .HBIQ-IBARF{
-  background: linear-gradient(90deg, var(--alc-ac), var(--alc-ac-2)) !important;
+  background: linear-gradient(90deg, var(--ia-ac), var(--ia-ac2)) !important;
 }
 
 /* ── 2.6  OS ULTIMOS FORA DA REGUA ───────────────────────────────────
