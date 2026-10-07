@@ -1,0 +1,152 @@
+/* ══════════════════════════════════════════════════════════════════════
+   BARBER IA — CAMADA VISUAL COMPARTILHADA
+
+   Este arquivo NAO cria tela, NAO muda estrutura e NAO toca em logica.
+   Ele so afina o que ja existe, para que toda tela interna pareca a
+   mesma coisa que a Home.
+
+   Por que uma camada e nao edicao espalhada: o index.html tem 106 KB de
+   CSS em 6 blocos. Mexer la dentro multiplicaria o risco por nada. Aqui
+   tudo que padroniza a identidade fica em UM lugar, e some tirando uma
+   linha se der errado.
+
+   O QUE A AUDITORIA ENCONTROU, e o que cada parte daqui conserta:
+     1. .btn-primary era CREME (#EDEAE6) com texto preto. A acao
+        principal da Home e azul eletrico. Viravam dois produtos.
+     2. Raio de botao: 8px, 5px e 4px conforme a tela.
+     3. Raio de card: 8px, 11px, 12px e 14px conforme a tela.
+     4. O Centro Financeiro usa cinzas proprios (#050505, #0a0a0a,
+        #141414, #a3a3a3) fora dos tokens, e um botao BRANCO PURO.
+     5. Estados vazios com tratamentos diferentes.
+
+   IDENTIDADE (nao ha outra):
+     PRETO de fundo · AZUL ELETRICO de destaque · BRANCO de leitura
+     VERDE so em valor positivo e confirmacao.
+     VERMELHO nunca e identidade — fica para o que e de fato critico.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* o azul da Home passa a ser o azul do produto inteiro.
+     Antes: --alc-ac #3D7BFF (mais apagado, so no painel). */
+  --alc-ac:      #2A9BFF;
+  --alc-ac-2:    #5FACFF;
+  --alc-ac-bg:   rgba(42,155,255,.12);
+  --alc-ac-bd:   rgba(42,155,255,.32);
+
+  /* um raio por tamanho de coisa, usado por todo mundo */
+  --alc-r-ctrl:  11px;   /* botoes e campos  */
+  --alc-r-card:  14px;   /* cards            */
+  --alc-r-grande:18px;   /* blocos e modais  */
+
+  --alc-sombra-card: 0 10px 26px -20px rgba(0,0,0,.9);
+  --alc-glow:        0 0 20px -8px rgba(42,155,255,.55);
+}
+
+/* ── 1. ACAO PRINCIPAL ────────────────────────────────────────────────
+   Era creme. A Home ensina que o que avanca e azul; a tela interna
+   precisa ensinar a mesma coisa. */
+.btn.btn-primary,
+button.btn-primary{
+  background: linear-gradient(170deg,#3FA8FF,#1878E0) !important;
+  color:#fff !important;
+  border:1px solid rgba(120,200,255,.42) !important;
+  border-radius: var(--alc-r-ctrl) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 18px -12px rgba(42,155,255,.9) !important;
+  font-weight:650 !important;
+}
+.btn.btn-primary:active, button.btn-primary:active{ transform:scale(.97); }
+
+/* ── 2. OS OUTROS BOTOES: mesmo raio, mesma borda ──────────────────── */
+.btn, .btn-ghost, .btn-sm, .bsm,
+.adb, .avb, .FPB, .FNB{
+  border-radius: var(--alc-r-ctrl) !important;
+  transition: transform .12s cubic-bezier(.3,.8,.4,1), background .15s;
+}
+.btn:not(.btn-primary), .btn-ghost{
+  border:1px solid var(--bd-default) !important;
+  background: rgba(255,255,255,.035) !important;
+}
+.btn:active, .adb:active, .avb:active, .FPB:active, .FNB:active{ transform:scale(.96); }
+
+/* o segmentado "Lista / Grade", "Hoje / Mes / 30 dias": o escolhido
+   fica azul, nao branco puro */
+.avb.on, .FPB.on, .adb.on{
+  background: var(--alc-ac-bg) !important;
+  border:1px solid var(--alc-ac-bd) !important;
+  color: var(--alc-ac-2) !important;
+  font-weight:650 !important;
+}
+
+/* ── 3. CARDS: um raio, uma borda, uma sombra ──────────────────────── */
+.adn, .avt, .CX-LIST, .CX-PANEL, .EQ-K, .EQ-CW, .EQ-CARD,
+.FK, .FHERO, .FCARD, .card, .cx-card{
+  border-radius: var(--alc-r-card) !important;
+  border:1px solid var(--bd-default) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)) !important;
+  box-shadow: var(--alc-sombra-card) !important;
+}
+
+/* ── 4. CENTRO FINANCEIRO ─────────────────────────────────────────────
+   E a tela mais fora do padrao: tem a propria escala de cinzas. Aqui
+   ela volta para os tokens, sem mexer em uma linha da logica dela. */
+.FHERO{
+  background: linear-gradient(150deg, rgba(42,155,255,.1), rgba(255,255,255,.02) 60%) !important;
+  border-color: var(--alc-ac-bd) !important;
+}
+.FNB{ background: rgba(255,255,255,.04) !important; color: var(--tx-2) !important; }
+.FNH{ color: var(--alc-ac-2) !important; font-weight:650; }
+
+/* ── 5. CAMPOS ────────────────────────────────────────────────────── */
+input:not([type=checkbox]):not([type=radio]), select, textarea{
+  border-radius: var(--alc-r-ctrl) !important;
+  background: var(--bg-input) !important;
+  border:1px solid var(--bd-default) !important;
+  color: var(--tx-1) !important;
+}
+input:focus, select:focus, textarea:focus{
+  outline:2px solid var(--alc-ac) !important;
+  outline-offset:1px;
+  border-color: var(--alc-ac-bd) !important;
+}
+
+/* ── 6. ESTADO VAZIO ──────────────────────────────────────────────── */
+.vazio, .empty, .sem-dados, .EQ-EMPTY, .CX-EMPTY{
+  border-radius: var(--alc-r-card) !important;
+  border:1px dashed var(--bd-default) !important;
+  background: rgba(255,255,255,.015) !important;
+}
+
+/* ── 7. AVISOS ────────────────────────────────────────────────────────
+   Verde para o que deu certo, ambar para atencao. Vermelho fica so para
+   o que e de fato critico — nunca como cor da marca. */
+.ok, .sucesso, .toast.ok{
+  color: var(--c-green) !important;
+  background: var(--c-green-bg) !important;
+  border:1px solid var(--c-green-bd) !important;
+  border-radius: var(--alc-r-ctrl) !important;
+}
+.aviso, .atencao{
+  color: var(--c-yellow) !important;
+  background: var(--c-yellow-bg) !important;
+  border:1px solid var(--c-yellow-bd) !important;
+  border-radius: var(--alc-r-ctrl) !important;
+}
+
+/* ── 8. TITULO DE SECAO DENTRO DA TELA ────────────────────────────────
+   O nome da tela agora fica no cabecalho, ao lado do Voltar. O titulo
+   repetido dentro do conteudo vira sobrancelha, para nao dizer a mesma
+   coisa duas vezes em tamanhos diferentes. */
+@media (max-width:860px){
+  #ct > h1:first-of-type, #ct > .tit > h1{
+    font-size:13px !important;
+    letter-spacing:.14em !important;
+    text-transform:uppercase !important;
+    color: var(--tx-3) !important;
+    font-weight:700 !important;
+  }
+}
+
+/* ── 9. a barra de rolagem, quando aparece ────────────────────────── */
+::-webkit-scrollbar{ width:6px; height:6px; }
+::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.14); border-radius:999px; }
+::-webkit-scrollbar-track{ background: transparent; }

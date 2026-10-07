@@ -80,7 +80,15 @@ var ART={
     }
     return null;
   }
+  function soltarCt(){
+    try {
+      var c = alvo();
+      if (c) c.style.removeProperty('padding-bottom');
+    } catch(e){}
+  }
+
   function abrir(id, rotulo){
+    soltarCt();
     var b = acharBotao(id, rotulo);
     if (b){ try { b.click(); return true; } catch(e){} }
     if (id && typeof window.ir === 'function'){ try { window.ir(id, b || null); return true; } catch(e){} }
@@ -614,71 +622,158 @@ var ART={
     if (!ct) return;
     var home = ct.querySelector('.alcHome');
     if (!home) return;
-    var k = 1;
-    home.style.setProperty('--alcK', '1');
-    /* O que precisa caber na PRIMEIRA tela e ate o BARBER IA. O que
-       vem depois (proximo atendimento e atalhos) fica abaixo da dobra,
-       de proposito. Por isso a medida e o pe do bloco do BARBER IA, e
-       nao a altura do documento: com conteudo embaixo, o documento e
-       sempre maior que a tela e o laco encolheria para sempre. */
-    var marco = home.querySelector('.alcIA') || home.lastElementChild;
-    var encolheu = false;
-    for (var i = 0; i < 20 && marco; i++){
-      var sobra = marco.getBoundingClientRect().bottom - window.innerHeight;
-      if (sobra <= 1) break;
-      encolheu = true;
-      k = Math.round((k - 0.03) * 1000) / 1000;
-      if (k <= 0.66){ home.style.setProperty('--alcK', '0.66'); break; }
-      home.style.setProperty('--alcK', String(k));
-    }
 
-    /* Se NAO precisou encolher, sobrou tela vazia embaixo. Em telefone
-       grande isso deixava uns 200px de preto morto depois do BARBER IA.
-       Entao cresce, ate encostar no fim da tela. Teto de 1.14 de
-       proposito: passando disso os icones ficam infantis e a Home deixa
-       de parecer tela de iPhone. */
-    if (!encolheu){
-      /* nao da para medir pelo scrollHeight: ele nunca fica menor que a
-         tela. Mede pelo fim do ultimo bloco ate o pe da tela. */
-      for (var j = 0; j < 14 && marco; j++){
-        var folga = window.innerHeight - marco.getBoundingClientRect().bottom;
-        if (folga <= 26) break;
-        var kk = Math.round((k + 0.02) * 1000) / 1000;
-        if (kk > 1.14) break;
-        k = kk;
+    /* Duas ambicoes, nesta ordem:
+         1. a tela INTEIRA sem arrastar, como na referencia
+         2. se isso obrigar a encolher demais, cabe ate o BARBER IA e o
+            resto rola.
+       O corte e 0.80: abaixo disso o rotulo do aplicativo fica menor que
+       11px e some na mao de quem tem 65 anos — que e exatamente o
+       publico que o Marcos descreveu quando pediu a Home nova.
+       Num iPhone de 919px de altura (o da referencia) o caso 1 vence.
+       Num de 667px, nao vence, e ai e melhor rolar do que nao enxergar. */
+    var PISO_BOM = 0.80;
+
+    function tentar(marco, piso){
+      if (!marco) return 1;
+      var k = 1;
+      home.style.setProperty('--alcK', '1');
+      var encolheu = false;
+      for (var i = 0; i < 24; i++){
+        if (marco.getBoundingClientRect().bottom - window.innerHeight <= 0) break;
+        encolheu = true;
+        k = Math.round((k - 0.02) * 1000) / 1000;
+        if (k <= piso){ k = piso; home.style.setProperty('--alcK', String(k)); break; }
         home.style.setProperty('--alcK', String(k));
-        if (marco.getBoundingClientRect().bottom - window.innerHeight > 1){
-          k = Math.round((k - 0.02) * 1000) / 1000;   /* passou: volta um degrau */
-          home.style.setProperty('--alcK', String(k));
-          break;
+      }
+      if (!encolheu){
+        for (var j = 0; j < 16; j++){
+          if (window.innerHeight - marco.getBoundingClientRect().bottom <= 20) break;
+          var kk = Math.round((k + 0.02) * 1000) / 1000;
+          if (kk > 1.14) break;
+          k = kk; home.style.setProperty('--alcK', String(k));
+          if (marco.getBoundingClientRect().bottom - window.innerHeight > 0){
+            k = Math.round((k - 0.02) * 1000) / 1000;
+            home.style.setProperty('--alcK', String(k));
+            break;
+          }
         }
       }
+      return k;
     }
-    /* se ainda sobrar, o que sai e ESPACO VAZIO no rodape, nunca conteudo.
-       Respeitando a faixa do gesto de casa do iPhone. */
-    var resto = document.documentElement.scrollHeight - window.innerHeight;
-    if (resto > 1){
+
+    var ultimo = home.lastElementChild;
+    var k = tentar(ultimo, 0.58);
+    var coube = ultimo && (ultimo.getBoundingClientRect().bottom - window.innerHeight <= 0);
+
+    if (!coube || k < PISO_BOM){
+      /* nao da para tudo: garante o essencial e deixa o resto rolar */
+      k = tentar(home.querySelector('.alcIA') || ultimo, 0.66);
+    }
+
+    /* se ainda sobra, o que sai e ESPACO VAZIO no rodape, nunca conteudo.
+       Duas passadas: a primeira reduz, a segunda confere. Com uma so
+       sobravam uns 9px e a tela ainda arrastava um dedinho. */
+    var piso = 0;
+    try {
+      var m = document.createElement('div');
+      m.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px)';
+      document.body.appendChild(m);
+      piso = m.getBoundingClientRect().height || 0;
+      document.body.removeChild(m);
+    } catch(e){}
+    /* o #ct e do painel, nao meu, e tem padding proprio no rodape. Era
+       ele que sobrava 9px e fazia a tela arrastar um dedinho mesmo com a
+       minha Home ja encaixada. Aparo enquanto a Home esta na tela e
+       devolvo ao sair (ver abrir/voltar). */
+    for (var t = 0; t < 4; t++){
+      var resto = document.documentElement.scrollHeight - window.innerHeight;
+      if (resto <= 0) break;
       var pb = parseFloat(getComputedStyle(home).paddingBottom) || 0;
-      var piso = 0;
-      try {
-        var m = document.createElement('div');
-        m.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom,0px)';
-        document.body.appendChild(m);
-        piso = m.getBoundingClientRect().height || 0;
-        document.body.removeChild(m);
-      } catch(e){}
-      home.style.setProperty('padding-bottom', Math.max(piso, pb - resto) + 'px', 'important');
+      var novoPb = Math.max(piso, pb - resto);
+      if (novoPb < pb){
+        home.style.setProperty('padding-bottom', novoPb + 'px', 'important');
+        continue;
+      }
+      var cpb = parseFloat(getComputedStyle(ct).paddingBottom) || 0;
+      var novoC = Math.max(0, cpb - resto);
+      if (novoC >= cpb) break;
+      ct.style.setProperty('padding-bottom', novoC + 'px', 'important');
     }
   }
 
-  function voltar(ct){
-    if (!ct || ct.querySelector('.alcVoltar')) return;
-    var b = document.createElement('button');
+
+  /* o nome de cada tela, para o cabecalho. Sai do proprio APPS, que ja
+     e a fonte dos nomes na Home — assim nunca divergem. */
+  var NOME_TELA = (function(){
+    var m = {};
+    /* Caixa e Comandas abrem a MESMA tela ('cx'). Sem este guarda, o
+       segundo sobrescrevia o primeiro e o cabecalho do Caixa dizia
+       "Comandas". Fica o primeiro, que e o nome da tela. */
+    for (var i = 0; i < APPS.length; i++)
+      if (APPS[i][2] && m[APPS[i][2]] === undefined) m[APPS[i][2]] = APPS[i][1];
+    m.fila = 'Fila de espera';
+    m.c360 = 'Clientes 360';
+    m.hor  = 'Horários';
+    m.pct  = 'Pacotes';
+    return m;
+  })();
+
+  /* Cabecalho de tela interna: voltar grande a esquerda, nome da secao
+     ao lado. O pedido foi explicito — o voltar nao se esconde em menu. */
+  function voltar(ct, nome){
+    if (!ct) return;
+    var ja = ct.querySelector('.alcVoltar');
+    if (ja){
+      if (nome){
+        var t = ja.querySelector('.alcTopoNm');
+        if (t) t.textContent = nome;
+      }
+      return;
+    }
+    var b = document.createElement('div');
     b.className = 'alcVoltar';
-    b.type = 'button';
-    b.innerHTML = '<span class="alcSeta">&#8249;</span> Voltar para o início';
-    b.addEventListener('click', function(){ abrir('home', 'Central'); });
+    b.innerHTML =
+      '<button class="alcVbt" type="button">' +
+        '<span class="alcSeta">&#8249;</span><span>Voltar</span>' +
+      '</button>' +
+      '<span class="alcTopoNm">' + tapar(nome || '') + '</span>';
+    b.querySelector('.alcVbt').addEventListener('click', function(){ abrir('home', 'Central'); });
     ct.insertBefore(b, ct.firstChild);
+    esconderTituloRepetido(ct, nome);
+  }
+
+  /* O nome da secao agora vive no cabecalho. Se a tela ja escrevia o
+     mesmo nome logo abaixo, some com a copia — dizer duas vezes a mesma
+     coisa, em tamanhos diferentes, e o oposto de hierarquia. Compara sem
+     acento e sem caixa; qualquer outro titulo fica onde esta. */
+  function esconderTituloRepetido(ct, nome){
+    if (!nome) return;
+    var limpo = function(t){
+      return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+             .toLowerCase().replace(/[^a-z0-9]+/g, '');
+    };
+    var alvoTxt = limpo(nome);
+    if (!alvoTxt) return;
+    try {
+      /* nem toda tela usa <h1>: a Agenda usa .mt e o Caixa usa .CX-TITLE.
+         Procuro por qualquer elemento de titulo cujo PROPRIO texto seja o
+         nome da secao — e so o texto direto dele, para nao esconder um
+         bloco inteiro que por acaso comece com a palavra. */
+      var cand = ct.querySelectorAll('h1,h2,h3,.mt,.CX-TITLE,.tit,.titulo');
+      for (var i = 0; i < cand.length && i < 12; i++){
+        var e = cand[i];
+        if (e.closest && e.closest('.alcVoltar')) continue;
+        var direto = '';
+        for (var j = 0; j < e.childNodes.length; j++)
+          if (e.childNodes[j].nodeType === 3) direto += e.childNodes[j].nodeValue;
+        if (limpo(direto) === alvoTxt && e.children.length === 0){
+          e.setAttribute('data-alc-dup', '1');
+          e.style.display = 'none';
+          break;
+        }
+      }
+    } catch(e){}
   }
 
   /* ══ 5. O ESTILO ══════════════════════════════════════════════════
@@ -710,7 +805,8 @@ var ART={
         'background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018))}' +
       '.alcDia div{flex:1;min-width:0;position:relative;text-align:center;' +
         'display:flex;flex-direction:column;align-items:center;' +
-        'padding:calc(10px * var(--alcK)) calc(5px * var(--alcK)) calc(9px * var(--alcK))}' +
+        'padding:calc(9px * var(--alcK)) calc(26px * var(--alcK)) calc(8px * var(--alcK)) ' +
+                'calc(8px * var(--alcK))}' +
       '.alcDia div+div:before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1px;' +
         'background:rgba(255,255,255,.09)}' +
       '.alcDia b{display:block;font-size:max(16px, calc(20px * var(--alcK)));font-weight:800;' +
@@ -731,44 +827,47 @@ var ART={
       '.alcDia s.b3{background:#25D366}' +
       /* o icone fica NA LINHA do numero, nao por cima: com "R$ 840" o
          posicionamento absoluto colidia com o texto. */
-      '.alcDiaIc{order:-1;flex:0 0 auto;' +
+      /* na referencia o icone fica a DIREITA do numero, na mesma linha,
+         num quadradinho arredondado. Mede 0.052 da largura. */
+      '.alcDiaIc{position:absolute;right:calc(6px * var(--alcK));' +
+        'top:calc(11px * var(--alcK));' +
         'width:calc(22px * var(--alcK));height:calc(22px * var(--alcK));' +
         'display:flex;align-items:center;justify-content:center;' +
-        'border-radius:7px;color:#5FACFF;opacity:.6;' +
-        'margin-bottom:calc(6px * var(--alcK));' +
-        'background:rgba(42,155,255,.09);border:1px solid rgba(42,155,255,.18)}' +
+        'border-radius:7px;color:#5FACFF;opacity:.62;' +
+        'background:rgba(42,155,255,.1);border:1px solid rgba(42,155,255,.2)}' +
       '.alcDiaIc svg{width:62%;height:62%}' +
       '.alcDia .az{color:#5FACFF}.alcDia .vd{color:#25D366}' +
       /* ── UMA grade: 3 colunas, 10 aplicativos, o decimo centrado ── */
       '.alcGrade{display:grid;grid-template-columns:repeat(3,1fr);' +
-        'gap:calc(13px * var(--alcK)) 8px;margin-bottom:calc(16px * var(--alcK))}' +
+        'gap:calc(16px * var(--alcK)) 8px;margin-bottom:calc(16px * var(--alcK))}' +
       '.alcGrade .alcAp:nth-child(10){grid-column:2}' +
       /* so a linha 2 mistura tamanhos: os dois vizinhos do Comandas descem
          os 12px da diferenca, para o nome ficar na mesma altura. Margem,
          nao elemento: assim nao entra no gap e nao muda a altura da grade. */
-      '.alcGrade .alcAp:nth-child(5) .alcSq,.alcGrade .alcAp:nth-child(6) .alcSq'
-        + '{margin-top:calc(12px * var(--alcK))}' +
+      /* os dez azulejos tem o mesmo tamanho, medido na referencia que o
+         Marcos congelou: 0.137 da largura, igual nas tres linhas. Por
+         isso nao existe mais o desnivel que a linha 2 precisava. */
       '.alcAp{display:flex;flex-direction:column;align-items:center;' +
-        'gap:calc(8px * var(--alcK));width:100%;background:none;border:0;padding:0;' +
+        'gap:calc(9px * var(--alcK));width:100%;background:none;border:0;padding:0;' +
         'cursor:pointer;color:inherit;font:inherit;' +
         'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
       '.alcAp:active{transform:scale(.9)}' +
-      '.alcSq{display:block;width:calc(60px * var(--alcK));height:calc(60px * var(--alcK));' +
+      '.alcSq{display:block;width:calc(58px * var(--alcK));height:calc(58px * var(--alcK));' +
         'border-radius:28%;flex:0 0 auto;' +
-        'box-shadow:0 8px 16px -10px rgba(0,0,0,.85), 0 0 16px -5px rgba(10,132,255,.3)}' +
-      '.alcAp.g .alcSq{width:calc(72px * var(--alcK));height:calc(72px * var(--alcK));' +
-        'box-shadow:0 10px 20px -12px rgba(0,0,0,.85), 0 0 22px -6px rgba(10,132,255,.38)}' +
+        'box-shadow:0 8px 16px -10px rgba(0,0,0,.85), 0 0 18px -5px rgba(10,132,255,.34)}' +
+      /* o brilho dos quatro principais continua um pouco mais forte —
+         e o que a referencia mostra. O TAMANHO e igual. */
+      '.alcAp.g .alcSq{box-shadow:0 9px 18px -11px rgba(0,0,0,.85), 0 0 22px -5px rgba(10,132,255,.42)}' +
       '.alcSq img{display:block;width:100%;height:100%}' +
-      '.alcNm{font-size:max(10.5px, calc(12px * var(--alcK)));font-weight:650;letter-spacing:-.1px;' +
+      '.alcNm{font-size:max(11px, calc(14px * var(--alcK)));font-weight:700;letter-spacing:-.2px;' +
         'text-align:center;line-height:1.16}' +
-      '.alcAp.g .alcNm{font-size:max(12px, calc(14px * var(--alcK)));font-weight:700;letter-spacing:-.2px}' +
       /* ── o BARBER IA ── */
       /* Este bloco nao e mais um aplicativo da grade: e o diferencial do
          produto. Por isso tem mais altura, aro luminoso no microfone e
          um fundo proprio de ondas. O brilho e contido de proposito —
          pedido explicito: glow moderado, nao exagerado. */
       '.alcIA{display:flex;align-items:center;gap:calc(15px * var(--alcK));width:100%;' +
-        'min-height:calc(118px * var(--alcK));' +
+        'min-height:calc(131px * var(--alcK));' +
         'padding:calc(15px * var(--alcK)) calc(16px * var(--alcK));' +
         'border-radius:calc(24px * var(--alcK));' +
         'cursor:pointer;color:inherit;font:inherit;' +
@@ -782,18 +881,19 @@ var ART={
         'transition:transform .13s cubic-bezier(.3,.8,.4,1)}' +
       '.alcIA:active{transform:scale(.985)}' +
       '.alcIaFundo{position:absolute;inset:auto 0 calc(-12px * var(--alcK)) 0;width:100%;' +
-        'height:calc(58px * var(--alcK));pointer-events:none;opacity:.5;' +
+        'height:calc(58px * var(--alcK));pointer-events:none;opacity:.72;' +
         '-webkit-mask-image:linear-gradient(90deg,transparent,#000 28%,#000);' +
         'mask-image:linear-gradient(90deg,transparent,#000 28%,#000)}' +
       /* o aro: dois circulos de luz em volta do microfone */
       '.alcIaAro{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;' +
-        'width:calc(74px * var(--alcK));height:calc(74px * var(--alcK));border-radius:50%;' +
-        'background:radial-gradient(circle,rgba(10,132,255,.28),rgba(10,132,255,.05) 62%,transparent 72%);' +
-        'box-shadow:0 0 0 1px rgba(42,155,255,.34), 0 0 22px -4px rgba(42,155,255,.45)}' +
+        'width:calc(83px * var(--alcK));height:calc(83px * var(--alcK));border-radius:50%;' +
+        'background:radial-gradient(circle,rgba(10,132,255,.42),rgba(10,132,255,.1) 60%,transparent 73%);' +
+        'box-shadow:0 0 0 1px rgba(90,185,255,.5), 0 0 26px -2px rgba(42,155,255,.6),' +
+        ' inset 0 0 18px -4px rgba(120,200,255,.3)}' +
       '.alcIaAro:before{content:"";position:absolute;inset:calc(-5px * var(--alcK));' +
-        'border-radius:50%;border:1px solid rgba(42,155,255,.16)}' +
+        'border-radius:50%;border:1px solid rgba(42,155,255,.22)}' +
       '.alcIaIc{position:relative;display:block;' +
-        'width:calc(58px * var(--alcK));height:calc(58px * var(--alcK))}' +
+        'width:calc(64px * var(--alcK));height:calc(64px * var(--alcK))}' +
       '.alcIaIc svg{display:block;width:100%;height:100%}' +
       '.alcIaTx{position:relative;flex:1;min-width:0}' +
       '.alcIaTx em{display:block;font-style:normal;' +
@@ -816,8 +916,8 @@ var ART={
         'color:#5FACFF;flex:0 0 auto}' +
       '.alcProxVer{background:none;border:0;padding:4px 0;cursor:pointer;color:#5FACFF;' +
         'font:inherit;font-size:max(12.5px, calc(13.5px * var(--alcK)));font-weight:650}' +
-      '.alcProxCx{display:flex;align-items:center;gap:calc(13px * var(--alcK));' +
-        'padding:calc(16px * var(--alcK)) calc(15px * var(--alcK));' +
+      '.alcProxCx{display:flex;align-items:center;gap:calc(12px * var(--alcK));' +
+        'padding:calc(13px * var(--alcK)) calc(14px * var(--alcK));' +
         'border-radius:calc(16px * var(--alcK));' +
         'border:1px dashed rgba(255,255,255,.13);background:rgba(255,255,255,.018)}' +
       '.alcProxCx.tem{border-style:solid;border-color:rgba(42,155,255,.3);' +
@@ -866,9 +966,9 @@ var ART={
           'padding:calc(13px * var(--alcK)) calc(10px * var(--alcK))}' +
       '}' +
       /* ── avisos de agendamento ── */
-      '.alcNotif{display:flex;align-items:center;gap:calc(12px * var(--alcK));width:100%;' +
-        'margin-top:calc(12px * var(--alcK));' +
-        'padding:calc(13px * var(--alcK)) calc(14px * var(--alcK));' +
+      '.alcNotif{display:flex;align-items:center;gap:calc(10px * var(--alcK));width:100%;' +
+        'margin-top:calc(10px * var(--alcK));' +
+        'padding:calc(8px * var(--alcK)) calc(12px * var(--alcK));' +
         'border-radius:calc(16px * var(--alcK));cursor:pointer;text-align:left;' +
         'color:inherit;font:inherit;' +
         'background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);' +
@@ -878,31 +978,37 @@ var ART={
         'background:linear-gradient(110deg,rgba(10,132,255,.12),rgba(255,255,255,.02))}' +
       '.alcNotif.bloq{opacity:.55;cursor:default}' +
       '.alcNotifIc{flex:0 0 auto;display:flex;align-items:center;justify-content:center;' +
-        'width:calc(32px * var(--alcK));height:calc(32px * var(--alcK));border-radius:50%;' +
+        'width:calc(26px * var(--alcK));height:calc(26px * var(--alcK));border-radius:50%;' +
         'background:rgba(255,255,255,.06);color:rgba(237,240,245,.45)}' +
       '.alcNotif.on .alcNotifIc{background:rgba(42,155,255,.16);color:#2A9BFF}' +
       '.alcNotifIc svg{width:58%;height:58%}' +
       '.alcNotifTx{flex:1;min-width:0}' +
-      '.alcNotifTx b{display:block;font-size:max(13.5px, calc(14.5px * var(--alcK)));' +
-        'font-weight:700;letter-spacing:-.15px}' +
-      '.alcNotifTx span{display:block;font-size:max(11px, calc(12px * var(--alcK)));' +
-        'opacity:.5;margin-top:2px;line-height:1.25}' +
+      '.alcNotifTx b{display:block;font-size:max(12.5px, calc(13.5px * var(--alcK)));' +
+        'font-weight:700;letter-spacing:-.15px;line-height:1.2}' +
+      '.alcNotifTx span{display:block;font-size:max(10px, calc(11px * var(--alcK)));' +
+        'opacity:.5;line-height:1.2}' +
       /* a chave liga/desliga */
       '.alcChave{flex:0 0 auto;position:relative;display:block;' +
-        'width:calc(48px * var(--alcK));height:calc(29px * var(--alcK));' +
+        'width:calc(42px * var(--alcK));height:calc(25px * var(--alcK));' +
         'border-radius:999px;background:rgba(255,255,255,.1);' +
         'border:1px solid rgba(255,255,255,.12);transition:background .18s}' +
-      '.alcChave i{position:absolute;top:calc(3px * var(--alcK));left:calc(3px * var(--alcK));' +
-        'width:calc(21px * var(--alcK));height:calc(21px * var(--alcK));border-radius:50%;' +
+      '.alcChave i{position:absolute;top:calc(2.5px * var(--alcK));left:calc(2.5px * var(--alcK));' +
+        'width:calc(18px * var(--alcK));height:calc(18px * var(--alcK));border-radius:50%;' +
         'background:#EDF0F5;transition:transform .18s cubic-bezier(.3,.8,.4,1)}' +
       '.alcNotif.on .alcChave{background:#2A9BFF;border-color:#2A9BFF}' +
-      '.alcNotif.on .alcChave i{transform:translateX(calc(19px * var(--alcK)))}' +
+      '.alcNotif.on .alcChave i{transform:translateX(calc(17px * var(--alcK)))}' +
       /* ── Voltar ── */
-      '.alcVoltar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 16px;' +
-        'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);' +
-        'border-radius:16px;padding:14px 16px;font-size:16px;font-weight:700;text-align:left;' +
-        'color:inherit;cursor:pointer}' +
-      '.alcSeta{font-size:24px;line-height:1;color:#5FACFF}' +
+      '.alcVoltar{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 16px;' +
+        'padding:0 0 12px;border-bottom:1px solid rgba(255,255,255,.07)}' +
+      '.alcVbt{display:flex;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;' +
+        'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);' +
+        'border-radius:12px;padding:11px 15px 11px 12px;' +
+        'font:inherit;font-size:15px;font-weight:650;color:inherit;' +
+        'transition:transform .12s cubic-bezier(.3,.8,.4,1)}' +
+      '.alcVbt:active{transform:scale(.95)}' +
+      '.alcSeta{font-size:22px;line-height:1;color:#2A9BFF}' +
+      '.alcTopoNm{flex:1;min-width:0;font-size:20px;font-weight:800;letter-spacing:-.4px;' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
       '}' +
       '@media (min-width:' + (LARGURA + 1) + 'px){.alcHome,.alcVoltar{display:none !important}}';
     document.head.appendChild(s);
@@ -942,7 +1048,15 @@ var ART={
       window.ir = function(tela, btn){
         var r = irOriginal.apply(this, arguments);
         try {
-          if (celular() && tela && tela !== 'home') setTimeout(function(){ voltar(alvo()); }, 0);
+          if (celular() && tela && tela !== 'home'){
+            var nm = NOME_TELA[tela] || '';
+            /* Ajustes e Financeiro redesenham o #ct depois de um ida ao
+               servidor, e levavam o cabecalho junto. Reponho tres vezes:
+               no ato, e depois que o conteudo chega. */
+            setTimeout(function(){ voltar(alvo(), nm); }, 0);
+            setTimeout(function(){ voltar(alvo(), nm); }, 260);
+            setTimeout(function(){ voltar(alvo(), nm); }, 900);
+          }
         } catch(e){}
         return r;
       };
