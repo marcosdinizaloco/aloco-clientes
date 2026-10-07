@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teste de microfone — BARBER IA</title>
+
+<!-- modo standalone no iPhone: e isto que faz abrir sem barra de endereco -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Teste Mic">
+<meta name="theme-color" content="#05070B">
+
+<style>
+  :root{
+    --preto:#05070B; --sup:#0C1118; --linha:rgba(255,255,255,.1);
+    --ink:#F4F7FB; --ink2:#93A1B4;
+    --azul:#0A84FF; --azul2:#5FACFF;
+    --ok:#25D366; --al:#FFB454; --critico:#E8343C;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--preto);color:var(--ink);min-height:100dvh;
+    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:calc(var(--safe-t) + 18px) 18px calc(var(--safe-b) + 26px);
+    background-image:radial-gradient(120% 60% at 50% -10%,rgba(10,132,255,.12),transparent 62%)}
+  h1{font-size:13px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;
+    color:var(--azul2);margin-bottom:22px}
+
+  .cartao{background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+    border:1px solid var(--linha);border-radius:20px;padding:18px;margin-bottom:16px}
+  .rot{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;
+    color:var(--ink2);margin-bottom:10px}
+
+  #estado{display:flex;align-items:center;gap:12px}
+  #bolha{width:14px;height:14px;border-radius:50%;flex:0 0 auto;background:var(--ink2);
+    box-shadow:0 0 0 0 rgba(10,132,255,.5)}
+  #estado.grav #bolha{background:var(--critico);animation:pulso 1.1s ease-out infinite}
+  #estado.ok   #bolha{background:var(--ok)}
+  #estado.err  #bolha{background:var(--al)}
+  @keyframes pulso{to{box-shadow:0 0 0 16px rgba(232,52,60,0)}}
+  #txt{font-size:19px;font-weight:750;letter-spacing:-.3px}
+  #cron{margin-left:auto;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;
+    color:var(--azul2)}
+
+  button{font:inherit;color:inherit;width:100%;cursor:pointer;display:block;
+    border-radius:18px;padding:19px;font-size:18px;font-weight:750;letter-spacing:-.2px;
+    border:1px solid transparent;margin-bottom:12px;transition:transform .12s}
+  button:active{transform:scale(.985)}
+  button:disabled{opacity:.38;cursor:default}
+  #gravar{background:linear-gradient(160deg,#3BA0FF,var(--azul));color:#02121F;
+    box-shadow:0 14px 30px -18px rgba(10,132,255,.9)}
+  #parar{background:rgba(255,255,255,.07);border-color:var(--linha)}
+
+  audio{width:100%;margin-top:4px;display:block}
+  .vazio{color:var(--ink2);font-size:14.5px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  td{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.055);vertical-align:top}
+  td:first-child{color:var(--ink2);width:46%;padding-right:10px}
+  td:last-child{font-weight:650;font-variant-numeric:tabular-nums;word-break:break-word}
+  tr:last-child td{border-bottom:0}
+  .sim{color:var(--ok)} .nao{color:var(--critico)} .mais{color:var(--al)}
+
+  #erro{display:none;border-color:rgba(232,52,60,.4);
+    background:linear-gradient(165deg,rgba(232,52,60,.12),rgba(232,52,60,.03))}
+  #erro.on{display:block}
+  #erro b{display:block;font-size:16px;margin-bottom:6px}
+  #erro span{font-size:14.5px;color:#FFD5D7;line-height:1.5}
+  #erro code{display:block;margin-top:10px;font-size:12px;color:var(--ink2);
+    font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+
+  #copiar{background:rgba(255,255,255,.06);border-color:var(--linha);font-size:15px;padding:15px}
+  .nota{color:var(--ink2);font-size:12.5px;line-height:1.6;text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+
+<h1>Teste de microfone · Barber IA</h1>
+
+<div class="cartao">
+  <div class="rot">Microfone</div>
+  <div id="estado"><span id="bolha"></span><span id="txt">Aguardando</span><span id="cron"></span></div>
+</div>
+
+<button id="gravar" type="button">TESTAR MICROFONE</button>
+<button id="parar" type="button" disabled>PARAR</button>
+
+<div class="cartao">
+  <div class="rot">Gravação</div>
+  <div id="player"><p class="vazio">Nenhuma gravação ainda.</p></div>
+</div>
+
+<div class="cartao" id="erro">
+  <b id="erroT"></b><span id="erroM"></span><code id="erroC"></code>
+</div>
+
+<div class="cartao">
+  <div class="rot">Diagnóstico</div>
+  <table><tbody id="diag"></tbody></table>
+</div>
+
+<button id="copiar" type="button">COPIAR DIAGNÓSTICO</button>
+<p class="nota">Abra pelo ícone da Tela de Início.<br>Se aparecer barra de endereço, não é o teste certo.</p>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var estado = $('estado'), txt = $('txt'), cron = $('cron');
+  var bGravar = $('gravar'), bParar = $('parar');
+  var fluxo = null, gravador = null, pedacos = [], t0 = 0, timer = null;
+  var RES = {};
+
+  /* ── diagnóstico: o que o aparelho oferece ───────────────────────── */
+  function standalone(){
+    try {
+      if (window.navigator.standalone === true) return 'sim (iOS, Tela de Início)';
+      if (window.matchMedia('(display-mode: standalone)').matches) return 'sim (display-mode)';
+      if (window.matchMedia('(display-mode: fullscreen)').matches) return 'sim (fullscreen)';
+    } catch(e){}
+    return 'NAO — está no navegador';
+  }
+  function versaoIOS(){
+    var m = (navigator.userAgent || '').match(/OS (\d+)[._](\d+)/);
+    if (m) return m[1] + '.' + m[2];
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent || '')) return 'iOS, versão não lida';
+    return 'não é iPhone';
+  }
+  function tipos(){
+    var v = ['audio/mp4','audio/aac','audio/webm;codecs=opus','audio/webm','audio/ogg'];
+    if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return [];
+    return v.filter(function(t){ try { return MediaRecorder.isTypeSupported(t); } catch(e){ return false; } });
+  }
+  function escolherTipo(){
+    var t = tipos();
+    return t.length ? t[0] : '';
+  }
+
+  function montarDiag(){
+    RES = {
+      'Aberto como aplicativo' : standalone(),
+      'Versão do iOS'          : versaoIOS(),
+      'Endereço seguro (https)': (location.protocol === 'https:' ? 'sim' : 'NAO — ' + location.protocol),
+      'mediaDevices'           : (navigator.mediaDevices ? 'sim' : 'NAO'),
+      'getUserMedia'           : ((navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ? 'sim' : 'NAO'),
+      'MediaRecorder'          : (typeof MediaRecorder !== 'undefined' ? 'sim' : 'NAO'),
+      'Formatos aceitos'       : (tipos().join(', ') || 'nenhum'),
+      'Formato escolhido'      : (escolherTipo() || '(padrão do aparelho)'),
+      'Tela'                   : window.innerWidth + 'x' + window.innerHeight,
+      'Navegador'              : (navigator.userAgent || '').slice(0, 110)
+    };
+    pintarDiag();
+  }
+  function pintarDiag(){
+    var h = '';
+    for (var k in RES){
+      var v = String(RES[k]);
+      var cls = /^sim/.test(v) ? 'sim' : (/^NAO|^nenhum/.test(v) ? 'nao' : '');
+      h += '<tr><td>' + k + '</td><td class="' + cls + '">' + v + '</td></tr>';
+    }
+    $('diag').innerHTML = h;
+  }
+
+  /* ── estado na tela ──────────────────────────────────────────────── */
+  function situacao(classe, texto){
+    estado.className = classe || '';
+    txt.textContent = texto;
+  }
+  function mostrarErro(titulo, msg, tecnico){
+    $('erro').classList.add('on');
+    $('erroT').textContent = titulo;
+    $('erroM').textContent = msg;
+    $('erroC').textContent = tecnico || '';
+    RES['Resultado'] = 'ERRO — ' + titulo;
+    RES['Detalhe técnico'] = tecnico || msg;
+    pintarDiag();
+  }
+  function limparErro(){ $('erro').classList.remove('on'); }
+
+  /* ── o que cada erro quer dizer, em português ────────────────────── */
+  function explicar(e){
+    var n = (e && (e.name || e.constructor && e.constructor.name)) || 'Erro';
+    var mapa = {
+      NotAllowedError  : ['Permissão negada',
+        'Você (ou o iPhone) recusou o microfone. Vá em Ajustes do iPhone, ache este aplicativo e libere o Microfone. Se não aparecer na lista, apague o ícone da Tela de Início e instale de novo.'],
+      PermissionDeniedError : ['Permissão negada',
+        'O microfone foi recusado. Libere nos Ajustes do iPhone.'],
+      NotFoundError    : ['Microfone não encontrado',
+        'O aparelho não ofereceu nenhum microfone para a página.'],
+      NotReadableError : ['Microfone ocupado',
+        'Outro aplicativo está usando o microfone. Feche chamadas, gravador e WhatsApp e tente de novo.'],
+      AbortError       : ['Interrompido',
+        'O pedido foi cancelado pelo sistema antes de abrir o microfone.'],
+      SecurityError    : ['Bloqueado por segurança',
+        'O navegador bloqueou o microfone neste contexto. Normalmente é por não estar em https.'],
+      TypeError        : ['Recurso ausente',
+        'Este navegador não oferece a função de captura de áudio.']
+    };
+    var m = mapa[n] || ['Falhou: ' + n, (e && e.message) || 'Sem mensagem do sistema.'];
+    return { titulo: m[0], msg: m[1], tecnico: n + (e && e.message ? ' — ' + e.message : '') };
+  }
+
+  /* ── gravar ──────────────────────────────────────────────────────── */
+  bGravar.addEventListener('click', function(){
+    limparErro();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      situacao('err', 'Não suportado');
+      return mostrarErro('Sem acesso ao microfone',
+        'Este aparelho não oferece getUserMedia. No iPhone, isso costuma significar iOS muito antigo.',
+        'navigator.mediaDevices.getUserMedia ausente');
+    }
+    if (typeof MediaRecorder === 'undefined'){
+      situacao('err', 'Não suportado');
+      return mostrarErro('Sem gravador de áudio',
+        'O microfone pode existir, mas este aparelho não oferece MediaRecorder. Precisaríamos de outro caminho para capturar a voz.',
+        'MediaRecorder ausente');
+    }
+
+    situacao('', 'Pedindo permissão...');
+    bGravar.disabled = true;
+
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(function(f){
+        fluxo = f;
+        pedacos = [];
+        var tipo = escolherTipo();
+        try {
+          gravador = tipo ? new MediaRecorder(f, { mimeType: tipo }) : new MediaRecorder(f);
+        } catch(e){
+          try { gravador = new MediaRecorder(f); }
+          catch(e2){ throw e2; }
+        }
+        RES['Formato em uso'] = gravador.mimeType || '(não informado)';
+
+        gravador.ondataavailable = function(ev){ if (ev.data && ev.data.size) pedacos.push(ev.data); };
+        gravador.onerror = function(ev){
+          var x = explicar(ev.error || ev);
+          situacao('err', 'Erro ao gravar');
+          mostrarErro(x.titulo, x.msg, x.tecnico);
+          soltar();
+        };
+        gravador.onstop = function(){ finalizar(); };
+
+        gravador.start();
+        t0 = Date.now();
+        situacao('grav', 'Gravando — fale algo');
+        bParar.disabled = false;
+        cron.textContent = '0s';
+        timer = setInterval(function(){
+          var s = Math.floor((Date.now() - t0) / 1000);
+          cron.textContent = s + 's';
+          if (s >= 20) bParar.click();            // trava de seguranca
+        }, 250);
+      })
+      .catch(function(e){
+        bGravar.disabled = false;
+        var x = explicar(e);
+        situacao('err', 'Sem permissão');
+        mostrarErro(x.titulo, x.msg, x.tecnico);
+      });
+  });
+
+  bParar.addEventListener('click', function(){
+    bParar.disabled = true;
+    if (timer){ clearInterval(timer); timer = null; }
+    try {
+      if (gravador && gravador.state !== 'inactive') gravador.stop();
+      else finalizar();
+    } catch(e){
+      var x = explicar(e);
+      mostrarErro(x.titulo, x.msg, x.tecnico);
+      soltar();
+    }
+  });
+
+  function soltar(){
+    try { if (fluxo) fluxo.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+    fluxo = null;
+    bGravar.disabled = false;
+  }
+
+  function finalizar(){
+    var seg = ((Date.now() - t0) / 1000).toFixed(1);
+    soltar();
+    var tipo = (gravador && gravador.mimeType) || escolherTipo() || 'audio/mp4';
+    var blob = new Blob(pedacos, { type: tipo });
+
+    RES['Resultado']        = (blob.size > 0 ? 'FUNCIONOU' : 'gravou 0 bytes');
+    RES['Tamanho gravado']  = blob.size + ' bytes';
+    RES['Duração']          = seg + ' s';
+    RES['Pedaços']          = pedacos.length;
+    pintarDiag();
+
+    if (!blob.size){
+      situacao('err', 'Gravou nada');
+      cron.textContent = '';
+      return mostrarErro('A gravação saiu vazia',
+        'O microfone abriu, mas nenhum áudio chegou. No iPhone isso acontece quando outro aplicativo tomou o microfone no meio do caminho.',
+        'Blob de 0 bytes, ' + pedacos.length + ' pedaço(s), tipo ' + tipo);
+    }
+
+    situacao('ok', 'Gravação concluída');
+    cron.textContent = seg + 's';
+    var url = URL.createObjectURL(blob);
+    $('player').innerHTML =
+      '<audio controls playsinline preload="auto" src="' + url + '"></audio>' +
+      '<p class="vazio" style="margin-top:9px">' + (blob.size / 1024).toFixed(1) +
+      ' KB · ' + seg + ' s · ' + tipo + '</p>';
+  }
+
+  /* ── copiar o diagnóstico para me mandar ─────────────────────────── */
+  $('copiar').addEventListener('click', function(){
+    var linhas = ['TESTE DE MICROFONE — BARBER IA', new Date().toString(), ''];
+    for (var k in RES) linhas.push(k + ': ' + RES[k]);
+    var t = linhas.join('\n');
+    function avisar(ok){
+      $('copiar').textContent = ok ? 'COPIADO' : 'SELECIONE E COPIE ACIMA';
+      setTimeout(function(){ $('copiar').textContent = 'COPIAR DIAGNÓSTICO'; }, 2200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ avisar(true); }, function(){ avisar(false); });
+    } else {
+      var a = document.createElement('textarea');
+      a.value = t; a.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(a); a.select();
+      try { document.execCommand('copy'); avisar(true); } catch(e){ avisar(false); }
+      document.body.removeChild(a);
+    }
+  });
+
+  montarDiag();
+})();
+</script>
+</body>
+</html>
