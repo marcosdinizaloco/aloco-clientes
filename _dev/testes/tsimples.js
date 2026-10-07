@@ -1,12 +1,17 @@
 /* Home simplificada: tem que terminar no BARBER IA e nao arrastar.
    Roda contra o mesmo painel falso das outras suites. */
-const fs=require('fs'); const {chromium}=require('playwright');
-const MOCK=fs.readFileSync('mock.html','utf8');
-const JS_=fs.readFileSync('home-apps.js','utf8');
+const fs=require('fs');
+const PROD=require('path').join(__dirname,'..','..','painel-app-pwa')+'/';
+ const {chromium}=require('playwright');
+const MOCK=fs.readFileSync(__dirname+'/mock.html','utf8');
+const JS_=fs.readFileSync(PROD+'home-apps.js','utf8');
+const UI_=fs.readFileSync(PROD+'ui.js','utf8');
+const UICSS_=fs.readFileSync(PROD+'ui.css','utf8');
 const SAFE=59;
 function pagina(){
   return MOCK.replace('</head>','<style>:root{--alc-safe:'+SAFE+'px;--alc-safe-b:34px}</style></head>')
-             .replace('</body>','<scr'+'ipt>'+JS_+'</scr'+'ipt></body>');
+             .replace('</head>','<style>'+UICSS_+'</style></head>')
+             .replace('</body>','<scr'+'ipt>'+JS_+'</scr'+'ipt><scr'+'ipt>'+UI_+'</scr'+'ipt></body>');
 }
 let ok=0,f=0;
 const t=(n,a,b)=>{ if(JSON.stringify(a)===JSON.stringify(b))ok++;

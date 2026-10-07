@@ -956,7 +956,7 @@ var ART={
         'padding:0 0 12px;border-bottom:1px solid rgba(255,255,255,.07)}' +
       '.alcVbt{display:flex;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;' +
         'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);' +
-        'border-radius:12px;padding:11px 15px 11px 12px;' +
+        'border-radius:11px;padding:11px 15px 11px 12px;' +
         'font:inherit;font-size:15px;font-weight:650;color:inherit;' +
         'transition:transform .12s cubic-bezier(.3,.8,.4,1)}' +
       '.alcVbt:active{transform:scale(.95)}' +
@@ -997,24 +997,18 @@ var ART={
       return r;
     };
 
-    if (typeof window.ir === 'function'){
-      var irOriginal = window.ir;
-      window.ir = function(tela, btn){
-        var r = irOriginal.apply(this, arguments);
-        try {
-          if (celular() && tela && tela !== 'home'){
-            var nm = NOME_TELA[tela] || '';
-            /* Ajustes e Financeiro redesenham o #ct depois de um ida ao
-               servidor, e levavam o cabecalho junto. Reponho tres vezes:
-               no ato, e depois que o conteudo chega. */
-            setTimeout(function(){ voltar(alvo(), nm); }, 0);
-            setTimeout(function(){ voltar(alvo(), nm); }, 260);
-            setTimeout(function(){ voltar(alvo(), nm); }, 900);
-          }
-        } catch(e){}
-        return r;
-      };
-    }
+    /* O cabecalho das telas internas e reposto por ui.js, que observa o
+       #ct. Antes eu repunha por tempo (0, 260 e 900ms) e isso tinha dois
+       defeitos reais, medidos: Horarios, Pacotes e Fila nao passam pelo
+       window.ir, entao nunca ganhavam cabecalho; e o temporizador da tela
+       ANTERIOR disparava depois da seguinte pintar, escrevendo o nome
+       errado (Profissionais dizia "Agenda"). Aqui eu so publico as duas
+       pecas que o ui.js precisa. */
+    try {
+      window.ALOCO_CAB = function(nome){ if (celular()) voltar(alvo(), nome); };
+      window.ALOCO_NOME_TELA = NOME_TELA;
+      window.ALOCO_SOLTAR_CT = soltarCt;
+    } catch(e){}
 
     try {
       window.addEventListener('resize', function(){

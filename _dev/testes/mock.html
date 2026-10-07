@@ -1,0 +1,94 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Painel — falso, só para teste</title>
+<style>
+:root{--hdr-h:52px}
+*{-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#060607;color:#ede7de;font-family:system-ui,sans-serif}
+/* cabecalho igual ao do painel: preso no topo e SEM area segura — o bug */
+.hdr{position:fixed;top:0;left:0;right:0;height:var(--hdr-h);z-index:30;
+  display:flex;align-items:center;gap:10px;padding:0 12px;background:#0b0b0d;
+  border-bottom:1px solid rgba(255,255,255,.07)}
+.hdr .tit{flex:1;text-align:center;font-size:13px;opacity:.5}
+#navBt{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);color:#ddd;font-size:17px;cursor:pointer}
+#btNoite{padding:8px 14px;border-radius:14px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);color:#ddd;font-size:13px;cursor:pointer}
+.nav{position:fixed;left:0;top:var(--hdr-h);bottom:0;width:200px;background:#0F0F12;padding:14px;
+  display:flex;flex-direction:column}
+.nav .nb{display:block;width:100%;text-align:left;background:none;border:0;color:#bbb;
+  padding:9px;font:inherit;cursor:pointer}
+.nav .nb.on{color:#fff;background:rgba(255,255,255,.08);border-radius:8px}
+.nav-ft{margin-top:auto}
+#alcAssLink{display:block;color:#5FACFF;font-size:12px;padding:8px}
+#ct{margin-left:210px;padding:14px;padding-top:calc(var(--hdr-h) + 10px)}
+@media (max-width:820px){ .nav{transform:translateX(-100%)} .nav.aberta{transform:none}
+  #ct{margin-left:0} }
+</style></head><body>
+<header class="hdr">
+  <button id="navBt" aria-expanded="false" aria-controls="navMenu" onclick="alcGaveta()">&#9776;</button>
+  <div class="tit">Centro de Comando</div>
+  <button id="btNoite" onclick="window.__noite=(window.__noite||0)+1">Noite</button>
+</header>
+<nav class="nav" id="navMenu"><div class="nav-links">
+  <div class="nav-glabel">Visão Geral</div>
+  <button class="nb on" id="nb-home" onclick="ir('home',this)">Central de Controle</button>
+  <div class="nav-glabel">Equipe</div>
+  <button class="nb" id="nb-barb" onclick="ir('barb',this)">Profissionais</button>
+  <button class="nb" id="nb-svc"  onclick="ir('svc',this)">Serviços</button>
+  <button class="nb" id="nb-agd"  onclick="ir('agd',this)">Agenda</button>
+  <div class="nav-glabel">Relacionamento</div>
+  <button class="nb" id="nb-cli"  onclick="ir('cli',this)">Clientes 360°</button>
+  <div class="nav-glabel">Gestão</div>
+  <button class="nb" id="nb-cx"   onclick="ir('cx',this)">Caixa</button>
+  <button class="nb" id="nb-fin"  onclick="ir('fin',this)">Centro Financeiro</button>
+  <button class="nb" id="nb-eq"   onclick="ir('eq',this)" style="display:none">Equipe e acessos</button>
+</div>
+<div class="nav-ft"><a id="alcAssLink" href="#" onclick="window.__iaAberta=(window.__iaAberta||0)+1;return false">BARBER IA · assistente inteligente</a></div>
+</nav>
+<div id="navSombra"></div>
+<div id="ct"></div>
+<script>
+var ALOCO = { NOME:'Marcos Barber' }, _TELA_ATUAL='home';
+var CHAMOU = [];
+function ir(tela, btn){
+  CHAMOU.push(tela); _TELA_ATUAL = tela;
+  document.querySelectorAll('.nb').forEach(function(b){ b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  if (tela==='home') ldHome(); else ldOutra(tela);
+}
+function ldHome(){
+  window.__rodouOriginal = (window.__rodouOriginal||0)+1;
+  document.getElementById('ct').innerHTML =
+    '<div class="CMD"><div class="CMD-TOP">Boa noite, '+ALOCO.NOME+'</div>'+
+    '<div class="CMD-KSTRIP"><div class="CMD-K" id="ck-rec">—</div></div></div>';
+}
+function ldOutra(t){ document.getElementById('ct').innerHTML='<div class="PG">tela '+t+'</div>'; }
+function alcGaveta(abrir){
+  var nv=document.querySelector('.nav');
+  var m=(abrir===undefined)? !nv.classList.contains('aberta') : !!abrir;
+  nv.classList.toggle('aberta', m);
+  var bt=document.getElementById('navBt');
+  if(bt) bt.setAttribute('aria-expanded', m?'true':'false');
+}
+window.google = { script: { run: (function(){
+  var h={_ok:null,_er:null};
+  h.withSuccessHandler=function(f){ this._ok=f; return this; };
+  h.withFailureHandler=function(f){ this._er=f; return this; };
+  h.getDadosHome=function(){ var o=this._ok; setTimeout(function(){
+    o && o({ ok:true, dados:{ home:{ atendimentos:3, comandasAbertas:2, receitaDia:840 } } });
+  }, 10); };
+  return h;
+})() } };
+(function(){
+  var lk=document.querySelector('.nav-links');
+  [['hor','Horários'],['fila','Fila de Espera'],['pct','Pacotes']].forEach(function(x){
+    var b=document.createElement('button');
+    b.className='nb'; b.id='nb-'+x[0]; b.textContent=x[1];
+    b.onclick=function(){ ir(x[0], b); };
+    lk.appendChild(b);
+  });
+})();
+ldHome();
+</script>
+</body></html>

@@ -1,0 +1,43 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>palco</title></head>
+<body>
+<div id="tos"></div>
+<script>
+/* reproduz o contrato do painel real */
+window.ALOCO = { API_URL:'https://exemplo.invalido/exec', BARBEARIA:'marcos-2', SENHA:'SENHA-DE-TESTE' };
+window.__toasts = [];
+window.toast = function(m,t){ window.__toasts.push({m:m,t:t}); };
+window.__ir = [];
+window.ir = function(tela){ window.__ir.push(tela); };
+
+/* servidor simulado — guarda tudo que o painel mandar */
+window.__posts = [];
+window.__resposta = null;
+window.fetch = function(url, opt){
+  var corpo = JSON.parse((opt && opt.body) || '{}');
+  window.__posts.push({ url:url, corpo:corpo });
+  var r = window.__resposta;
+  return Promise.resolve({ json: function(){ return Promise.resolve(typeof r === 'function' ? r(corpo) : r); } });
+};
+
+/* microfone simulado */
+window.__micErro = null;
+navigator.mediaDevices = navigator.mediaDevices || {};
+navigator.mediaDevices.getUserMedia = function(){
+  if (window.__micErro) return Promise.reject(window.__micErro);
+  return Promise.resolve({ getTracks: function(){ return [{ stop: function(){} }]; } });
+};
+window.MediaRecorder = function(){
+  this.state = 'recording';
+  this.mimeType = 'audio/mp4';
+  var self = this;
+  this.start = function(){};
+  this.stop  = function(){
+    self.state = 'inactive';
+    if (self.ondataavailable) self.ondataavailable({ data: new Blob(['fingindo-audio'], {type:'audio/mp4'}) });
+    if (self.onstop) self.onstop();
+  };
+};
+window.MediaRecorder.isTypeSupported = function(){ return true; };
+</script>
+<script src="/painel-app-pwa/ia-voz.js"></script>
+</body></html>
