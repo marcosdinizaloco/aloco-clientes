@@ -615,6 +615,13 @@
           try { porque = (j.detalhe.recusados[0] || {}).porque || ''; } catch(e){}
           return telaErro('Não consegui salvar: ' + (porque || (j && j.erro) || 'erro'));
         }
+        /* O painel guarda o pacote de dados por 5 minutos no proprio
+           navegador. Sem jogar fora, o agendamento entra na planilha (a
+           notificacao chega) e a Agenda continua pintando a leitura
+           antiga — foi exatamente o que aconteceu. As duas funcoes ja
+           existem no painel; a tela da voz so nao chamava. */
+        try { if (window._homeCacheClear) window._homeCacheClear(); } catch(e){}
+        try { if (window._alocoEsquecerPacote) window._alocoEsquecerPacote(); } catch(e){}
         telaFim(j.gravados, j.recusados, j);
       })
       .catch(function(){ telaErro('Não consegui falar com o servidor.'); });
@@ -639,7 +646,15 @@
     document.getElementById('iavDeNovo').onclick = function(){ ITENS = []; ESTADO = []; TEXTO = ''; telaInicio(); };
     document.getElementById('iavFim').onclick = function(){
       fechar();
-      try { if (typeof window.ir === 'function') window.ir(T.tela); } catch(e){}
+      /* joga fora o pacote de novo, agora: entre salvar e clicar aqui o
+         painel pode ter guardado outra leitura antiga */
+      try { if (window._homeCacheClear) window._homeCacheClear(); } catch(e){}
+      try { if (window._alocoEsquecerPacote) window._alocoEsquecerPacote(); } catch(e){}
+      try {
+        if (typeof window.ir === 'function') { window.ir(T.tela); return; }
+      } catch(e){}
+      /* o painel nao tem a funcao ir(): recarrega, que e o jeito honesto */
+      try { location.reload(); } catch(e){}
     };
   }
 
