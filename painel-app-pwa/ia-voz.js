@@ -36,6 +36,63 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;');
   }
+  /* ALOCO — o que cada tipo mostra e o que deixa corrigir na mao.
+     Espelha o IA_TIPOS do servidor. Para ensinar uma coisa nova, e aqui
+     e la — e so isso. */
+  var TIPOS = {
+    servico: {
+      rotulo:'serviço', plural:'serviços', tela:'servicos',
+      linha: function(it){ return brl(it.preco) + ' · ' + (it.duracao || 30) + ' min'; },
+      titulo: function(it){ return it.nome; },
+      campos: [ {c:'nome', r:'Nome'}, {c:'preco', r:'Preço', m:'decimal'},
+                {c:'duracao', r:'Minutos', m:'numeric'} ]
+    },
+    barbeiro: {
+      rotulo:'barbeiro', plural:'barbeiros', tela:'equipe',
+      linha: function(){ return 'vai para a Equipe'; },
+      titulo: function(it){ return it.nome; },
+      campos: [ {c:'nome', r:'Nome'} ]
+    },
+    cliente: {
+      rotulo:'cliente', plural:'clientes', tela:'clientes',
+      linha: function(it){ return it.telefone ? fone(it.telefone) : 'sem telefone'; },
+      titulo: function(it){ return it.nome; },
+      campos: [ {c:'nome', r:'Nome'}, {c:'telefone', r:'Telefone', m:'tel'} ]
+    },
+    agendamento: {
+      rotulo:'agendamento', plural:'agendamentos', tela:'agenda',
+      linha: function(it){
+        return dataBr(it.data) + ' às ' + (it.horario || '--:--') +
+               (it.servico ? ' · ' + it.servico : '') +
+               (it.barbeiro ? ' · ' + it.barbeiro : ''); },
+      titulo: function(it){ return it.cliente; },
+      campos: [ {c:'cliente', r:'Cliente'}, {c:'data', r:'Data', m:'numeric', ph:'AAAA-MM-DD'},
+                {c:'horario', r:'Hora', ph:'HH:MM'}, {c:'servico', r:'Serviço'},
+                {c:'barbeiro', r:'Barbeiro'} ]
+    },
+    pacote: {
+      rotulo:'pacote', plural:'pacotes', tela:'pacotes',
+      linha: function(it){ return brl(it.preco) + (it.descricao ? ' · ' + it.descricao : ''); },
+      titulo: function(it){ return it.nome; },
+      campos: [ {c:'nome', r:'Nome'}, {c:'preco', r:'Preço', m:'decimal'},
+                {c:'descricao', r:'Descrição'} ]
+    }
+  };
+
+  function tipoDe(it){ return TIPOS[String((it && it.tipo) || 'servico')] || TIPOS.servico; }
+
+  function fone(t){
+    var n = String(t || '').replace(/\D/g, '');
+    if (n.length === 11) return '(' + n.slice(0,2) + ') ' + n.slice(2,7) + '-' + n.slice(7);
+    if (n.length === 10) return '(' + n.slice(0,2) + ') ' + n.slice(2,6) + '-' + n.slice(6);
+    return n;
+  }
+
+  function dataBr(d){
+    var m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? (m[3] + '/' + m[2]) : (d || 'sem data');
+  }
+
   function brl(v){
     var n = Number(v);
     if (!isFinite(n)) return '—';
@@ -223,7 +280,7 @@
     }
 
     var novos = (j.plano && j.plano.itens) || [];
-    if (!novos.length) return telaErro('Não identifiquei nenhum serviço no que você falou.');
+    if (!novos.length) return telaErro('Não entendi o que você quer fazer. Fale de novo, dizendo o que é: um serviço, um barbeiro, um cliente ou um agendamento.');
 
     if (REGRAVANDO >= 0 && ITENS[REGRAVANDO]){
       ITENS[REGRAVANDO] = novos[0];        // regravação de um item só
@@ -248,33 +305,39 @@
     ITENS.forEach(function(it, i){
       var st  = ESTADO[i] || '';
       var amb = it.ambiguo === true;
+      var T   = tipoDe(it);
       h += '<div class="iav-item' + (st === 'ok' ? ' ok' : '') + (amb ? ' amb' : '') + '" data-i="' + i + '">';
       if (st === 'edit'){
-        h +=
-          '<div class="iav-form">' +
-            '<label>Nome<input class="iav-in" data-c="nome" value="' + esc(it.nome) + '"></label>' +
-            '<div class="iav-dupla">' +
-              '<label>Preço<input class="iav-in" data-c="preco" inputmode="decimal" value="' + esc(it.preco) + '"></label>' +
-              '<label>Minutos<input class="iav-in" data-c="duracao" inputmode="numeric" value="' + esc(it.duracao || 30) + '"></label>' +
-            '</div>' +
-            '<button class="iav-salvar" data-a="salvar">Pronto</button>' +
-          '</div>';
+        h += '<div class="iav-form">';
+        T.campos.forEach(function(cp){
+          h += '<label>' + esc(cp.r) +
+               '<input class="iav-in" data-c="' + cp.c + '"' +
+               (cp.m ? ' inputmode="' + cp.m + '"' : '') +
+               (cp.ph ? ' placeholder="' + cp.ph + '"' : '') +
+               ' value="' + esc(it[cp.c] == null ? '' : it[cp.c]) + '"></label>';
+        });
+        h += '<button class="iav-salvar" data-a="salvar">Pronto</button>' +
+             '</div>';
       } else {
         h +=
           '<div class="iav-linha">' +
-            '<div class="iav-nome">' + esc(it.nome || '(sem nome)') +
+            '<div class="iav-nome">' +
+              '<em class="tipo">' + esc(T.rotulo) + '</em> ' +
+              esc(T.titulo(it) || '(sem nome)') +
               (it.corrigido ? '<em>corrigido</em>' : '') +
               (amb ? '<em class="amb">confira este</em>' : '') +
             '</div>' +
-            '<div class="iav-val">' + brl(it.preco) + ' · ' + (it.duracao || 30) + ' min</div>' +
+            '<div class="iav-val">' + esc(T.linha(it)) + '</div>' +
+            (amb && it.porque ? '<div class="iav-porque">' + esc(it.porque) + '</div>' : '') +
           '</div>' +
           '<div class="iav-bts">' +
             '<button class="iav-bt reg" data-a="regravar">' + svgMicP() + '<i>Gravar<br>de novo</i></button>' +
             '<button class="iav-bt edi" data-a="editar">'  + svgLapis() + '<i>Corrigir<br>escrevendo</i></button>' +
+            '<button class="iav-bt del" data-a="excluir">' + svgLixo()  + '<i>Tirar<br>da lista</i></button>' +
             '<button class="iav-bt sim" data-a="ok">'      + svgCerto() + '<i>Está<br>certo</i></button>' +
           '</div>';
       }
-      h += '</div>';
+    h += '</div>';
     });
 
     h += '</div>';
@@ -314,23 +377,62 @@
           if (a === 'regravar'){
             return gravar(i);
           }
+          if (a === 'excluir'){
+            ITENS.splice(i, 1);
+            ESTADO.splice(i, 1);
+            if (!ITENS.length) return telaInicio();
+            return telaConferir();
+          }
           if (a === 'salvar'){
+            var T2 = tipoDe(ITENS[i]);
             var campos = bloco.querySelectorAll('.iav-in');
             var novo = {};
             campos.forEach(function(el){ novo[el.getAttribute('data-c')] = el.value; });
 
-            var nome = String(novo.nome || '').trim();
-            if (!nome){ aviso('O nome não pode ficar vazio.', 'er'); return; }
-            var preco = numDe(novo.preco);
-            if (!isFinite(preco) || preco < 0){ aviso('Preço inválido.', 'er'); return; }
-            var dur = parseInt(numDe(novo.duracao), 10);
-            if (!isFinite(dur) || dur <= 0) dur = 30;
+            /* o que o tipo mostra na tela e o que ele deixa corrigir */
+            if (T2 === TIPOS.servico || T2 === TIPOS.pacote){
+              var nome = String(novo.nome || '').trim();
+              if (!nome){ aviso('O nome não pode ficar vazio.', 'er'); return; }
+              var preco = numDe(novo.preco);
+              if (!isFinite(preco) || preco < 0){ aviso('Preço inválido.', 'er'); return; }
+              ITENS[i].nome  = nome;
+              ITENS[i].preco = preco;
+              if (T2 === TIPOS.servico){
+                var dur = parseInt(numDe(novo.duracao), 10);
+                if (!isFinite(dur) || dur <= 0) dur = 30;
+                ITENS[i].duracao = dur;
+              } else {
+                ITENS[i].descricao = String(novo.descricao || '').trim();
+              }
 
-            ITENS[i].nome      = nome;
-            ITENS[i].preco     = preco;
-            ITENS[i].duracao   = dur;
+            } else if (T2 === TIPOS.barbeiro){
+              var nb = String(novo.nome || '').trim();
+              if (!nb){ aviso('O nome não pode ficar vazio.', 'er'); return; }
+              ITENS[i].nome = nb;
+
+            } else if (T2 === TIPOS.cliente){
+              var nc = String(novo.nome || '').trim();
+              if (!nc){ aviso('O nome não pode ficar vazio.', 'er'); return; }
+              ITENS[i].nome     = nc;
+              ITENS[i].telefone = String(novo.telefone || '').replace(/\D/g, '');
+
+            } else if (T2 === TIPOS.agendamento){
+              var cli = String(novo.cliente || '').trim();
+              if (!cli){ aviso('Diga para quem é o agendamento.', 'er'); return; }
+              var dt = String(novo.data || '').trim();
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(dt)){ aviso('Data no formato AAAA-MM-DD.', 'er'); return; }
+              var hr = String(novo.horario || '').trim();
+              var mh = hr.match(/^(\d{1,2})[:h.]?(\d{2})?$/);
+              if (!mh){ aviso('Hora no formato HH:MM.', 'er'); return; }
+              ITENS[i].cliente  = cli;
+              ITENS[i].data     = dt;
+              ITENS[i].horario  = ('0' + mh[1]).slice(-2) + ':' + (mh[2] || '00');
+              ITENS[i].servico  = String(novo.servico  || '').trim();
+              ITENS[i].barbeiro = String(novo.barbeiro || '').trim();
+            }
+
             ITENS[i].corrigido = true;
-            ITENS[i].ambiguo   = false;    // ele escreveu com a própria mão
+            ITENS[i].ambiguo   = false;    // ele escreveu com a propria mao
             ESTADO[i] = 'ok';
             return telaConferir();
           }
@@ -345,10 +447,13 @@
   }
 
   /* ── 5. gravar de verdade ───────────────────────────────────────── */
+  var ULTIMO_TIPO = '';
+
   function aplicar(){
     var escolhidos = [];
     ITENS.forEach(function(it, i){ if (ESTADO[i] === 'ok') escolhidos.push(it); });
     if (!escolhidos.length) return;
+    ULTIMO_TIPO = String((escolhidos[0] && escolhidos[0].tipo) || 'servico');
 
     pinta(
       '<div class="iav-centro">' +
@@ -357,7 +462,7 @@
       '</div>'
     );
 
-    post({ action:'ia_aplicar', itens: escolhidos, intencao: 'servico' })
+    post({ action:'ia_aplicar', itens: escolhidos, intencao: (escolhidos[0] && escolhidos[0].tipo) || 'servico' })
       .then(function(j){
         if (!j || !j.ok) return telaErro('Não consegui salvar: ' + ((j && j.erro) || 'erro'));
         telaFim(j.gravados, j.recusados);
@@ -366,19 +471,22 @@
   }
 
   function telaFim(n, recusados){
+    /* o texto e o destino saem do que foi gravado, nao de "servico" fixo */
+    var T = tipoDe(ULTIMO_TIPO ? { tipo: ULTIMO_TIPO } : null);
+    var palavra = n === 1 ? T.rotulo : T.plural;
     pinta(
       '<div class="iav-centro">' +
         '<div class="iav-ok" aria-hidden="true">' + svgCerto() + '</div>' +
-        '<p class="iav-tit">' + n + (n === 1 ? ' serviço salvo' : ' serviços salvos') + '</p>' +
+        '<p class="iav-tit">' + n + ' ' + esc(palavra) + ' ' + (n === 1 ? 'salvo' : 'salvos') + '</p>' +
         (recusados ? '<p class="iav-nota">' + recusados + ' não entrou. Tente de novo por este.</p>' : '') +
         '<button class="iav-parar" id="iavDeNovo">Falar de novo</button>' +
-        '<button class="iav-texto" id="iavFim">Fechar</button>' +
+        '<button class="iav-texto" id="iavFim">Ver na tela</button>' +
       '</div>'
     );
     document.getElementById('iavDeNovo').onclick = function(){ ITENS = []; ESTADO = []; TEXTO = ''; telaInicio(); };
     document.getElementById('iavFim').onclick = function(){
       fechar();
-      try { if (typeof window.ir === 'function') window.ir('servicos'); } catch(e){}
+      try { if (typeof window.ir === 'function') window.ir(T.tela); } catch(e){}
     };
   }
 
@@ -409,6 +517,12 @@
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
       '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/></svg>';
   }
+  function svgLixo(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' +
+           '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  }
+
   function svgCerto(){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">' +
       '<path d="M4 12.5l5.5 5.5L20 7"/></svg>';
@@ -429,7 +543,7 @@
       '  padding-bottom:max(12px,env(safe-area-inset-bottom))}',
       '.iav-topo{display:flex;align-items:center;justify-content:space-between;',
       '  padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07)}',
-      '.iav-topo b{font-size:13px;letter-spacing:.14em;color:var(--ia-ac,#0097fd)}',
+      '.iav-topo b{font-size:13px;letter-spacing:.14em;color:#0097fd}',
       '.iav-x{background:none;border:0;color:rgba(237,234,230,.5);font-size:26px;line-height:1;cursor:pointer;padding:0 4px}',
       '.iav-corpo{overflow-y:auto;padding:18px;-webkit-overflow-scrolling:touch}',
       '.iav-centro{text-align:center;padding:14px 4px 6px}',
@@ -439,12 +553,12 @@
       '.iav-nota{color:rgba(237,234,230,.36);font-size:12.5px;margin:14px 0 0}',
       '.iav-dica{color:rgba(237,234,230,.5);font-size:13px;margin:14px 0 0}',
       '.iav-mic{width:112px;height:112px;border-radius:50%;border:0;cursor:pointer;',
-      '  background:var(--ia-ac,#0097fd);color:var(--ia-sobre,#fff);display:inline-flex;align-items:center;justify-content:center;',
-      '  box-shadow:0 0 0 10px var(--ia-a14,rgba(0,151,253,.14)),0 10px 30px var(--ia-a30,rgba(0,151,253,.3))}',
+      '  background:#0097fd;color:#fff;display:inline-flex;align-items:center;justify-content:center;',
+      '  box-shadow:0 0 0 10px rgba(0,151,253,.14),0 10px 30px rgba(0,151,253,.3)}',
       '.iav-mic svg{width:46px;height:46px}',
       '.iav-mic:active{transform:scale(.96)}',
       '.iav-ondas{display:flex;align-items:center;justify-content:center;gap:5px;height:66px;margin:10px 0 4px}',
-      '.iav-ondas i{width:5px;border-radius:3px;background:var(--ia-ac,#0097fd);animation:iavP .9s ease-in-out infinite}',
+      '.iav-ondas i{width:5px;border-radius:3px;background:#0097fd;animation:iavP .9s ease-in-out infinite}',
       '.iav-ondas i:nth-child(1){height:18px;animation-delay:0s}',
       '.iav-ondas i:nth-child(2){height:34px;animation-delay:.1s}',
       '.iav-ondas i:nth-child(3){height:52px;animation-delay:.2s}',
@@ -456,34 +570,39 @@
       '@media (prefers-reduced-motion:reduce){.iav-ondas i{animation:none}}',
       '.iav-rel{font-size:26px;font-variant-numeric:tabular-nums;margin:4px 0 18px;color:#EDEAE6}',
       '.iav-parar{display:block;width:100%;padding:16px;border-radius:14px;border:0;cursor:pointer;',
-      '  background:var(--ia-ac,#0097fd);color:var(--ia-sobre,#fff);font-size:16px;font-weight:600;margin-top:4px}',
+      '  background:#0097fd;color:#fff;font-size:16px;font-weight:600;margin-top:4px}',
       '.iav-texto{display:block;width:100%;padding:13px;border:0;background:none;cursor:pointer;',
       '  color:rgba(237,234,230,.5);font-size:14px;margin-top:6px}',
       '.iav-girando{width:44px;height:44px;margin:16px auto 20px;border-radius:50%;',
-      '  border:3px solid var(--ia-a20,rgba(0,151,253,.18));border-top-color:var(--ia-ac,#0097fd);animation:iavG .8s linear infinite}',
+      '  border:3px solid rgba(0,151,253,.18);border-top-color:#0097fd;animation:iavG .8s linear infinite}',
       '@keyframes iavG{to{transform:rotate(360deg)}}',
       '.iav-falou{background:#161619;border:1px solid rgba(255,255,255,.07);border-radius:12px;',
       '  padding:12px 14px;font-size:13.5px;color:rgba(237,234,230,.5);margin:0 0 12px}',
       '.iav-falou span{color:#EDEAE6}',
-      '.iav-pergunta{background:var(--ia-a10,rgba(0,151,253,.1));border:1px solid var(--ia-a30,rgba(0,151,253,.3));',
-      '  border-radius:12px;padding:12px 14px;font-size:14px;color:var(--ia-ac3,#8fd0ff);margin:0 0 12px}',
+      '.iav-pergunta{background:rgba(0,151,253,.1);border:1px solid rgba(0,151,253,.3);',
+      '  border-radius:12px;padding:12px 14px;font-size:14px;color:#8fd0ff;margin:0 0 12px}',
       '.iav-lista{display:flex;flex-direction:column;gap:10px}',
       '.iav-item{background:#161619;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px 14px}',
       '.iav-item.ok{border-color:rgba(74,158,110,.5);background:rgba(74,158,110,.07)}',
-      '.iav-item.amb{border-color:var(--ia-a40,rgba(0,151,253,.45))}',
+      '.iav-item.amb{border-color:rgba(0,151,253,.45)}',
       '.iav-linha{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}',
       '.iav-nome{font-size:16px;font-weight:600}',
       '.iav-nome em{display:block;font-style:normal;font-size:11px;letter-spacing:.06em;',
       '  color:rgba(237,234,230,.4);margin-top:2px}',
-      '.iav-nome em.amb{color:var(--ia-ac3,#8fd0ff)}',
+      '.iav-nome em.amb{color:#8fd0ff}',
       '.iav-val{font-size:14px;color:rgba(237,234,230,.62);white-space:nowrap;font-variant-numeric:tabular-nums}',
-      '.iav-bts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}',
+      '.iav-bts{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}',
       '.iav-bt{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;',
       '  border-radius:11px;cursor:pointer;background:#1d1d21;border:1px solid rgba(255,255,255,.09);',
       '  color:rgba(237,234,230,.72);font-size:11px;line-height:1.25;text-align:center}',
       '.iav-bt svg{width:20px;height:20px}',
       '.iav-bt i{font-style:normal}',
       '.iav-bt.sim{border-color:rgba(74,158,110,.4);color:#7ec79b}',
+      '.iav-bt.del{border-color:rgba(190,90,90,.32);color:#c98b8b}',
+      '.iav-nome em.tipo{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.4px;',
+        'text-transform:uppercase;color:#8aa0bd;background:rgba(138,160,189,.12);',
+        'border-radius:999px;padding:2px 7px;margin-right:7px;vertical-align:middle}',
+      '.iav-porque{margin-top:6px;font-size:12.5px;line-height:1.35;color:#c9a227}',
       '.iav-item.ok .iav-bt.sim{background:#4A9E6E;border-color:#4A9E6E;color:#fff}',
       '.iav-bt.edi:active,.iav-bt.reg:active{background:#26262b}',
       '.iav-form{display:flex;flex-direction:column;gap:10px}',
@@ -491,8 +610,8 @@
       '.iav-dupla{display:grid;grid-template-columns:1fr 1fr;gap:10px}',
       '.iav-in{width:100%;margin-top:5px;padding:11px 12px;border-radius:10px;',
       '  background:#0F0F12;border:1px solid rgba(255,255,255,.14);color:#EDEAE6;font-size:15px}',
-      '.iav-in:focus{outline:2px solid var(--ia-ac,#0097fd);outline-offset:1px}',
-      '.iav-salvar{padding:12px;border-radius:11px;border:0;background:var(--ia-ac,#0097fd);color:var(--ia-sobre,#fff);',
+      '.iav-in:focus{outline:2px solid #0097fd;outline-offset:1px}',
+      '.iav-salvar{padding:12px;border-radius:11px;border:0;background:#0097fd;color:#fff;',
       '  font-size:14px;font-weight:600;cursor:pointer}',
       '.iav-rodape{display:flex;gap:9px;margin-top:16px}',
       '.iav-cancelar{flex:0 0 34%;padding:15px;border-radius:13px;cursor:pointer;',
