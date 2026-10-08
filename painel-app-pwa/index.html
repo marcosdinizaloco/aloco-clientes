@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Painel — Barbearia WL</title>
 <!-- ALOCO · App instalável (PWA) -->
 <meta name="theme-color" content="#060607">
@@ -80,6 +80,14 @@
 /* ── RESET ────────────────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
+/* ALOCO — a tela arrastava para os lados e dava para dar zoom com dois
+   dedos. Num painel de celular isso so atrapalha: o barbeiro puxa sem
+   querer e perde o conteudo. Agora o eixo horizontal e travado no
+   documento inteiro, e o "puxao" nas bordas nao acontece mais.
+   Quem precisa rolar de lado (tabela larga, faixa de indicadores) tem
+   o proprio overflow-x:auto e continua funcionando. */
+html,body{max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+*{-webkit-tap-highlight-color:transparent}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
   background:var(--bg-base);color:var(--tx-1);
@@ -4162,7 +4170,14 @@ function _agdStrip(){
   var recPrev=agds.filter(function(a){return a.status!=='CANCELADO'&&!_ehBlq(a);}).reduce(function(s,a){return s+_valorAgd(a);},0);
   var agora=p2(new Date().getHours())+':'+p2(new Date().getMinutes());
   var prox=agds.filter(function(a){return xhora(_hIni(a))>agora&&a.status!=='CANCELADO'&&!_ehBlq(a);}).sort(function(a,b){return xhora(_hIni(a))>xhora(_hIni(b))?1:-1;})[0]||null;
-  var proxNome=prox?(prox.observacao||'').replace('cli:',''):'—';
+  /* ALOCO — isto lia `observacao`, coluna que NAO existe na aba
+     Agendamentos (as colunas sao id, barbearia, data, horario, cliente,
+     telefone, servico, barbeiro, valor, status, criadoEm). O nome saia
+     sempre vazio. Mesmo erro que deixava o Clientes 360 em zero visita.
+     Agora le `cliente`, e so cai na observacao como ultimo recurso. */
+  var proxNome=prox?(String(prox.cliente||'').trim()
+                     || String(prox.observacao||'').replace('cli:','').trim()
+                     || '—'):'—';
   var proxH=prox?xhora(_hIni(prox)):'—';
 
   // Mock se não tem dados
@@ -4173,15 +4188,18 @@ function _agdStrip(){
   var ocup=total>0?Math.min(100,Math.round((confirm/Math.max(total,1))*100)):0;
   var ocupCor=ocup>=80?'var(--c-green)':ocup>=50?'var(--c-yellow)':'var(--c-red)';
 
-  el.innerHTML=
-    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:4px">'+
-    _agK('Receita prevista',fmt(recPrev),'Agendamentos confirmados')+
-    _agK('Ocupação',ocup+'%',confirm+' de '+total+' horários',ocupCor)+
-    _agK('Em atendimento',emAt,emAt>0?'Agora':'Nenhum no momento','var(--c-green)')+
-    _agK('Pendente confirmar',pend,pend>0?'Requer ação':'Todos confirmados',pend>0?'var(--c-yellow)':'')+
-    _agK('Cancelamentos',cancel,cancel>0?'Hoje':'Nenhum hoje',cancel>0?'var(--c-red)':'')+
-    _agKProx(proxH,proxNome)+
-    '</div>';
+  /* ALOCO — a Agenda tinha seis indicadores em cima dos horarios.
+     Quem abre a Agenda quer ver horario, nao relatorio. Ficou so o
+     "Proximo atendimento", que e o unico que serve para agir agora; os
+     outros cinco passaram para o Financeiro, que e o lugar deles. */
+  el.innerHTML =
+    '<div style="margin-bottom:4px">' + _agKProx(proxH, proxNome) + '</div>';
+
+  /* guarda para o Financeiro desenhar sem reler a planilha */
+  try {
+    window._agdResumo = { recPrev:recPrev, ocup:ocup, ocupCor:ocupCor,
+      confirm:confirm, total:total, emAt:emAt, pend:pend, cancel:cancel };
+  } catch(e){}
 }
 
 function _agK(l,v,d,cor){
@@ -5004,7 +5022,62 @@ function bModal(id,titulo,body,footer){
   setTimeout(function(){var inp=el.querySelector('input');if(inp)inp.focus();},80);
 }
 
-function ldFin(){_fcss();_finRAFs.forEach(function(id){cancelAnimationFrame(id);});_finRAFs=[];var h='<div class="FW">';h+='<div class="FHD"><div><div class="FTIT">Centro Financeiro</div><div class="FSUB" id="F-sub">Carregando dados...</div></div><div class="FPW"><button class="FPB'+(_finVista==='dia'?' on':'')+'" onclick="setFinVista(\'dia\')">Hoje</button><button class="FPB'+(_finVista==='mes'?' on':'')+'" onclick="setFinVista(\'mes\')">Mês</button><button class="FPB'+(_finVista==='30d'?' on':'')+'" onclick="setFinVista(\'30d\')">30 dias</button></div></div>';h+='<div class="FNAV" id="F-nav"></div>';h+='<div class="FHERO"><div class="FHB"><div class="FHLB">Receita do dia</div><div class="FHNUM FCTR" id="F-h-dia">—</div><div id="F-h-dia-d"></div></div><div class="FHB"><div class="FHLB">Receita prevista</div><div class="FHNUM prev FCTR" id="F-h-prev">—</div><div class="FHMSG" style="margin-top:6px" id="F-h-prev-msg"></div></div><div class="FHB"><div class="FHLB">Receita líquida</div><div class="FHNUM FCTR" id="F-h-liq">—</div><div id="F-h-liq-d"></div></div><div class="FHB"><div class="FHLB">Meta do dia</div><div class="FHPROG"><div class="FHPCT FCTR" id="F-h-meta-pct">0%</div><div class="FHPBG"><div class="FHPFILL" id="F-h-meta-bar" style="width:0%"></div></div><div class="FHMSG" id="F-h-meta-msg">Carregando...</div></div></div></div>';h+='<div class="FSECT">Receitas</div><div class="FKR" id="F-kpi1">'+_fLd5()+'</div>';h+='<div class="FSECT">Desempenho</div><div class="FKR" id="F-kpi2">'+_fLd5()+'</div>';h+='<div class="FROW2"><div class="FG"><div class="FGT">Receita — últimos 7 dias</div><div id="F-g7d">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Receita por barbeiro</div><div id="F-gbarb">'+_fLd()+'</div></div></div>';h+='<div class="FP24"><div class="FG"><div class="FGT">Evolução — últimos 30 dias</div><div id="F-g30d">'+_fLd()+'</div></div></div>';h+='<div class="FROW3"><div class="FG"><div class="FGT">Formas de pagamento</div><div id="F-gpag">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Receita por serviço</div><div id="F-gsvc">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Evolução do ticket médio</div><div id="F-gtk">'+_fLd()+'</div></div></div>';h+='<div class="FROW21"><div class="FG"><div class="FGT">Ranking dos profissionais</div><div id="F-rank">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Ranking de serviços</div><div id="F-svc">'+_fLd()+'</div></div></div>';h+='<div class="FROW2"><div class="FG"><div class="FGT">Central de oportunidades</div><div id="F-op">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Inteligência financeira</div><div id="F-intel">'+_fLd()+'</div></div></div>';h+='<div class="FP24"><div class="FG"><div class="FGT">Movimentação do dia</div><div id="F-mov">'+_fLd()+'</div></div></div>';h+='</div>';document.getElementById('ct').innerHTML=h;_finNavRender();carregarFin();}
+function ldFin(){_fcss();_finRAFs.forEach(function(id){cancelAnimationFrame(id);});_finRAFs=[];var h='<div class="FW">';h+='<div class="FHD"><div><div class="FTIT">Centro Financeiro</div><div class="FSUB" id="F-sub">Carregando dados...</div></div><div class="FPW"><button class="FPB'+(_finVista==='dia'?' on':'')+'" onclick="setFinVista(\'dia\')">Hoje</button><button class="FPB'+(_finVista==='mes'?' on':'')+'" onclick="setFinVista(\'mes\')">Mês</button><button class="FPB'+(_finVista==='30d'?' on':'')+'" onclick="setFinVista(\'30d\')">30 dias</button></div></div>';h+='<div class="FNAV" id="F-nav"></div>';h+='<div class="FHERO"><div class="FHB"><div class="FHLB">Receita do dia</div><div class="FHNUM FCTR" id="F-h-dia">—</div><div id="F-h-dia-d"></div></div><div class="FHB"><div class="FHLB">Receita prevista</div><div class="FHNUM prev FCTR" id="F-h-prev">—</div><div class="FHMSG" style="margin-top:6px" id="F-h-prev-msg"></div></div><div class="FHB"><div class="FHLB">Receita líquida</div><div class="FHNUM FCTR" id="F-h-liq">—</div><div id="F-h-liq-d"></div></div><div class="FHB"><div class="FHLB">Meta do dia</div><div class="FHPROG"><div class="FHPCT FCTR" id="F-h-meta-pct">0%</div><div class="FHPBG"><div class="FHPFILL" id="F-h-meta-bar" style="width:0%"></div></div><div class="FHMSG" id="F-h-meta-msg">Carregando...</div></div></div></div>';h+='<div class="FSECT">Receitas</div><div class="FKR" id="F-kpi1">'+_fLd5()+'</div>';h+='<div class="FSECT">Desempenho</div><div class="FKR" id="F-kpi2">'+_fLd5()+'</div>';h+='<div class="FSECT">Agenda de hoje</div><div class="FKR" id="F-agd">'+_fLd5()+'</div>';h+='<div class="FROW2"><div class="FG"><div class="FGT">Receita — últimos 7 dias</div><div id="F-g7d">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Receita por barbeiro</div><div id="F-gbarb">'+_fLd()+'</div></div></div>';h+='<div class="FP24"><div class="FG"><div class="FGT">Evolução — últimos 30 dias</div><div id="F-g30d">'+_fLd()+'</div></div></div>';h+='<div class="FROW3"><div class="FG"><div class="FGT">Formas de pagamento</div><div id="F-gpag">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Receita por serviço</div><div id="F-gsvc">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Evolução do ticket médio</div><div id="F-gtk">'+_fLd()+'</div></div></div>';h+='<div class="FROW21"><div class="FG"><div class="FGT">Ranking dos profissionais</div><div id="F-rank">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Ranking de serviços</div><div id="F-svc">'+_fLd()+'</div></div></div>';h+='<div class="FROW2"><div class="FG"><div class="FGT">Central de oportunidades</div><div id="F-op">'+_fLd()+'</div></div><div class="FG"><div class="FGT">Inteligência financeira</div><div id="F-intel">'+_fLd()+'</div></div></div>';h+='<div class="FP24"><div class="FG"><div class="FGT">Movimentação do dia</div><div id="F-mov">'+_fLd()+'</div></div></div>';h+='</div>';document.getElementById('ct').innerHTML=h;_finNavRender();carregarFin();_finAgdStrip();}
+
+/* ALOCO — os cinco indicadores que saíram da Agenda moram aqui agora.
+   Lê os agendamentos de hoje do mesmo jeito que a Agenda lê: pelo pacote
+   que o painel já tem guardado, sem viagem nova ao servidor. */
+function _finAgdStrip(){
+  var el=document.getElementById('F-agd');if(!el)return;
+
+  function pintar(r){
+    el.innerHTML=
+      _finK('Receita prevista',fmt(r.recPrev),'Agendamentos confirmados')+
+      _finK('Ocupação',r.ocup+'%',r.confirm+' de '+r.total+' horários',r.ocupCor)+
+      _finK('Em atendimento',r.emAt,r.emAt>0?'Agora':'Nenhum no momento','var(--c-green)')+
+      _finK('Pendente confirmar',r.pend,r.pend>0?'Requer ação':'Todos confirmados',r.pend>0?'var(--c-yellow)':'')+
+      _finK('Cancelamentos',r.cancel,r.cancel>0?'Hoje':'Nenhum hoje',r.cancel>0?'var(--c-red)':'');
+  }
+
+  /* a Agenda já calculou nesta sessão? aproveita */
+  if(window._agdResumo) return pintar(window._agdResumo);
+
+  /* senão, calcula dos agendamentos de hoje */
+  try{
+    _gas().withSuccessHandler(function(r){
+      var ag=(r&&r.ok&&r.dados)?r.dados:[];
+      var hoje=dtBR(new Date());
+      var agds=ag.filter(function(a){
+        var d=String(a.data||'').trim();
+        if(d===hoje)return true;
+        try{var dt=new Date(d);if(!isNaN(dt.getTime())){
+          if(p2(dt.getDate())+'/'+p2(dt.getMonth()+1)+'/'+dt.getFullYear()===hoje)return true;
+        }}catch(e){}
+        return false;
+      });
+      var vivos=agds.filter(function(a){return a.status!=='CANCELADO'&&!_ehBlq(a);});
+      var confirm=agds.filter(function(a){return a.status==='CONFIRMADO'&&!_ehBlq(a);}).length;
+      var total=vivos.length;
+      var ocup=total>0?Math.min(100,Math.round((confirm/Math.max(total,1))*100)):0;
+      pintar({
+        recPrev:vivos.reduce(function(s,a){return s+_valorAgd(a);},0),
+        ocup:ocup,
+        ocupCor:ocup>=80?'var(--c-green)':ocup>=50?'var(--c-yellow)':'var(--c-red)',
+        confirm:confirm, total:total,
+        emAt:agds.filter(function(a){return a.status==='EM_ATENDIMENTO'||a.status==='EMATENDIMENTO';}).length,
+        pend:agds.filter(function(a){return a.status==='PENDENTE'&&!_ehBlq(a);}).length,
+        cancel:agds.filter(function(a){return a.status==='CANCELADO';}).length
+      });
+    }).withFailureHandler(function(){ el.innerHTML=''; }).listarAgendamentos({});
+  }catch(e){ el.innerHTML=''; }
+}
+
+/* mesmo cartao do Financeiro, para nao destoar do resto da tela */
+function _finK(l,v,d,cor){
+  return '<div class="FK"><div class="FKLB">'+l+'</div>'+
+    '<div class="FKV" style="'+(cor?'color:'+cor:'')+'">'+v+'</div>'+
+    '<div class="FKD z">'+d+'</div></div>';
+}
 function setFinVista(v){_finVista=v;_finData=new Date();_finMes=new Date().getMonth()+1;_finAno=new Date().getFullYear();ldFin();}
 function mudaFinDia(d){_finData=new Date(_finData.getTime()+d*86400000);_finNavRender();carregarFin();}
 function mudaFinMes(d){_finMes+=d;if(_finMes>12){_finMes=1;_finAno++;}if(_finMes<1){_finMes=12;_finAno--;}  _finNavRender();carregarFin();}
@@ -6774,6 +6847,6 @@ window.onload = function(){
 </style>
 <link rel="stylesheet" href="/painel-app-pwa/ui.css?v=20261007e">
    <script src="/painel-app-pwa/home-apps.js?v=20261007e" defer></script>
-<script src="/painel-app-pwa/ia-voz.js?v=20261008-agenda2" defer></script>
+<script src="/painel-app-pwa/ia-voz.js?v=20261008-tela" defer></script>
 </body>
 </html>
