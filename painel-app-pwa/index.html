@@ -2581,6 +2581,9 @@ function _aplicarPermissoes(){
 //  GLOBALS
 // ═══════════════════════════════════════════════════════
 var _barbs=[],_svcs=[],_agds=[];
+/* ALOCO: o _agds da Agenda e FILTRADO pelo dia escolhido. O Clientes 360
+   precisa do historico inteiro, senao conta so as visitas de hoje. */
+var _agdsCrm=null;
 var _eBarb=false,_eSvc=false;
 var _upOk=true;
 var _delId=null,_delTipo=null;
@@ -4206,7 +4209,7 @@ function pAgdPre(idB,hora){pAgd();document.getElementById('agd-barb').value=idB;
 function calcFim(){var si=document.getElementById('agd-svc').value;var hi=document.getElementById('agd-hi').value;if(!si||!hi)return;var s=_svcs.find(function(x){return x.id===si;});if(!s)return;var p=hi.split(':');var tot=parseInt(p[0])*60+parseInt(p[1])+(parseInt(s.duracao,10)||30);document.getElementById('agd-hf').value=p2(Math.floor(tot/60))+':'+p2(tot%60);}
 function gerarSlots(){var el=document.getElementById('agd-slots');if(!el)return;var slots=_slotsExpediente();var sel=document.getElementById('agd-hi').value;var idBarb=document.getElementById('agd-barb').value;var idSvc=document.getElementById('agd-svc').value;var svc=_svcs.find(function(x){return x.id===idSvc;});var dur=(svc&&parseInt(svc.duracao,10))||30;var _bSel=(_barbs||[]).filter(function(x){return String(x.id)===String(idBarb);})[0]||{id:idBarb,nome:''};var ocup=_agds.filter(function(a){var st=String(a.status||'').toUpperCase();return _ehDoBarb(a,_bSel)&&st!=='CANCELADO';}).map(function(a){return{ini:_iniMin(a),fim:_fimMin(a)};}).filter(function(o){return o.ini>=0&&o.fim>o.ini;});function toMin(t){if(!t)return 0;var p=t.split(':');return parseInt(p[0])*60+parseInt(p[1]);}function conflita(slotIni){var sIni=toMin(slotIni);var sFim=sIni+dur;if(sFim>_expediente().fecha*60)return true;return ocup.some(function(o){return sIni<o.fim&&sFim>o.ini;});}el.innerHTML='';slots.forEach(function(s){var ocupado=conflita(s);var isSel=s===sel;var btn=document.createElement('button');btn.type='button';btn.textContent=s;var bg,color,border,cursor;if(isSel){bg='#fff';color='#0A0A0A';border='1px solid #fff';cursor='pointer';}else if(ocupado){bg='rgba(214,96,96,0.08)';color='rgba(214,96,96,0.5)';border='1px solid rgba(214,96,96,0.2)';cursor='not-allowed';}else{bg='#1A1A1A';color='rgba(240,237,232,0.60)';border='1px solid rgba(255,255,255,0.08)';cursor='pointer';}btn.style.cssText='padding:8px 4px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:500;cursor:'+cursor+';transition:all 0.15s;border:'+border+';background:'+bg+';color:'+color+';';if(!ocupado){btn.onmouseover=function(){if(!isSel)this.style.background='#2A2A2A';};btn.onmouseout=function(){if(!isSel)this.style.background=bg;};}btn.onclick=function(){if(!ocupado)selSlot(s);else toast('Horario indisponivel.','er');};el.appendChild(btn);});}
 function selSlot(hora){document.getElementById('agd-hi').value=hora;calcFim();gerarSlots();var hf=document.getElementById('agd-hf').value;document.getElementById('agd-slot-txt').textContent=hora+(hf?' - '+hf:'');document.getElementById('agd-slot-sel').style.display='block';}
-function svAgd(){var nome=document.getElementById('agd-nome').value.trim();var tel=document.getElementById('agd-tel').value.trim()||'00000000000';var idB=document.getElementById('agd-barb').value;var idS=document.getElementById('agd-svc').value;var data=document.getElementById('agd-data').value;var hi=document.getElementById('agd-hi').value;var hf=document.getElementById('agd-hf').value;if(!nome){toast('Informe o nome.','er');return;}if(!idB){toast('Selecione o barbeiro.','er');return;}if(!data||!hi||!hf){toast('Preencha data e horarios.','er');return;}if(hi>=hf){toast('Hora inicio deve ser antes do fim.','er');return;}var btn=document.getElementById('bsv-agd');btn.disabled=true;btn.textContent='Salvando...';_gas().withSuccessHandler(function(rc){_gas().withSuccessHandler(function(r){btn.disabled=false;btn.textContent='Confirmar';if(r.ok){fModal('new-agd');toast(r.mensagem,'ok');ldAgd();}else toast('Erro: '+r.erro,'er');}).withFailureHandler(function(e){btn.disabled=false;btn.textContent='Confirmar';toast('Erro: '+e.message,'er');}).criarAgendamento({idCliente:rc.id||'',idBarbeiro:idB,idServico:idS,data:iso2br(data),horaInicio:hi,horaFim:hf,observacao:'cli:'+nome});}).withFailureHandler(function(e){btn.disabled=false;btn.textContent='Confirmar';toast('Erro: '+e.message,'er');}).salvarCliente({nome:nome,telefone:tel});}
+function svAgd(){var nome=document.getElementById('agd-nome').value.trim();var tel=document.getElementById('agd-tel').value.trim();/* ALOCO: antes, telefone vazio virava '00000000000' em silencio e o agendamento era salvo com um numero que nao existe \u2014 a barbearia ficava sem como confirmar. Agora pede, como ja pedia no Novo Cliente. */var idB=document.getElementById('agd-barb').value;var idS=document.getElementById('agd-svc').value;var data=document.getElementById('agd-data').value;var hi=document.getElementById('agd-hi').value;var hf=document.getElementById('agd-hf').value;if(!nome){toast('Informe o nome.','er');return;}if(!tel){toast('Informe o telefone.','er');return;}if(!idB){toast('Selecione o barbeiro.','er');return;}if(!data||!hi||!hf){toast('Preencha data e horarios.','er');return;}if(hi>=hf){toast('Hora inicio deve ser antes do fim.','er');return;}var btn=document.getElementById('bsv-agd');btn.disabled=true;btn.textContent='Salvando...';_gas().withSuccessHandler(function(rc){_gas().withSuccessHandler(function(r){btn.disabled=false;btn.textContent='Confirmar';if(r.ok){fModal('new-agd');toast(r.mensagem,'ok');ldAgd();}else toast('Erro: '+r.erro,'er');}).withFailureHandler(function(e){btn.disabled=false;btn.textContent='Confirmar';toast('Erro: '+e.message,'er');}).criarAgendamento({idCliente:rc.id||'',idBarbeiro:idB,idServico:idS,data:iso2br(data),horaInicio:hi,horaFim:hf,observacao:'cli:'+nome});}).withFailureHandler(function(e){btn.disabled=false;btn.textContent='Confirmar';toast('Erro: '+e.message,'er');}).salvarCliente({nome:nome,telefone:tel});}
 function pBlq(){document.getElementById('blq-tipo').value='HORARIO';tgBlq();document.getElementById('blq-data').value=dtISO(_agdDt);['blq-hi','blq-hf'].forEach(function(i){document.getElementById(i).value='';});var sb=document.getElementById('blq-barb');sb.innerHTML='';_barbs.forEach(function(b){var o=document.createElement('option');o.value=b.id;o.textContent=b.nome;sb.appendChild(o);});}
 function tgBlq(){var t=document.getElementById('blq-tipo').value;document.getElementById('blq-h').style.display=t==='HORARIO'?'':'none';document.getElementById('blq-p').style.display=t==='PERIODO'?'':'none';}
 function svBlq(){var idB=document.getElementById('blq-barb').value;var tipo=document.getElementById('blq-tipo').value;var mot=document.getElementById('blq-mot').value;if(!idB){toast('Selecione o barbeiro.','er');return;}var btn=document.getElementById('bsv-blq');btn.disabled=true;btn.textContent='Bloqueando...';var d={idBarbeiro:idB,motivo:mot,tipo:tipo};if(tipo==='HORARIO'){d.data=iso2br(document.getElementById('blq-data').value);d.horaInicio=document.getElementById('blq-hi').value;d.horaFim=document.getElementById('blq-hf').value;}else{d.dataInicio=iso2br(document.getElementById('blq-di').value);d.dataFim=iso2br(document.getElementById('blq-df').value);}_gas().withSuccessHandler(function(r){btn.disabled=false;btn.textContent='Bloquear';if(r.ok){fModal('blq');toast(r.mensagem,'ok');ldAgd();}else toast('Erro: '+r.erro,'er');}).withFailureHandler(function(e){btn.disabled=false;btn.textContent='Bloquear';toast('Erro: '+e.message,'er');}).bloquearHorario(d);}
@@ -4307,24 +4310,62 @@ function _clisMock(){
   ];
 }
 
+/* ALOCO — o agendamento nunca contava como visita.
+
+   A aba Agendamentos NAO tem coluna idCliente nem observacao. As colunas
+   sao: id, barbearia, data, horario, cliente, telefone, servico, barbeiro,
+   valor, status, criadoEm. E este trecho procurava exatamente por essas
+   duas que nao existem — entao `cid` saia vazio SEMPRE, o forEach dava
+   return na primeira linha, e todo cliente ficava com 0 Visitas, ultima
+   visita vazia e total gasto zero. Em todas as lojas, desde sempre.
+
+   Com isso, VIP, Em risco, Novos e a taxa de retencao mediam o nada.
+
+   Agora o encontro e pelo TELEFONE, que existe nas duas abas, com o id
+   (quando houver) na frente e o nome como ultima reserva. Cada cliente le
+   de uma chave so, entao nada e contado duas vezes. */
 function _cliEnrichBasic(clis,agds){
+  function _soTel(v){ return String(v==null?'':v).replace(/\D/g,'').replace(/^55/,''); }
+  function _soNome(v){ return String(v==null?'':v).trim().toLowerCase().replace(/\s+/g,' '); }
+
   var ulVisita={},totalGasto={},cntAtend={};
+  function marcar(ch,a){
+    if(!ch)return;
+    if(!ulVisita[ch]||a.data>ulVisita[ch])ulVisita[ch]=a.data;
+    cntAtend[ch]=(cntAtend[ch]||0)+1;
+    totalGasto[ch]=(totalGasto[ch]||0)+_valorAgd(a);
+  }
   (agds||[]).forEach(function(a){
-    if(a.status==='CANCELADO')return;
+    var st=String(a.status||'').toUpperCase();
+    if(st==='CANCELADO'||st==='BLOQUEADO')return;
     var cid=a.idCliente||((a.observacao||'').replace('cli:',''));
-    if(!cid)return;
-    if(!ulVisita[cid]||a.data>ulVisita[cid])ulVisita[cid]=a.data;
-    cntAtend[cid]=(cntAtend[cid]||0)+1;
-    totalGasto[cid]=(totalGasto[cid]||0)+_valorAgd(a);
+    if(cid) marcar('id:'+cid,a);
+    var tel=_soTel(a.telefone);
+    if(tel.length>=8) marcar('tel:'+tel,a);
+    var nm=_soNome(a.cliente);
+    if(nm) marcar('nm:'+nm,a);
   });
+
+  function chaveDe(c){
+    if(ulVisita['id:'+c.id]!==undefined) return 'id:'+c.id;
+    var t=_soTel(c.telefone);
+    if(t.length>=8 && ulVisita['tel:'+t]!==undefined) return 'tel:'+t;
+    var n=_soNome(c.nome);
+    if(n && ulVisita['nm:'+n]!==undefined) return 'nm:'+n;
+    return '';
+  }
+
   var hoje=new Date();
   return clis.map(function(c){
-    var ul=ulVisita[c.id]||c.dataCadastro||'—';
+    var ch=chaveDe(c);
+    var gasto=ch?(totalGasto[ch]||0):0;
+    var qtd  =ch?(cntAtend[ch]||0):0;
+    var ul=(ch&&ulVisita[ch])||c.dataCadastro||'—';
     var dias=0;try{var d=new Date(ul);if(!isNaN(d.getTime()))dias=Math.round((hoje-d)/(1000*60*60*24));}catch(e){}
     return Object.assign({},c,{
-      _totalGasto:totalGasto[c.id]||0,_atend:cntAtend[c.id]||0,
+      _totalGasto:gasto,_atend:qtd,
       _ultimaV:ul,_proxV:null,_barbeiro:'—',_freq:'—',
-      _vip:(totalGasto[c.id]||0)>1000,_inativo:dias>30,_novo:(cntAtend[c.id]||0)<=1,_aniv:false,_diasSemV:dias,
+      _vip:gasto>1000,_inativo:dias>30,_novo:qtd<=1,_aniv:false,_diasSemV:dias,
     });
   });
 }
@@ -4337,7 +4378,18 @@ function _cliAvatarBg(nome){
 function ldCli(){
   _crmCss();
   document.getElementById('ct').innerHTML='<div class="lw"><div class="sp"></div>Carregando clientes...</div>';
-  _gas().withSuccessHandler(function(r){if(!r.ok){toast('Erro: '+r.erro,'er');return;}_clis=r.ok?r.dados:[];_drawCrm();}).withFailureHandler(function(e){toast('Erro: '+e.message,'er');}).listarClientes(false);
+  /* ALOCO: antes so os clientes eram lidos, e o _drawCrm contava as visitas
+     em cima de uma lista de agendamentos vazia \u2014 dava 0 para todo mundo.
+     Os dois vem do mesmo pacote ja guardado, entao nao ha viagem a mais. */
+  var pen=2;
+  function chk(){ if(!--pen) _drawCrm(); }
+  _gas().withSuccessHandler(function(r){
+    if(!r||!r.ok){ if(r&&r.erro)toast('Erro: '+r.erro,'er'); _clis=[]; chk(); return; }
+    _clis=r.dados||[]; chk();
+  }).withFailureHandler(function(e){ toast('Erro: '+e.message,'er'); _clis=[]; chk(); }).listarClientes(false);
+  _gas().withSuccessHandler(function(r){
+    _agdsCrm=(r&&r.ok&&r.dados)?r.dados:[]; chk();
+  }).withFailureHandler(function(){ _agdsCrm=[]; chk(); }).listarAgendamentos({});
 }
 
 function rnCli(){_drawCrm();}
@@ -4345,7 +4397,7 @@ function filtraCli(v){_cliFiltro=v;_drawCrm();}
 
 function _drawCrm(){
   var raw=_clis;   // sem base real a tela mostra o estado vazio, nunca clientes inventados
-  var clis=_isGAS()?_cliEnrichBasic(raw,_agds):raw;
+  var clis=_isGAS()?_cliEnrichBasic(raw,(_agdsCrm||_agds)):raw;
 
   var tots=clis.length;
   var vips=clis.filter(function(c){return c._vip;}).length;
