@@ -25,6 +25,7 @@
   var cx = null;             // a caixa na tela
   var rec = null, pedacos = [], fluxo = null;
   var t0 = 0, timer = null;
+  var INTENCAO = 'criar';    // criar | alterar | excluir — vinha sendo perdida
   var ITENS = [];            // o plano devolvido pela IA
   var ESTADO = [];           // '' | 'ok' | 'edit'
   var TEXTO = '';            // o que ele falou, transcrito
@@ -231,6 +232,130 @@
     }];
   }
 
+
+  /* ══════════════════════════════════════════════════════════════════
+     ALTERAR E EXCLUIR — o que a tela precisa resolver sozinha
+
+     `camposDitos` le na frase QUAIS campos a pessoa quer mudar. Sem
+     isso o servidor recebe o item inteiro e sobrescreve tudo: foi assim
+     que "altera o corte para 45" trocava o preco E zerava a duracao
+     para 30, porque a ponte preenche 30 quando ninguem fala de minutos.
+
+     E deliberadamente conservador. Na duvida devolve lista vazia, e o
+     servidor recusa pedindo para repetir. Entre chutar e perguntar,
+     perguntar.
+     ══════════════════════════════════════════════════════════════════ */
+
+  var CAMPOS_DO_TIPO = { servico:['nome','preco','duracao'], barbeiro:['nome'],
+                         cliente:['nome','telefone'], pacote:['nome','preco','descricao'] };
+
+  function camposDitos(fala, tipo){
+    var f = semAcento(fala);
+    var podem = CAMPOS_DO_TIPO[String(tipo || '')] || [];
+    var achei = {};
+
+    /* duracao: um numero colado em minuto, ou a palavra duracao */
+    if (/\b\d{1,3}\s*(?:minutos?|mins?)\b/.test(f) || /\bduracao\b|\bdura\s+\d/.test(f))
+      achei.duracao = 1;
+
+    /* preco: palavra de dinheiro... */
+    if (/\br\$|\breais\b|\breal\b|\bpreco\b|\bvalor\b|\bcusta|\bcobra/.test(f))
+      achei.preco = 1;
+    /* ...ou "para/por 45" — desde que o 45 nao seja minuto */
+    var m = f.match(/\b(?:para|pra|por)\s+(\d{1,4})(?:[,.]\d{1,2})?\s*([a-z]+)?/);
+    if (m && !/^(?:minutos?|mins?|horas?)$/.test(m[2] || '')) achei.preco = 1;
+
+    if (/\bnome\b|\bse chama|\bchamar\b|\brenome/.test(f)) achei.nome = 1;
+    if (/\btelefone\b|\bcelular\b|\bzap\b|\bwhats/.test(f) ||
+        String(fala || '').replace(/\D/g, '').length >= 10) achei.telefone = 1;
+    if (/\bdescri/.test(f)) achei.descricao = 1;
+
+    return podem.filter(function(c){ return achei[c]; });
+  }
+
+  /* o registro como ele esta hoje, para mostrar o DE -> PARA.
+     O painel ja carregou essas listas; aqui so se le. */
+  function registroAtual(it){
+    var listas = { servico:'_svcs', barbeiro:'_barbs', cliente:'_clis' };
+    var nome = listas[String((it && it.tipo) || '')];
+    if (!nome || !it || !it.id) return null;
+    var arr = null;
+    try { arr = window[nome]; } catch(e){ return null; }
+    if (!arr || !arr.length) return null;
+    for (var i = 0; i < arr.length; i++)
+      if (String(arr[i].id) === String(it.id)) return arr[i];
+    return null;
+  }
+
+  var ROTULO_CAMPO = { nome:'Nome', preco:'Preço', duracao:'Minutos',
+                       telefone:'Telefone', descricao:'Descrição' };
+
+  function mostraValor(c, v){
+    if (c === 'preco') return brl(v);
+    if (c === 'duracao') return (Number(v) || 0) + ' min';
+    if (c === 'telefone') return v ? fone(v) : '—';
+    return String(v == null || v === '' ? '—' : v);
+  }
+
+  function deParaHtml(it){
+    var cps = it.campos || [];
+    if (!cps.length) return '';
+    var atual = registroAtual(it);
+    var l = [];
+    cps.forEach(function(c){
+      var para = mostraValor(c, it[c]);
+      if (!atual) { l.push(esc(ROTULO_CAMPO[c] || c) + ': passa a ' + esc(para)); return; }
+      var de = mostraValor(c, atual[c]);
+      if (de === para) return;
+      l.push(esc(ROTULO_CAMPO[c] || c) + ': ' + esc(de) + ' → ' + esc(para));
+    });
+    if (!l.length) return '';
+    return '<div class="iav-porque">' + l.join('<br>') + '</div>';
+  }
+
+  /* Prepara o plano quando a intencao e alterar ou excluir.
+     Nao inventa nada: so acrescenta `campos` e solta a duvida que a
+     ponte levanta por falta de campo que, nesses dois casos, nao faz
+     falta nenhuma ("exclui o corte" nao precisa dizer o preco). */
+  function prepararAcao(intencao, fala, itens){
+    if (intencao !== 'alterar' && intencao !== 'excluir') return itens;
+
+    return (itens || []).map(function(it){
+      var T = CAMPOS_DO_TIPO[String(it.tipo || '')];
+
+      /* sem id nao se mexe em nada: a ponte nao achou um unico registro */
+      if (!String(it.id || '').trim()){
+        it.ambiguo = true;
+        it.porque = it.porque || 'não sei qual deles é; me diga o nome exato';
+        return it;
+      }
+
+      /* agendamento nao se apaga nem se altera por voz ainda */
+      if (!T){
+        it.ambiguo = true;
+        it.porque = 'mexer em ' + String(it.tipo || '') + ' por voz ainda não; isso se faz na tela';
+        return it;
+      }
+
+      if (intencao === 'alterar'){
+        it.campos = camposDitos(fala, it.tipo);
+        if (!it.campos.length){
+          it.ambiguo = true;
+          it.porque = 'não entendi o que mudar; diga por exemplo "o corte passa a custar 45"';
+          return it;
+        }
+      }
+
+      /* "faltou: preco" nao e duvida de verdade quando o que se quer e
+         apagar ou mudar outra coisa. Duvida de nome continua valendo. */
+      if (it.ambiguo === true && /^faltou:/.test(String(it.porque || ''))){
+        it.ambiguo = false;
+        it.porque = '';
+      }
+      return it;
+    });
+  }
+
   function brl(v){
     var n = Number(v);
     if (!isFinite(n)) return '—';
@@ -291,7 +416,7 @@
   function fechar(){
     pararTudo();
     if (cx && cx.parentNode) cx.parentNode.removeChild(cx);
-    cx = null; ITENS = []; ESTADO = []; TEXTO = ''; REGRAVANDO = -1;
+    cx = null; ITENS = []; ESTADO = []; TEXTO = ''; REGRAVANDO = -1; INTENCAO = 'criar';
   }
 
   function corpo(){ return document.getElementById('iavCorpo'); }
@@ -420,8 +545,16 @@
     var novos = (j.plano && j.plano.itens) || [];
     var falou = j.texto || '';
 
-    /* a frase manda mais que o palpite do modelo */
-    novos = consertarPlano(falou, novos);
+    /* A INTENCAO. Ela vinha sendo lida e jogada fora aqui mesmo: a tela
+       so pegava `itens` e `pergunta`. Sem ela, "exclui o corte" chegava
+       no servidor como se fosse para gravar. */
+    INTENCAO = String((j.plano && j.plano.intencao) || 'criar').toLowerCase();
+    if (INTENCAO !== 'alterar' && INTENCAO !== 'excluir') INTENCAO = 'criar';
+
+    /* o conserto de tipo e para frase de agendamento; numa frase de
+       apagar ou mudar ele so atrapalharia */
+    if (INTENCAO === 'criar') novos = consertarPlano(falou, novos);
+    else                      novos = prepararAcao(INTENCAO, falou, novos);
 
     if (!novos.length) return telaErro('Não entendi o que você quer fazer. Fale de novo, dizendo o que é: um serviço, um barbeiro, um cliente ou um agendamento.');
 
@@ -437,6 +570,16 @@
     var perg = (j.plano && j.plano.pergunta) || '';
     if (novos.length && novos[0].consertado) perg = novos[0].ambiguo ? 'Para quem é esse horário?' : '';
     telaConferir(perg);
+  }
+
+  /* o botao dizia sempre "Salvar N serviços", mesmo apagando um
+     barbeiro. Agora diz o verbo da intencao e o nome do tipo. */
+  function _verbo(){
+    return INTENCAO === 'excluir' ? 'Apagar' : INTENCAO === 'alterar' ? 'Alterar' : 'Salvar';
+  }
+  function _palavra(n){
+    var T = tipoDe(ITENS.filter(function(x, i){ return ESTADO[i] === 'ok'; })[0] || ITENS[0]);
+    return n === 1 ? T.rotulo : T.plural;
   }
 
   /* ── 4. conferir, item por item ─────────────────────────────────── */
@@ -473,6 +616,9 @@
               (amb ? '<em class="amb">confira este</em>' : '') +
             '</div>' +
             '<div class="iav-val">' + esc(T.linha(it)) + '</div>' +
+            (INTENCAO === 'alterar' && !amb ? deParaHtml(it) : '') +
+            (INTENCAO === 'excluir' && !amb
+               ? '<div class="iav-porque">sai da lista de ' + esc(T.plural) + ' de vez</div>' : '') +
             (amb && it.porque ? '<div class="iav-porque">' + esc(it.porque) + '</div>' : '') +
           '</div>' +
           '<div class="iav-bts">' +
@@ -492,7 +638,7 @@
       '<div class="iav-rodape">' +
         '<button class="iav-cancelar" id="iavCancelar">Cancelar</button>' +
         '<button class="iav-gravar" id="iavGravar"' + (prontos ? '' : ' disabled') + '>' +
-          (prontos ? 'Salvar ' + prontos + (prontos === 1 ? ' serviço' : ' serviços') : 'Confirme ao menos um') +
+          (prontos ? _verbo() + ' ' + prontos + ' ' + _palavra(prontos) : 'Confirme ao menos um') +
         '</button>' +
       '</div>';
 
@@ -591,6 +737,32 @@
     if (bg) bg.onclick = aplicar;
   }
 
+
+  /* ── 4b. a tela que confirma a exclusao ─────────────────────────── */
+  function telaApagar(escolhidos){
+    var T = tipoDe(escolhidos[0]);
+    var n = escolhidos.length;
+    var nomes = escolhidos.map(function(it){ return esc(T.titulo(it) || '(sem nome)'); }).join(', ');
+
+    pinta(
+      '<div class="iav-centro">' +
+        '<p class="iav-tit">Apagar de vez?</p>' +
+        '<p class="iav-sub">' + nomes + '</p>' +
+        '<p class="iav-nota">' +
+          (n === 1 ? 'Este ' + esc(T.rotulo) + ' sai' : 'Estes ' + n + ' ' + esc(T.plural) + ' saem') +
+          ' da lista e não dá para desfazer.</p>' +
+        '<button class="iav-parar" id="iavApagarSim">Apagar de vez</button>' +
+        '<button class="iav-texto" id="iavApagarNao">Não, deixa como está</button>' +
+      '</div>'
+    );
+
+    document.getElementById('iavApagarNao').onclick = function(){ telaConferir(); };
+    document.getElementById('iavApagarSim').onclick = function(){
+      escolhidos.forEach(function(it){ it.confirmadoExcluir = true; });
+      aplicar();
+    };
+  }
+
   /* ── 5. gravar de verdade ───────────────────────────────────────── */
   var ULTIMO_TIPO = '';
 
@@ -600,6 +772,12 @@
     if (!escolhidos.length) return;
     ULTIMO_TIPO = String((escolhidos[0] && escolhidos[0].tipo) || 'servico');
 
+    /* APAGAR NAO ACONTECE NUM TOQUE SO. O "Está certo" diz que a IA
+       entendeu; nao diz que pode apagar. A segunda tela e quem manda o
+       `confirmadoExcluir` — sem ele o servidor recusa. */
+    if (INTENCAO === 'excluir' && !escolhidos[0].confirmadoExcluir)
+      return telaApagar(escolhidos);
+
     pinta(
       '<div class="iav-centro">' +
         '<div class="iav-girando" aria-hidden="true"></div>' +
@@ -607,7 +785,7 @@
       '</div>'
     );
 
-    post({ action:'ia_aplicar', itens: escolhidos, intencao: (escolhidos[0] && escolhidos[0].tipo) || 'servico' })
+    post({ action:'ia_aplicar', itens: escolhidos, intencao: INTENCAO })
       .then(function(j){
         if (!j || !j.ok){
           /* o servidor recusou: mostra O MOTIVO, nao um "erro" generico */
@@ -627,6 +805,12 @@
       .catch(function(){ telaErro('Não consegui falar com o servidor.'); });
   }
 
+  function _feito(n){
+    if (INTENCAO === 'excluir') return n === 1 ? 'apagado' : 'apagados';
+    if (INTENCAO === 'alterar') return n === 1 ? 'alterado' : 'alterados';
+    return n === 1 ? 'salvo' : 'salvos';
+  }
+
   function telaFim(n, recusados, j){
     /* o texto e o destino saem do que foi gravado, nao de "servico" fixo */
     var T = tipoDe(ULTIMO_TIPO ? { tipo: ULTIMO_TIPO } : null);
@@ -634,7 +818,7 @@
     pinta(
       '<div class="iav-centro">' +
         '<div class="iav-ok" aria-hidden="true">' + svgCerto() + '</div>' +
-        '<p class="iav-tit">' + n + ' ' + esc(palavra) + ' ' + (n === 1 ? 'salvo' : 'salvos') + '</p>' +
+        '<p class="iav-tit">' + n + ' ' + esc(palavra) + ' ' + _feito(n) + '</p>' +
         (recusados ? '<p class="iav-nota">' + recusados + ' não entrou' +
             (function(){ try { var q = (j.detalhe.recusados[0]||{}).porque;
                                return q ? ': ' + esc(q) : '.'; } catch(e){ return '.'; } })() +
@@ -643,7 +827,7 @@
         '<button class="iav-texto" id="iavFim">Ver na tela</button>' +
       '</div>'
     );
-    document.getElementById('iavDeNovo').onclick = function(){ ITENS = []; ESTADO = []; TEXTO = ''; telaInicio(); };
+    document.getElementById('iavDeNovo').onclick = function(){ ITENS = []; ESTADO = []; TEXTO = ''; INTENCAO = 'criar'; telaInicio(); };
     document.getElementById('iavFim').onclick = function(){
       fechar();
       /* joga fora o pacote de novo, agora: entre salvar e clicar aqui o
@@ -800,7 +984,11 @@
   /* exposto só para os testes */
   window.__iavTeste = {
     numDe: numDe, brl: brl, esc: esc, porQueNao: porQueNao,
-    estado: function(){ return { ITENS: ITENS, ESTADO: ESTADO }; },
-    semear: function(itens){ ITENS = itens; ESTADO = itens.map(function(){ return ''; }); }
+    estado: function(){ return { ITENS: ITENS, ESTADO: ESTADO, INTENCAO: INTENCAO }; },
+    semear: function(itens){ ITENS = itens; ESTADO = itens.map(function(){ return ''; }); },
+    /* o caminho inteiro de alterar/excluir, para o teste medir */
+    aoVoltar: aoVoltar, aplicar: aplicar, abrir: abrir,
+    camposDitos: camposDitos, prepararAcao: prepararAcao,
+    marcarTodosOk: function(){ ESTADO = ITENS.map(function(){ return 'ok'; }); }
   };
 })();
