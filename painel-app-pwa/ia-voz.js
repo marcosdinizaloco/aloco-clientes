@@ -93,6 +93,144 @@
     return m ? (m[3] + '/' + m[2]) : (d || 'sem data');
   }
 
+
+  /* ══════════════════════════════════════════════════════════════════
+     LEITURA DA FRASE, AQUI NA TELA
+
+     O modelo às vezes devolve SERVIÇO para uma frase que é claramente um
+     agendamento — "Agende um corte de cabelo para o Chico hoje às 15
+     horas" voltou como serviço, e o barbeiro salvava um serviço achando
+     que tinha agendado. Verbo + pessoa + hora não é coisa de adivinhar.
+
+     Isto mora na tela de propósito: a tela já tem a frase transcrita e
+     sabe que dia é hoje pelo próprio telefone. Assim o conserto vale no
+     recarregar, sem depender de publicar nada no servidor.
+     ══════════════════════════════════════════════════════════════════ */
+
+  var NUM_PT = { uma:1, um:1, duas:2, dois:2, tres:3, quatro:4, cinco:5,
+    seis:6, sete:7, oito:8, nove:9, dez:10, onze:11, doze:12, treze:13,
+    quatorze:14, catorze:14, quinze:15, dezesseis:16, dezessete:17,
+    dezoito:18, dezenove:19, vinte:20, 'vinte e uma':21, 'vinte e um':21,
+    'vinte e duas':22, 'vinte e dois':22, 'vinte e tres':23 };
+
+  var DIAS_PT = { domingo:0, segunda:1, terca:2, quarta:3, quinta:4, sexta:5, sabado:6 };
+
+  function semAcento(t){
+    return String(t == null ? '' : t).toLowerCase()
+      .replace(/[áàâãä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i')
+      .replace(/[óòôõö]/g,'o').replace(/[úùûü]/g,'u').replace(/ç/g,'c')
+      .replace(/\s+/g,' ').trim();
+  }
+
+  function hojeISO(d){
+    d = d || new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth()+1)).slice(-2) +
+           '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  function lerHora(fn){
+    var h = null, min = 0, m;
+    if (/\bmeio dia\b|\bmeio-dia\b/.test(fn)) h = 12;
+    else if (/\bmeia noite\b|\bmeia-noite\b/.test(fn)) h = 0;
+    if (h === null && (m = fn.match(/\b(\d{1,2})[:h](\d{2})\b/))){ h = +m[1]; min = +m[2]; }
+    if (h === null && (m = fn.match(/\b(\d{1,2})\s*(?:horas?|h|hrs?)\b/))) h = +m[1];
+    if (h === null && (m = fn.match(/\b(?:as|para as|pras|pra)\s+(\d{1,2})\b/))) h = +m[1];
+    if (h === null){
+      for (var k in NUM_PT){
+        if (new RegExp('\\b(?:as|para as|pras|pra)\\s+' + k + '\\b').test(fn) ||
+            new RegExp('\\b' + k + '\\s*(?:horas?|h)\\b').test(fn)) h = NUM_PT[k];
+      }
+    }
+    if (h === null) return '';
+    if (/\be meia\b/.test(fn)) min = 30;
+    else if (/\be quinze\b/.test(fn)) min = 15;
+    else if (/\be quarenta e cinco\b/.test(fn)) min = 45;
+    if (/\b(?:da|de) (?:tarde|noite)\b/.test(fn) && h < 12) h += 12;
+    if (/\b(?:da|de) manha\b/.test(fn) && h === 12) h = 0;
+    if (h < 0 || h > 23 || min < 0 || min > 59) return '';
+    return ('0' + h).slice(-2) + ':' + ('0' + min).slice(-2);
+  }
+
+  function lerData(fn){
+    var hoje = new Date();
+    function mais(n){ var d = new Date(hoje); d.setDate(d.getDate() + n); return hojeISO(d); }
+    if (/\bhoje\b/.test(fn))             return hojeISO(hoje);
+    if (/\bdepois de amanha\b/.test(fn)) return mais(2);
+    if (/\bamanha\b/.test(fn))           return mais(1);
+    for (var k in DIAS_PT){
+      if (new RegExp('\\b' + k + '([ -]feira)?\\b').test(fn)){
+        var falta = (DIAS_PT[k] - hoje.getDay() + 7) % 7;
+        if (falta === 0) falta = 7;
+        return mais(falta);
+      }
+    }
+    var m = fn.match(/\bdia (\d{1,2})\b/);
+    if (m){
+      var d2 = new Date(hoje); d2.setDate(+m[1]);
+      if (+m[1] < hoje.getDate()) d2.setMonth(d2.getMonth() + 1);
+      return hojeISO(d2);
+    }
+    return hojeISO(hoje);     /* falou hora e não falou dia: é hoje */
+  }
+
+  var NAO_NOME = /^(as|a|o|os|hoje|amanha|depois|segunda|terca|quarta|quinta|sexta|sabado|domingo|dia|meio|meia|manha|tarde|noite|hora|horas|uma|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|\d+)$/;
+
+  function lerCliente(fala){
+    var m = String(fala || '').match(
+      /\b(?:para|pra|pro|p\/)\s+(?:o|a|os|as)?\s*(?:seu|dona|sr\.?|sra\.?)?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ']{1,20}(?:\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ']{1,20})?)/);
+    if (!m) return '';
+    var ps = m[1].trim().split(/\s+/);
+    if (NAO_NOME.test(semAcento(ps[0]))) return '';
+    if (ps.length > 1 && NAO_NOME.test(semAcento(ps[1]))) ps = [ps[0]];
+    return ps.map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+  }
+
+  var VERBO_AGENDA = /\b(agend|marca|marqu|encaix|remarc|reserv)/;
+
+  /* o que vai ser feito, quando o próprio modelo não disse */
+  function lerServico(fala){
+    var m = String(fala || '').match(
+      /\b(?:agend[ae]r?|agenda|marc[ae]r?|marca|marque|encaix[ae]r?|reserv[ae]r?)\s+(?:um|uma|o|a)?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' ]{1,30}?)\s+(?:para|pra|pro|p\/|hoje|amanh|as |às )/i);
+    if (m) return m[1].trim();
+    var m2 = String(fala || '').match(/^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' ]{1,30}?)\s+(?:para|pra|pro|p\/)\b/i);
+    return m2 ? m2[1].trim() : '';
+  }
+
+  /**
+   * Devolve os itens corrigidos. Só mexe quando tem CERTEZA de que a
+   * frase é um agendamento; fora disso devolve o que veio.
+   */
+  function consertarPlano(fala, itens){
+    itens = itens || [];
+    var fn = semAcento(fala);
+    if (!fn) return itens;
+
+    var hora = lerHora(fn);
+    if (!hora) return itens;                       /* sem hora não é agendamento */
+
+    var cli = lerCliente(fala);
+    if (!VERBO_AGENDA.test(fn) && !cli) return itens;
+
+    /* já veio como agendamento: não mexe */
+    for (var i = 0; i < itens.length; i++) if (itens[i].tipo === 'agendamento') return itens;
+
+    /* o modelo mandou serviço numa frase de agendamento. O nome que ele
+       achou é o serviço; o resto vem da fala. */
+    var svc = '';
+    for (var j = 0; j < itens.length; j++){
+      if (itens[j] && itens[j].nome){ svc = itens[j].nome; break; }
+    }
+    if (!svc) svc = lerServico(fala);
+    if (svc) svc = svc.charAt(0).toUpperCase() + svc.slice(1);
+
+    return [{
+      tipo:'agendamento', cliente:cli, data:lerData(fn), horario:hora,
+      servico:svc, barbeiro:'', id:'',
+      ambiguo: !cli, porque: cli ? '' : 'não entendi para quem é',
+      consertado: true
+    }];
+  }
+
   function brl(v){
     var n = Number(v);
     if (!isFinite(n)) return '—';
@@ -280,6 +418,11 @@
     }
 
     var novos = (j.plano && j.plano.itens) || [];
+    var falou = j.texto || '';
+
+    /* a frase manda mais que o palpite do modelo */
+    novos = consertarPlano(falou, novos);
+
     if (!novos.length) return telaErro('Não entendi o que você quer fazer. Fale de novo, dizendo o que é: um serviço, um barbeiro, um cliente ou um agendamento.');
 
     if (REGRAVANDO >= 0 && ITENS[REGRAVANDO]){
@@ -291,7 +434,9 @@
       ESTADO = novos.map(function(){ return ''; });
       TEXTO  = j.texto || '';
     }
-    telaConferir(j.plano && j.plano.pergunta);
+    var perg = (j.plano && j.plano.pergunta) || '';
+    if (novos.length && novos[0].consertado) perg = novos[0].ambiguo ? 'Para quem é esse horário?' : '';
+    telaConferir(perg);
   }
 
   /* ── 4. conferir, item por item ─────────────────────────────────── */
@@ -464,13 +609,18 @@
 
     post({ action:'ia_aplicar', itens: escolhidos, intencao: (escolhidos[0] && escolhidos[0].tipo) || 'servico' })
       .then(function(j){
-        if (!j || !j.ok) return telaErro('Não consegui salvar: ' + ((j && j.erro) || 'erro'));
-        telaFim(j.gravados, j.recusados);
+        if (!j || !j.ok){
+          /* o servidor recusou: mostra O MOTIVO, nao um "erro" generico */
+          var porque = '';
+          try { porque = (j.detalhe.recusados[0] || {}).porque || ''; } catch(e){}
+          return telaErro('Não consegui salvar: ' + (porque || (j && j.erro) || 'erro'));
+        }
+        telaFim(j.gravados, j.recusados, j);
       })
       .catch(function(){ telaErro('Não consegui falar com o servidor.'); });
   }
 
-  function telaFim(n, recusados){
+  function telaFim(n, recusados, j){
     /* o texto e o destino saem do que foi gravado, nao de "servico" fixo */
     var T = tipoDe(ULTIMO_TIPO ? { tipo: ULTIMO_TIPO } : null);
     var palavra = n === 1 ? T.rotulo : T.plural;
@@ -478,7 +628,10 @@
       '<div class="iav-centro">' +
         '<div class="iav-ok" aria-hidden="true">' + svgCerto() + '</div>' +
         '<p class="iav-tit">' + n + ' ' + esc(palavra) + ' ' + (n === 1 ? 'salvo' : 'salvos') + '</p>' +
-        (recusados ? '<p class="iav-nota">' + recusados + ' não entrou. Tente de novo por este.</p>' : '') +
+        (recusados ? '<p class="iav-nota">' + recusados + ' não entrou' +
+            (function(){ try { var q = (j.detalhe.recusados[0]||{}).porque;
+                               return q ? ': ' + esc(q) : '.'; } catch(e){ return '.'; } })() +
+          '</p>' : '') +
         '<button class="iav-parar" id="iavDeNovo">Falar de novo</button>' +
         '<button class="iav-texto" id="iavFim">Ver na tela</button>' +
       '</div>'
