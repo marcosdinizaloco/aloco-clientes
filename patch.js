@@ -1504,3 +1504,238 @@
     abrir(modo || (pedido ? 'android' : (ehWebView() ? 'webview' : (ehIOS() ? 'ios' : 'manual'))));
   };
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ALOCO — A RESERVA SÓ VIRA "RESERVADO" QUANDO O SERVIDOR CONFIRMAR
+
+   O problema: o confirmarAgendamento mandava o pedido com
+   `fetch(...).catch(function(){})` e pintava a tela de sucesso na linha
+   seguinte, sem esperar resposta nenhuma. Internet ruim, Apps Script
+   fora do ar ou cota estourada: o cliente lia "RESERVADO", fechava o
+   app e aparecia na barbearia. O barbeiro nao tinha o agendamento e
+   nao tinha como saber que isso aconteceu.
+
+   Agora: manda, ESPERA, e so pinta o sucesso se vier ok. Se o horario
+   tiver sido preenchido no meio do caminho, o cliente fica na tela de
+   escolha com a lista de horarios recarregada. Se cair a internet, ele
+   le em letra clara que NAO reservou.
+
+   Nada de visual muda. Nenhum texto de sucesso foi reescrito: quem
+   pinta a tela continua sendo a funcao original do app.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  if (window.__alocoReservaFirme) return;
+
+  function aviso(msg){
+    try { if (typeof alocoToast === 'function') { alocoToast(msg); return; } } catch(e){}
+    try { if (typeof window.alocoToast === 'function') { window.alocoToast(msg); return; } } catch(e){}
+    /* ultimo recurso: o app nao tem toast carregado ainda */
+    try {
+      var t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = 'position:fixed;left:50%;bottom:92px;transform:translateX(-50%);'
+        + 'background:#1a1a1a;border:1px solid rgba(214,176,129,.3);color:#e8dcc4;'
+        + 'padding:12px 18px;border-radius:12px;font-size:13.5px;z-index:99999;'
+        + 'max-width:82%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+      document.body.appendChild(t);
+      setTimeout(function(){
+        t.style.transition = 'opacity .4s'; t.style.opacity = '0';
+        setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 400);
+      }, 3600);
+    } catch(e){}
+  }
+
+  function ligar(){
+    if (window.__alocoReservaFirme) return true;
+    if (typeof window.confirmarAgendamento !== 'function') return false;
+
+    var original = window.confirmarAgendamento;
+    window.__alocoReservaFirme = 1;
+
+    window.confirmarAgendamento = function(){
+      /* as escolhas sao `let` no escopo do app: leem-se pelo nome, nao pelo window */
+      var svc = null, bar = null, slot = null, dia = null, iso = '';
+      try { svc = selSvc; bar = selBar; slot = selSlot; dia = selDate; } catch(e){}
+      try { iso = window.selDateISO || ''; } catch(e){}
+      if (!svc || !bar || !slot) return;
+
+      var API  = '', SLUG = '';
+      try { API  = window.ALOCO_API  || ''; } catch(e){}
+      try { SLUG = window.ALOCO_SLUG || ''; } catch(e){}
+
+      /* app sem backend configurado: segue como era, nao ha o que confirmar */
+      if (!API || String(API).indexOf('http') !== 0) return original.apply(this, arguments);
+
+      var bt = document.getElementById('ag-cta-2');
+      var rotulo = bt ? bt.textContent : '';
+      if (bt){ bt.disabled = true; bt.textContent = 'Reservando...'; }
+      function soltar(){ if (bt){ bt.disabled = false; bt.textContent = rotulo; } }
+
+      var cli = {};
+      try { cli = JSON.parse(localStorage.getItem('aloco_cliente')) || {}; } catch(e){}
+      var nome = ((cli.nome || '') + ' ' + (cli.sobrenome || '')).trim();
+      if (!nome){
+        var dn = document.getElementById('dname');
+        nome = ((dn && dn.textContent) || 'Cliente').replace(/\.$/, '').trim();
+      }
+      var valor = parseFloat(String(svc.preco).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+
+      fetch(API, { method:'POST', body: JSON.stringify({
+        action:'agendar', b: SLUG,
+        cliente: nome, telefone: (cli.telefone || ''),
+        servico: svc.nome, barbeiro: bar,
+        data: (iso || dia), horario: slot,
+        valor: valor, status: 'CONFIRMADO'
+      }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        soltar();
+        if (j && j.ok){ pintarSucesso(); return; }
+        recusar(j);
+      })
+      .catch(function(){
+        soltar();
+        aviso('Sem conexão. Seu horário NÃO foi reservado — tente de novo.');
+      });
+    };
+
+    /* O sucesso continua sendo pintado pela funcao original — ela sabe
+       mexer no card do inicio, no localStorage e no ritual. So que o
+       pedido dela ja foi feito aqui em cima, entao o fetch dela e
+       silenciado nesse instante para nao agendar duas vezes. */
+    function pintarSucesso(){
+      var f = window.fetch;
+      try {
+        window.fetch = function(){
+          return Promise.resolve({ ok:true, json:function(){ return Promise.resolve({ ok:true }); } });
+        };
+        original();
+      } catch(e){
+      } finally {
+        try { window.fetch = f; } catch(e2){}
+      }
+    }
+
+    function recusar(j){
+      var erro = (j && j.erro) || '';
+      var msg;
+      if (erro === 'horario_ocupado'){
+        msg = 'Esse horário acabou de ser preenchido. Escolha outro, por favor.';
+        try { if (typeof alocoCarregarHorarios === 'function') alocoCarregarHorarios(); } catch(e){}
+      } else if (erro === 'horario_ausente'){
+        msg = 'Escolha um horário.';
+      } else if (erro === 'assinatura_expirada'){
+        msg = 'Agendamento indisponível no momento. Fale com a barbearia.';
+      } else {
+        msg = (j && j.mensagem) || 'Não consegui reservar agora. Tente de novo em instantes.';
+      }
+      aviso(msg);
+    }
+
+    return true;
+  }
+
+  /* o patch.js entra com async: a funcao do app pode ainda nao existir */
+  if (!ligar()){
+    var tentou = 0;
+    var t = setInterval(function(){
+      if (ligar() || ++tentou > 60) clearInterval(t);
+    }, 300);
+  }
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ALOCO — CONTROLES QUE NAO FAZIAM NADA
+
+   "Remarcar" no card do inicio nao tinha onclick nenhum: o cliente
+   tocava e a tela ficava parada. Agora leva para a tela de agendamento,
+   que e o caminho real de remarcar.
+
+   "Notificacoes", "Privacidade" e "Ajuda" no perfil tambem nao tinham
+   handler — e as telas por tras delas nao existem. Ficam escondidas:
+   linha morta com setinha de ">" promete o que o app nao tem. Para
+   trazer de volta, basta apagar este bloco.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  if (window.__alocoControlesMortos) return;
+
+  function arrumar(){
+    var mexeu = false;
+
+    /* Remarcar -> tela de agendamento */
+    try {
+      var bts = document.querySelectorAll('.nc-foot .cta2, .cta2');
+      for (var i = 0; i < bts.length; i++){
+        var b = bts[i];
+        if (!/^\s*Remarcar\s*$/i.test(b.textContent || '')) continue;
+        if (b.getAttribute('onclick') || b.__alocoOk) continue;
+        b.__alocoOk = 1;
+        b.addEventListener('click', function(){
+          try { if (typeof navTo === 'function') navTo('agenda'); } catch(e){}
+        });
+        mexeu = true;
+      }
+    } catch(e){}
+
+    /* linhas do perfil sem destino */
+    try {
+      var linhas = document.querySelectorAll('.style-row');
+      for (var k = 0; k < linhas.length; k++){
+        var r = linhas[k];
+        if (r.getAttribute('onclick') || r.__alocoVisto) continue;
+        var t = (r.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!/^(Notificações|Notificacoes|Privacidade|Ajuda)\s*›?$/.test(t)) continue;
+        r.__alocoVisto = 1;
+        r.style.display = 'none';
+        mexeu = true;
+      }
+    } catch(e){}
+
+    return mexeu;
+  }
+
+  function quandoPronto(fn){
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  quandoPronto(function(){
+    window.__alocoControlesMortos = 1;
+    arrumar();
+    /* o perfil e montado depois: olha de novo por um tempo */
+    var n = 0;
+    var t = setInterval(function(){ arrumar(); if (++n > 40) clearInterval(t); }, 400);
+  });
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ALOCO — O RELOGIO DA TELA DE PACOTES ESTAVA PARADO EM 09:41
+
+   O atualizador so conhece lt-home, lt-agenda, lt-fila, lt-perfil e
+   lt-cons. A barra da tela Pacotes nao tem id, entao ficava com a hora
+   de exemplo do molde, para sempre. (lt-cons, alias, nao existe em
+   lugar nenhum.) Agora qualquer .sb-time acompanha o relogio.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  if (window.__alocoRelogio) return;
+  window.__alocoRelogio = 1;
+
+  function hora(){
+    var d = new Date();
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+  function pintar(){
+    try {
+      var t = hora();
+      var el = document.querySelectorAll('.sb-time');
+      for (var i = 0; i < el.length; i++) if (el[i].textContent !== t) el[i].textContent = t;
+    } catch(e){}
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintar);
+  else pintar();
+  setInterval(pintar, 20000);
+})();
