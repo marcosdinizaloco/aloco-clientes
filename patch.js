@@ -318,14 +318,19 @@
 // Aqui ele e recarregado com carimbo unico a cada abertura.
 (function(){
   try{
+    // qual arquivo de patch ESTE app pediu? pode nao ser o /patch.css
+    // (loja em teste aponta para outro). Recarrega o mesmo, nunca outro.
+    var sel = 'link[href*="/patch.css?v="], link[href*="/patch-teste.css?v="]';
+    var velhos = document.querySelectorAll(sel);
+    var arq = velhos.length
+            ? String(velhos[velhos.length - 1].getAttribute('href') || '').split('?')[0]
+            : '/patch.css';
+    if (arq.indexOf('/patch') !== 0) arq = '/patch.css';
     var novo = document.createElement('link');
     novo.rel = 'stylesheet';
-    novo.href = '/patch.css?t=' + Date.now();
+    novo.href = arq + '?t=' + Date.now();
     novo.onload = function(){
-      try{
-        var velhos = document.querySelectorAll('link[href*="/patch.css?v="]');
-        for(var i = 0; i < velhos.length; i++) velhos[i].remove();
-      }catch(e){}
+      try{ for(var i = 0; i < velhos.length; i++) velhos[i].remove(); }catch(e){}
     };
     document.head.appendChild(novo);
   }catch(e){}
