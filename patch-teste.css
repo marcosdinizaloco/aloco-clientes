@@ -1,0 +1,482 @@
+/* ═══════════════════════════════════════════════════════════════
+   ALOCO — patch-teste.css      CANARIO: so a loja de teste aponta aqui
+
+   Mesmo arquivo do patch.css, com uma diferenca: nenhuma cor de marca
+   esta escrita aqui dentro. Toda cor de marca vem dos tokens --mk* que
+   o proprio app declara. App que nao declara nada cai no fallback, que
+   e o ouro exato de hoje — fica identico ao que ja esta no ar.
+
+   NAO passam por aqui, de proposito: verde e vermelho semanticos
+   (--ok, --err, WhatsApp), preto e branco estruturais.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  --tz:    var(--mkz, #E3BE70);   /* marca sobre preto: texto, borda, ponto */
+  --tzc:   var(--mkzc, #F6E3B0);   /* variante clara */
+  --tze:   var(--mkze, #C9992F);   /* variante escura */
+
+  --tg1:   var(--mkg1, #C9992F);   /* degrade dos preenchimentos solidos */
+  --tg2:   var(--mkg2, #F6E3B0);
+  --tg3:   var(--mkg3, #E3BE70);
+  --tg4:   var(--mkg4, #C08A2E);
+  --td:    var(--mkd, #16100A);   /* texto POR CIMA desses preenchimentos */
+
+  --tn0:   var(--mkn0, #050403);   /* superficies escuras, tingidas */
+  --tn1:   var(--mkn1, #0A0806);
+  --tn2:   var(--mkn2, #120E08);
+  --tn3:   var(--mkn3, #191309);
+  --tn4:   var(--mkn4, #221909);
+
+  /* transparencias: um token por nivel (rgba(var(--x),a) quebra em
+     iPhone antigo — mesma regra que o painel ja segue) */
+  --tca18: var(--mtca18, rgba(246,227,176,0.18));
+  --tca46: var(--mtca46, rgba(255,241,214,0.46));
+  --tca55: var(--mtca55, rgba(255,241,214,0.55));
+  --tca82: var(--mtca82, rgba(240,214,163,0.82));
+  --tca92: var(--mtca92, rgba(240,214,163,0.92));
+  --tea0:  var(--mtea0, rgba(201,169,106,0));
+  --tea09: var(--mtea09, rgba(176,133,62,0.09));
+  --tea10: var(--mtea10, rgba(201,153,47,0.10));
+  --tea11: var(--mtea11, rgba(176,133,62,0.11));
+  --tea13: var(--mtea13, rgba(201,153,47,0.13));
+  --tea14: var(--mtea14, rgba(201,153,47,0.14));
+  --tea16: var(--mtea16, rgba(205,166,92,0.16));
+  --tea18: var(--mtea18, rgba(201,153,47,0.18));
+  --tea20: var(--mtea20, rgba(205,166,92,0.20));
+  --tea45: var(--mtea45, rgba(201,153,47,.45));
+  --tea6:  var(--mtea6, rgba(201,153,47,0.6));
+  --tea65: var(--mtea65, rgba(201,153,47,0.65));
+  --tza018: var(--mtza018, rgba(236,206,148,0.018));
+  --tza045: var(--mtza045, rgba(236,206,148,0.045));
+  --tza05: var(--mtza05, rgba(227,190,112,0.05));
+  --tza09: var(--mtza09, rgba(227,190,112,0.09));
+  --tza10: var(--mtza10, rgba(227,190,112,0.10));
+  --tza16: var(--mtza16, rgba(227,190,112,0.16));
+  --tza18: var(--mtza18, rgba(227,190,112,0.18));
+  --tza20: var(--mtza20, rgba(227,190,112,0.20));
+  --tza22: var(--mtza22, rgba(227,190,112,0.22));
+  --tza28: var(--mtza28, rgba(227,190,112,0.28));
+  --tza30: var(--mtza30, rgba(227,190,112,0.30));
+  --tza32: var(--mtza32, rgba(227,190,112,0.32));
+  --tza34: var(--mtza34, rgba(233,197,126,0.34));
+  --tza35: var(--mtza35, rgba(227,190,112,.35));
+  --tza42: var(--mtza42, rgba(227,190,112,0.42));
+  --tza5:  var(--mtza5, rgba(227,190,112,.5));
+  --tza6:  var(--mtza6, rgba(227,190,112,.6));
+}
+/* ═══════════════════════════════════════════════════════════════
+   ALOCO — TEMA INTERNO DO APP  (vale para todos os apps entregues)
+   Paleta fixa: preto cinematografico + ouro. A cor da barbearia
+   continua mandando na abertura, no icone e na logo — aqui dentro
+   o visual e o mesmo para todo mundo.
+   Estrutura, textos e posicoes: nada muda. So cor e luz.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  /* fundos */
+  --ink: #000000 !important;
+  --s0:  var(--tn0) !important;
+  --s1:  var(--tn1) !important;
+  --s2:  var(--tn2) !important;
+  --s3:  var(--tn3) !important;
+  --s4:  var(--tn4) !important;
+
+  /* cor da loja, lida da logo */
+  --b0:  var(--tze) !important;
+  --b1:  var(--tze) !important;
+  --b2:  var(--tz) !important;
+  --b3:  var(--tzc) !important;
+  --ba:  var(--tza18) !important;
+  --bb:  var(--tza09) !important;
+  --bc:  var(--tza045) !important;
+
+  /* linhas */
+  --r0:  rgba(255,255,255,0.045) !important;
+  --r1:  rgba(255,255,255,0.085) !important;
+  --r2:  rgba(255,255,255,0.15) !important;
+
+  /* texto: branco de verdade, com a hierarquia de volta */
+  --cr:  #FFFFFF !important;
+  --c2:  rgba(255,255,255,0.64) !important;
+  --c3:  rgba(255,255,255,0.40) !important;
+  --c4:  rgba(255,255,255,0.20) !important;
+  --c5:  rgba(255,255,255,0.09) !important;
+}
+
+/* ── a barra do topo sai inteira: sem logo, sem relogio falso e sem
+      a faixa preta que cortava o degrade. O conteudo comeca no topo. ── */
+.sb { display: none !important; }
+.screen, #screen-cadastro{
+  padding-top: calc(env(safe-area-inset-top, 0px) + 18px) !important;
+  box-sizing: border-box !important;
+}
+
+/* ── fundo: preto com brasa, nao preto chapado ── */
+.screen{
+  background:
+    /* a barra de status do app instalado e preta e nao muda mais (a cor
+       dela ficou gravada no dia da instalacao). Entao a tela comeca no
+       mesmo preto e so depois esquenta: assim nao existe linha nenhuma. */
+    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    radial-gradient(130% 56% at 92% 10%, var(--tea18) 0%, transparent 56%),
+    radial-gradient(106% 50% at -14% 106%, var(--tea13) 0%, transparent 60%),
+    linear-gradient(176deg, var(--tn1) 0%, var(--tn0) 30%, #000000 78%)
+    !important;
+}
+/* o corpo tambem recebe o fundo: assim nao aparece preto por tras
+   enquanto a tela anima a troca de aba */
+body{
+  background:
+    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    radial-gradient(132% 44% at 92% 4%, var(--tea14) 0%, transparent 58%),
+    linear-gradient(176deg, var(--tn1) 0%, #000000 70%)
+    !important;
+}
+
+/* rede de seguranca: se por qualquer motivo o "aparecer" nao chegar,
+   o conteudo se revela sozinho depois de 2,5s. Tela em branco nunca. */
+.fu{ animation: alcoGarantir 0.01s linear 2.5s forwards; }
+.fu.on{ animation: none; }
+@keyframes alcoGarantir{ to{ opacity:1; transform:none; } }
+
+/* ═══ LUZ: faixas curvas passando por tras da interface ═══
+   Tudo e aneis finissimos em champagne metalico, com brilho ao redor,
+   desfoque nas pontas e opacidade baixa. O preto continua mandando:
+   o dourado aparece so como reflexo. */
+
+.screen::before,
+.screen::after{
+  content: ''; position: fixed; z-index: -1; pointer-events: none;
+  border-radius: 50%;
+}
+
+/* arco que varre o alto da direita e some antes de chegar no cartao */
+.screen::before{
+  width: 179vw; height: 179vw; top: -51vw; right: -164vw;
+  border: 1.5px solid var(--tca92);
+  box-shadow:
+    0 0 10px 0 var(--tca55),
+    0 0 34px 2px var(--tza34),
+    0 0 92px 10px var(--tea20),
+    0 0 190px 30px var(--tea11);
+  filter: blur(0.3px);
+  -webkit-mask-image: radial-gradient(48% 44% at 2% 56%,
+      #000 10%, rgba(0,0,0,.55) 50%, rgba(0,0,0,0) 86%);
+          mask-image: radial-gradient(48% 44% at 2% 56%,
+      #000 10%, rgba(0,0,0,.55) 50%, rgba(0,0,0,0) 86%);
+}
+
+/* arco raso atravessando o rodape, entrando pela esquerda */
+.screen::after{
+  width: 256vw; height: 256vw; bottom: -194vw; left: -103vw;
+  border: 1.4px solid var(--tca82);
+  box-shadow:
+    0 0 9px 0 var(--tca46),
+    0 0 30px 2px var(--tza28),
+    0 0 84px 9px var(--tea16),
+    0 0 170px 26px var(--tea09);
+  filter: blur(0.3px);
+  -webkit-mask-image: radial-gradient(42% 36% at 56% 5%,
+      #000 12%, rgba(0,0,0,.5) 52%, rgba(0,0,0,0) 88%);
+          mask-image: radial-gradient(42% 36% at 56% 5%,
+      #000 12%, rgba(0,0,0,.5) 52%, rgba(0,0,0,0) 88%);
+}
+
+/* ── saudacao: "Ola," branco, o nome em ouro escovado ── */
+.hd-n { color: #FFFFFF !important; }
+.hd-n em{
+  background: linear-gradient(116deg, var(--tze) 0%, var(--tzc) 44%, var(--tz) 68%, var(--tze) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.hd-lbl { color: var(--tz) !important; }
+.pdot   { background: var(--tz) !important; box-shadow: 0 0 10px var(--tza6) !important; }
+.hd-rule{ background: linear-gradient(90deg, var(--tza35), transparent) !important; }
+
+/* ── cartao: vidro escuro com brasa no canto ── */
+.nc{
+  border-radius: 18px !important;
+  border: 1px solid var(--tza22) !important;
+  background:
+    radial-gradient(130% 94% at 100% 0%, var(--tea10) 0%, transparent 62%),
+    linear-gradient(162deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.012) 48%, rgba(0,0,0,0) 100%)
+    !important;
+  box-shadow: 0 26px 64px rgba(0,0,0,0.6) !important;
+}
+.nc-body { padding: 22px 20px 18px !important; }
+.nc-ava{
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg3) 100%) !important;
+  color: var(--td) !important; font-weight: 700 !important;
+  box-shadow: 0 0 0 1px var(--tza35), 0 8px 22px -6px var(--tea45) !important;
+}
+.nc-ring { border-color: var(--tza5) !important; }
+.nc-hr   { color: var(--tzc) !important; }
+
+/* ── botao: ouro escovado, texto escuro ── */
+.cta{
+  padding: 16px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  color: var(--td) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 46%, var(--tg3) 72%, var(--tg4) 100%) !important;
+  box-shadow: 0 16px 36px -12px var(--tea65),
+              inset 0 1px 0 rgba(255,255,255,0.45) !important;
+  display: inline-flex !important;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.cta svg { width: 17px; height: 17px; flex: none; }
+/* O botao de criar conta era ouro chapado, destoando do resto do app.
+   Recebe o mesmo ouro escovado dos outros botoes. */
+.cad-btn{
+  padding: 16px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  color: var(--td) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 46%, var(--tg3) 72%, var(--tg4) 100%) !important;
+  box-shadow: 0 16px 36px -12px var(--tea65),
+              inset 0 1px 0 rgba(255,255,255,0.45) !important;
+}
+.cad-btn:disabled{
+  background: rgba(255,255,255,0.05) !important;
+  color: rgba(255,255,255,0.28) !important;
+  box-shadow: none !important;
+}
+/* o cartao do formulario respira um pouco mais longe dos filetes do fundo */
+.cad-wrap{ padding: 40px 0 56px !important; }
+/* O app esconde alguns botoes por JS (style.display='none'). O !important
+   acima ressuscitava esses botoes — entre eles o "Confirmar no WhatsApp",
+   que ja foi desativado e levava a lugar nenhum. */
+#cd-wa{ display: none !important; }
+.cta[style*="display:none"], .cta[style*="display: none"],
+.cta2[style*="display:none"], .cta2[style*="display: none"],
+.ag-cta[style*="display:none"], .ag-cta[style*="display: none"]{ display: none !important; }
+.cta2{
+  border-radius: 14px !important; padding: 13px !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* ── barra de baixo ── */
+.nav { background: rgba(0,0,0,0.92) !important; border-top: 1px solid rgba(255,255,255,0.07) !important; }
+.nav-btn { padding: 8px 14px !important; }
+.nav-lbl { letter-spacing: 0.08em !important; }
+.nav-btn.active { color: var(--tz) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   O gerador chumbou a cor da barbearia como valor literal em dezenas
+   de seletores (nao usou variavel). Entao cada um precisa ser dito
+   aqui, senao o azul antigo sobrevive no meio do dourado.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* cartao do proximo horario */
+.nc-lbl  { color: rgba(255,255,255,0.42) !important; }
+.nc-svc  { color: #FFFFFF !important; }
+.nc-sub  { color: rgba(255,255,255,0.58) !important; }
+.nc-dy   { color: rgba(255,255,255,0.42) !important; }
+.nc-div  { background: rgba(255,255,255,0.07) !important; }
+.nc-bloom{ background: radial-gradient(circle, var(--tza10) 0%, transparent 70%) !important; }
+.nc-gloss{ background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%) !important; }
+
+/* pecas que aparecem nas outras abas */
+.chip            { border-color: var(--tza22) !important; }
+.bk              { border-color: var(--tza20) !important; }
+.bk::before      { background: var(--tza10) !important; }
+.bk-wm           { color: var(--tza05) !important; }
+.bk-badge        { border-color: var(--tza30) !important; color: var(--tz) !important; }
+.ia              { border-color: var(--tza16) !important; }
+.slot-cs         { border-color: var(--tza22) !important; }
+.card.warm,
+.card.actionable { border-color: var(--tza18) !important; }
+.next-benefit    { border-color: var(--tza20) !important; }
+.tl-dot.mark     { background: var(--tz) !important; box-shadow: 0 0 10px var(--tza5) !important; }
+.step-dot.done   { background: var(--tza30) !important; }
+.confirm-icon    { border-color: var(--tza30) !important; color: var(--tz) !important; }
+.ritual-pulse    { background: radial-gradient(circle, var(--tza28) 0%, transparent 70%) !important; }
+.p-ava{
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 100%) !important;
+  color: var(--td) !important;
+}
+.cta::after, .cta2::after, .ag-cta:not(:disabled)::after{
+  background: var(--tca18) !important;
+}
+
+/* ═══ DETALHES GRAFICOS ═══ */
+
+/* faixas largas e muito suaves cruzando o fundo: e o que da a sensacao
+   de camadas passando por tras, sem desenhar nada que chame atencao.
+   No fim, dois pontos de luz especular, como reflexo em metal. */
+body::before{
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    /* reflexo no alto do arco da direita */
+    radial-gradient(15px 15px at 93% 16%, rgba(255,247,230,0.78) 0%, rgba(255,246,228,0) 72%),
+    /* reflexo no arco de baixo */
+    radial-gradient(12px 12px at 16% 88%, rgba(255,247,230,0.62) 0%, rgba(255,246,228,0) 74%),
+    /* lencol de luz descendo da direita */
+    radial-gradient(64% 44% at 106% 12%,  var(--tea20) 0%, var(--tea0) 68%),
+    /* lencol subindo da esquerda */
+    radial-gradient(70% 34% at 18% 104%, var(--tea16) 0%, var(--tea0) 70%),
+    /* faixa diagonal larga, quase imperceptivel, dando profundidade */
+    linear-gradient(162deg,
+      rgba(255,255,255,0) 38%,
+      var(--tza045) 52%,
+      var(--tza018) 61%,
+      rgba(255,255,255,0) 72%);
+  filter: blur(0.4px);
+}
+
+/* granulado de cinema + vinheta: tira o "liso de tela" */
+body::after{
+  content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(130% 92% at 50% 44%, transparent 52%, rgba(0,0,0,0.55) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: cover, 160px 160px;
+  mix-blend-mode: soft-light;
+}
+
+/* brilho que atravessa o botao de tempos em tempos */
+.cta{ position: relative !important; overflow: hidden !important; }
+.cta > *{ position: relative; z-index: 2; }
+.cta::before{
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.55) 50%, transparent 62%);
+  transform: translateX(-120%);
+  animation: alcoBrilho 5.5s ease-in-out 1.4s infinite;
+}
+@keyframes alcoBrilho{
+  0%, 68%   { transform: translateX(-120%); }
+  86%, 100% { transform: translateX(120%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .cta::before{ animation: none; }
+}
+
+/* fio dourado acima da barra de baixo */
+.nav{ position: fixed !important; }
+.nav::before{
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tza42), transparent);
+}
+
+
+/* ── as quatro abas comecam na mesma altura ──
+   O alinhamento e pela LINHA DO ROTULO (o texto pequeno em maiusculas),
+   nao pelo primeiro texto: no Agendar existe o "< inicio" acima dele.
+   Medido no navegador: rotulo do Agendar em 79px; as outras subiam para
+   46px e por isso o titulo ficava 33px mais alto. Agora todas em 79px,
+   com o titulo grande caindo em 134px nas quatro. */
+.ag-hd                  { padding-top: 26px !important; }   /* ja estava certo */
+#hd-home                { padding-top: 61px !important; }
+#screen-meus .fila-hd   { padding-top: 61px !important; }
+.p-hd                   { padding-top: 61px !important; }
+
+/* ═══ FUNDO: composicao em camadas ═══
+   Massas curvas grandes, pretas sobre pretas, cortadas pelas bordas, com
+   dois filetes dourados finissimos acompanhando as bordas de duas delas.
+   Tudo num SVG unico, aplicado como camada de fundo da tela. */
+.screen::before, .screen::after { display: none !important; }
+/* A tela de criar conta nao e .screen: ficava preta chapada, sem as
+   curvas nem os filetes. Agora recebe o mesmo fundo das outras. */
+.screen, #screen-cadastro{
+  background-image:
+    var(--mk-svg, url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20390%20844%27%20preserveAspectRatio%3D%27xMidYMid%20slice%27%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%27mA%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23141414%27%2F%3E%3Cstop%20offset%3D%27.55%27%20stop-color%3D%27%230A0A0A%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23030303%27%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%27mB%27%20x1%3D%271%27%20y1%3D%270%27%20x2%3D%270%27%20y2%3D%271%27%3E%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23101010%27%2F%3E%3Cstop%20offset%3D%27.6%27%20stop-color%3D%27%23060606%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23030303%27%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%27mC%27%20x1%3D%270%27%20y1%3D%271%27%20x2%3D%271%27%20y2%3D%270%27%3E%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23121212%27%2F%3E%3Cstop%20offset%3D%27.5%27%20stop-color%3D%27%23080808%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23030303%27%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%27ouro1%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%27.75%27%20y2%3D%271%27%3E%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%270%27%2F%3E%20%3Cstop%20offset%3D%27.16%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%27.55%27%2F%3E%20%3Cstop%20offset%3D%27.42%27%20stop-color%3D%27%23F3E0AE%27%20stop-opacity%3D%271%27%2F%3E%20%3Cstop%20offset%3D%27.62%27%20stop-color%3D%27%23E5C46A%27%20stop-opacity%3D%27.85%27%2F%3E%20%3Cstop%20offset%3D%27.88%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%27.18%27%2F%3E%20%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%270%27%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%27ouro2%27%20x1%3D%270%27%20y1%3D%271%27%20x2%3D%271%27%20y2%3D%270%27%3E%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%270%27%2F%3E%20%3Cstop%20offset%3D%27.22%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%27.42%27%2F%3E%20%3Cstop%20offset%3D%27.5%27%20stop-color%3D%27%23EBD098%27%20stop-opacity%3D%27.92%27%2F%3E%20%3Cstop%20offset%3D%27.78%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%27.3%27%2F%3E%20%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23C9A44A%27%20stop-opacity%3D%270%27%2F%3E%20%3C%2FlinearGradient%3E%20%3Cfilter%20id%3D%27b1%27%20x%3D%27-40%25%27%20y%3D%27-40%25%27%20width%3D%27180%25%27%20height%3D%27180%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%279%27%2F%3E%3C%2Ffilter%3E%20%3Cfilter%20id%3D%27b2%27%20x%3D%27-40%25%27%20y%3D%27-40%25%27%20width%3D%27180%25%27%20height%3D%27180%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%273%27%2F%3E%3C%2Ffilter%3E%20%3Cfilter%20id%3D%27b3%27%20x%3D%27-30%25%27%20y%3D%27-30%25%27%20width%3D%27160%25%27%20height%3D%27160%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%2726%27%2F%3E%3C%2Ffilter%3E%20%3Cfilter%20id%3D%27bm%27%20x%3D%27-20%25%27%20y%3D%27-20%25%27%20width%3D%27140%25%27%20height%3D%27140%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%272.2%27%2F%3E%3C%2Ffilter%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%27390%27%20height%3D%27844%27%20fill%3D%27%23030303%27%2F%3E%20%3Cpath%20d%3D%27M%20-120%20-60%20C%20150%20-20%20300%20110%20470%2090%20L%20470%20-120%20L%20-120%20-120%20Z%27%20fill%3D%27url%28%23mB%29%27%20opacity%3D%27.9%27%2F%3E%20%3Cpath%20d%3D%27M%20-140%20300%20C%2060%20190%20190%20150%20520%20-10%20L%20520%20120%20C%20230%20250%20110%20330%20-140%20470%20Z%27%20fill%3D%27url%28%23mA%29%27%20opacity%3D%27.75%27%2F%3E%20%3Cpath%20d%3D%27M%20-160%20980%20C%2020%20700%20210%20650%20520%20600%20L%20520%20980%20Z%27%20fill%3D%27url%28%23mC%29%27%20opacity%3D%27.85%27%2F%3E%20%3Cpath%20d%3D%27M%20-160%201040%20C%2080%20820%20250%20790%20520%20760%20L%20520%201040%20Z%27%20fill%3D%27%230A0A0A%27%20opacity%3D%27.6%27%2F%3E%20%3Cpath%20d%3D%27M%2056%20-78%20C%20220%2010%20332%20140%20476%20116%27%20fill%3D%27none%27%20stroke%3D%27%239A7526%27%20stroke-width%3D%2726%27%20opacity%3D%27.16%27%20filter%3D%27url%28%23b3%29%27%2F%3E%20%3Cpath%20d%3D%27M%2056%20-78%20C%20220%2010%20332%20140%20476%20116%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro1%29%27%20stroke-width%3D%277%27%20opacity%3D%27.30%27%20filter%3D%27url%28%23b1%29%27%2F%3E%20%3Cpath%20d%3D%27M%2056%20-78%20C%20220%2010%20332%20140%20476%20116%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro1%29%27%20stroke-width%3D%272.6%27%20opacity%3D%27.6%27%20filter%3D%27url%28%23b2%29%27%2F%3E%20%3Cpath%20d%3D%27M%2056%20-78%20C%20220%2010%20332%20140%20476%20116%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro1%29%27%20stroke-width%3D%271.1%27%2F%3E%20%3Cpath%20d%3D%27M%20-120%20905%20C%2070%20650%20240%20605%20510%20560%27%20fill%3D%27none%27%20stroke%3D%27%239A7526%27%20stroke-width%3D%2722%27%20opacity%3D%27.13%27%20filter%3D%27url%28%23b3%29%27%2F%3E%20%3Cpath%20d%3D%27M%20-120%20905%20C%2070%20650%20240%20605%20510%20560%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro2%29%27%20stroke-width%3D%276%27%20opacity%3D%27.26%27%20filter%3D%27url%28%23b1%29%27%2F%3E%20%3Cpath%20d%3D%27M%20-120%20905%20C%2070%20650%20240%20605%20510%20560%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro2%29%27%20stroke-width%3D%272.2%27%20opacity%3D%27.5%27%20filter%3D%27url%28%23b2%29%27%2F%3E%20%3Cpath%20d%3D%27M%20-120%20905%20C%2070%20650%20240%20605%20510%20560%27%20fill%3D%27none%27%20stroke%3D%27url%28%23ouro2%29%27%20stroke-width%3D%27.9%27%2F%3E%20%3Ccircle%20cx%3D%27356%27%20cy%3D%2796%27%20r%3D%271.7%27%20fill%3D%27%23FFF6DC%27%20opacity%3D%27.52%27%2F%3E%20%3Ccircle%20cx%3D%27356%27%20cy%3D%2796%27%20r%3D%279%27%20fill%3D%27%23F3E0AE%27%20opacity%3D%27.12%27%20filter%3D%27url%28%23b2%29%27%2F%3E%20%3Ccircle%20cx%3D%2796%27%20cy%3D%27737%27%20r%3D%271.4%27%20fill%3D%27%23FFF6DC%27%20opacity%3D%27.42%27%2F%3E%20%3Ccircle%20cx%3D%2796%27%20cy%3D%27737%27%20r%3D%277%27%20fill%3D%27%23F3E0AE%27%20opacity%3D%27.10%27%20filter%3D%27url%28%23b2%29%27%2F%3E%20%3C%2Fsvg%3E")),
+    linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
+    linear-gradient(176deg, var(--tn1) 0%, var(--tn0) 34%, #000000 100%) !important;
+  background-size: cover, auto, auto !important;
+  background-position: center top, top, top !important;
+  background-repeat: no-repeat, no-repeat, no-repeat !important;
+  background-attachment: fixed, scroll, scroll !important;
+}
+/* ═══ FIM DO FUNDO ═══ */
+
+/* ═══ CALENDARIO ═══
+   O app injeta o estilo do calendario em tempo de execucao, com azul
+   chumbado (#4d78f0, #2E9BFF) e com var(--c1), que nunca foi definida.
+   Como aquele <style> entra depois, so vence com !important. */
+:root{ --c1: #FFFFFF !important; }
+
+.agc-title{ color: #FFFFFF !important; font-weight: 700 !important; }
+.agc-nav button{
+  color: var(--tz) !important;
+  background: rgba(255,255,255,0.035) !important;
+  border: 1px solid var(--tza22) !important;
+}
+.agc-wd { color: rgba(255,255,255,0.34) !important; }
+.agc-day{ color: rgba(255,255,255,0.90) !important; }
+.agc-day.off{ color: rgba(255,255,255,0.14) !important; }
+.agc-day.on{ background: rgba(255,255,255,0.045) !important; }
+.agc-day.on:hover{ background: rgba(255,255,255,0.10) !important; }
+.agc-day.sel{
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg3) 100%) !important;
+  color: var(--td) !important; font-weight: 700 !important;
+  box-shadow: 0 6px 18px -6px var(--tea6) !important;
+}
+.agc-back{ color: rgba(255,255,255,0.58) !important; }
+
+/* ── restos de azul chumbado que o gerador deixou ── */
+.p-ava{ border-color: var(--tza42) !important; }
+.bd-foto, .trk-foto, .bq-foto{
+  border-color: var(--tza32) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg3) 100%) !important;
+}
+.bd-rating .stars{ color: var(--tz) !important; }
+.bd-cta, .fila-hero-cta, .trk-fill{
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg3) 100%) !important;
+  color: var(--td) !important;
+}
+.pressa-glow{ background: radial-gradient(circle, var(--tza18) 0%, transparent 70%) !important; }
+.st-wait, .st-wait .fb-dot, .bq-status.wait, .bq-status.wait .bq-dot,
+.st-near .trk-eta b{ color: var(--tz) !important; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ABERTURA (SPLASH) — tirar a borda dura da logo
+
+   A logo entra como arquivo retangular. Quando ela e JPEG (sem canal de
+   transparencia) o preto do arquivo nunca e exatamente o preto da tela, e
+   o resultado e um retangulo visivel por cima do fundo: parece imagem
+   colada. A mascara abaixo dissolve so a franja externa, em degrade, e
+   deixa o miolo intacto — o anel e o texto nao sao tocados.
+
+   closest-side = o degrade termina na borda mais proxima, entao os cantos
+   (que sao sempre fundo) somem por completo.
+   ═══════════════════════════════════════════════════════════════════════ */
+#splash .splash-logo,
+#splash .splash-logo img,
+#splash .splash-logo-wrap img,
+.splash-logo > img,
+.splash-logo{
+  -webkit-mask-image: radial-gradient(closest-side,
+      #000 0%, #000 84%, rgba(0,0,0,.55) 92%, rgba(0,0,0,.18) 97%, transparent 100%);
+          mask-image: radial-gradient(closest-side,
+      #000 0%, #000 84%, rgba(0,0,0,.55) 92%, rgba(0,0,0,.18) 97%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-position: center;   mask-position: center;
+  -webkit-mask-size: 100% 100%;    mask-size: 100% 100%;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* o retangulo do proprio contorno tambem some */
+#splash .splash-logo-wrap,
+#splash .splash-logo-circle{
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* a mesma franja no icone pequeno dentro do app (cabecalho, cadastro) */
+.cad-logo-circle img,
+.logo-circle img,
+.sb img{
+  -webkit-mask-image: radial-gradient(closest-side,
+      #000 0%, #000 88%, rgba(0,0,0,.5) 95%, transparent 100%);
+          mask-image: radial-gradient(closest-side,
+      #000 0%, #000 88%, rgba(0,0,0,.5) 95%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;    mask-size: 100% 100%;
+}

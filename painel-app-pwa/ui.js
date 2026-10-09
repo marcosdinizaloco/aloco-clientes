@@ -109,6 +109,30 @@
     if (s === 'beauty') trazerArteBeauty();
   }
   marcarIA();
+
+  /* ══ 0b. CANARIO: a cor da loja no painel ════════════════════════
+     Hoje o painel tem duas cores fixas (barber azul, beauty champagne).
+     Aqui ele passa a usar a cor da PROPRIA loja, lida da logo, que vem
+     pronta em /clientes/<slug>/tema.json — a mesma rampa que o app usa,
+     para nao existirem duas fontes de verdade.
+
+     Enquanto e canario, isso vale para UMA loja so. As outras 42 nao
+     entram nesta funcao: ela sai na primeira linha. ══════════════ */
+  var LOJA_CANARIO = 'marcos-2';
+  function temaDaLoja(){
+    try {
+      if (quemSou() !== LOJA_CANARIO) return;
+      fetch('/clientes/' + LOJA_CANARIO + '/tema.json', { cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(t){
+          if (!t) return;
+          var r = document.documentElement;
+          for (var k in t){ if (k.charAt(0) === '-') { try { r.style.setProperty(k, t[k]); } catch(e){} } }
+        })
+        .catch(function(){});
+    } catch(e){}
+  }
+  temaDaLoja();
   /* o segmento pode chegar do servidor depois; paro de olhar em 30s */
   (function(){
     var n = 0;
