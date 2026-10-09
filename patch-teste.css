@@ -6,63 +6,74 @@
    o proprio app declara. App que nao declara nada cai no fallback, que
    e o ouro exato de hoje — fica identico ao que ja esta no ar.
 
+   Cada cor de ouro distinta tem o SEU token. Nada e agrupado: duas
+   cores parecidas nunca viram a mesma variavel.
+
    NAO passam por aqui, de proposito: verde e vermelho semanticos
    (--ok, --err, WhatsApp), preto e branco estruturais.
    ═══════════════════════════════════════════════════════════════ */
 
 :root{
-  --tz:    var(--mkz, #E3BE70);   /* marca sobre preto: texto, borda, ponto */
-  --tzc:   var(--mkzc, #F6E3B0);   /* variante clara */
-  --tze:   var(--mkze, #C9992F);   /* variante escura */
+  --tz:     var(--mkz, #E3BE70);   /* cor da loja sobre preto */
+  --tzc:    var(--mkzc, #F6E3B0);   /* variante clara */
+  --tze:    var(--mkze, #C9992F);   /* variante escura */
+  --tzd:    var(--mkzd, #E5C46A);   /* tom medio claro */
+  --tzf:    var(--mkzf, #A9741F);   /* o mais fundo */
+  --td:     var(--mkd, #16100A);   /* texto POR CIMA do preenchimento */
+  --tn0:    var(--mkn0, #050403);   /* superficies escuras, tingidas */
 
-  --tg1:   var(--mkg1, #C9992F);   /* degrade dos preenchimentos solidos */
-  --tg2:   var(--mkg2, #F6E3B0);
-  --tg3:   var(--mkg3, #E3BE70);
-  --tg4:   var(--mkg4, #C08A2E);
-  --td:    var(--mkd, #16100A);   /* texto POR CIMA desses preenchimentos */
+  --tg1:      var(--mkg1, #C9992F);   /* degrade dos preenchimentos solidos */
+  --tg2:      var(--mkg2, #F6E3B0);
+  --tg3:      var(--mkg3, #E3BE70);
+  --tg4:      var(--mkg4, #C08A2E);
+  --tg5:      var(--mkg5, #D9A94A);
+  --tn0b:   var(--mkn0b, #070502);
+  --tn1:    var(--mkn1, #0A0806);
+  --tn1b:   var(--mkn1b, #0C0905);
+  --tn2:    var(--mkn2, #120E08);
+  --tn3:    var(--mkn3, #191309);
+  --tn4:    var(--mkn4, #221909);
 
-  --tn0:   var(--mkn0, #050403);   /* superficies escuras, tingidas */
-  --tn1:   var(--mkn1, #0A0806);
-  --tn2:   var(--mkn2, #120E08);
-  --tn3:   var(--mkn3, #191309);
-  --tn4:   var(--mkn4, #221909);
-
-  /* transparencias: um token por nivel (rgba(var(--x),a) quebra em
-     iPhone antigo — mesma regra que o painel ja segue) */
-  --tca18: var(--mtca18, rgba(246,227,176,0.18));
-  --tca46: var(--mtca46, rgba(255,241,214,0.46));
-  --tca55: var(--mtca55, rgba(255,241,214,0.55));
-  --tca82: var(--mtca82, rgba(240,214,163,0.82));
-  --tca92: var(--mtca92, rgba(240,214,163,0.92));
-  --tea0:  var(--mtea0, rgba(201,169,106,0));
-  --tea09: var(--mtea09, rgba(176,133,62,0.09));
-  --tea10: var(--mtea10, rgba(201,153,47,0.10));
-  --tea11: var(--mtea11, rgba(176,133,62,0.11));
-  --tea13: var(--mtea13, rgba(201,153,47,0.13));
-  --tea14: var(--mtea14, rgba(201,153,47,0.14));
-  --tea16: var(--mtea16, rgba(205,166,92,0.16));
-  --tea18: var(--mtea18, rgba(201,153,47,0.18));
-  --tea20: var(--mtea20, rgba(205,166,92,0.20));
-  --tea45: var(--mtea45, rgba(201,153,47,.45));
-  --tea6:  var(--mtea6, rgba(201,153,47,0.6));
-  --tea65: var(--mtea65, rgba(201,153,47,0.65));
-  --tza018: var(--mtza018, rgba(236,206,148,0.018));
-  --tza045: var(--mtza045, rgba(236,206,148,0.045));
-  --tza05: var(--mtza05, rgba(227,190,112,0.05));
-  --tza09: var(--mtza09, rgba(227,190,112,0.09));
-  --tza10: var(--mtza10, rgba(227,190,112,0.10));
-  --tza16: var(--mtza16, rgba(227,190,112,0.16));
-  --tza18: var(--mtza18, rgba(227,190,112,0.18));
-  --tza20: var(--mtza20, rgba(227,190,112,0.20));
-  --tza22: var(--mtza22, rgba(227,190,112,0.22));
-  --tza28: var(--mtza28, rgba(227,190,112,0.28));
-  --tza30: var(--mtza30, rgba(227,190,112,0.30));
-  --tza32: var(--mtza32, rgba(227,190,112,0.32));
-  --tza34: var(--mtza34, rgba(233,197,126,0.34));
-  --tza35: var(--mtza35, rgba(227,190,112,.35));
-  --tza42: var(--mtza42, rgba(227,190,112,0.42));
-  --tza5:  var(--mtza5, rgba(227,190,112,.5));
-  --tza6:  var(--mtza6, rgba(227,190,112,.6));
+  /* transparencias: um token por cor E por nivel. rgba(var(--x),a)
+     quebra em iPhone antigo — mesma regra que o painel ja segue. */
+  --tc2a82: var(--mkc2a82, rgba(240,214,163,0.82));
+  --tc2a92: var(--mkc2a92, rgba(240,214,163,0.92));
+  --tc3a46: var(--mkc3a46, rgba(255,241,214,0.46));
+  --tc3a55: var(--mkc3a55, rgba(255,241,214,0.55));
+  --tca18:  var(--mkca18, rgba(246,227,176,0.18));
+  --te2a16: var(--mke2a16, rgba(205,166,92,0.16));
+  --te2a20: var(--mke2a20, rgba(205,166,92,0.20));
+  --te3a0:  var(--mke3a0, rgba(201,169,106,0));
+  --te4a16: var(--mke4a16, rgba(201,160,86,0.16));
+  --te4a20: var(--mke4a20, rgba(201,160,86,0.20));
+  --te5a09: var(--mke5a09, rgba(176,133,62,0.09));
+  --te5a11: var(--mke5a11, rgba(176,133,62,0.11));
+  --tea10:  var(--mkea10, rgba(201,153,47,0.10));
+  --tea13:  var(--mkea13, rgba(201,153,47,0.13));
+  --tea14:  var(--mkea14, rgba(201,153,47,0.14));
+  --tea18:  var(--mkea18, rgba(201,153,47,0.18));
+  --tea45:  var(--mkea45, rgba(201,153,47,.45));
+  --tea6:   var(--mkea6, rgba(201,153,47,0.6));
+  --tea65:  var(--mkea65, rgba(201,153,47,0.65));
+  --tz2a28: var(--mkz2a28, rgba(233,197,126,0.28));
+  --tz2a34: var(--mkz2a34, rgba(233,197,126,0.34));
+  --tz3a018: var(--mkz3a018, rgba(236,206,148,0.018));
+  --tz3a045: var(--mkz3a045, rgba(236,206,148,0.045));
+  --tza045: var(--mkza045, rgba(227,190,112,0.045));
+  --tza05:  var(--mkza05, rgba(227,190,112,0.05));
+  --tza09:  var(--mkza09, rgba(227,190,112,0.09));
+  --tza10:  var(--mkza10, rgba(227,190,112,0.10));
+  --tza16:  var(--mkza16, rgba(227,190,112,0.16));
+  --tza18:  var(--mkza18, rgba(227,190,112,0.18));
+  --tza20:  var(--mkza20, rgba(227,190,112,0.20));
+  --tza22:  var(--mkza22, rgba(227,190,112,0.22));
+  --tza28:  var(--mkza28, rgba(227,190,112,0.28));
+  --tza30:  var(--mkza30, rgba(227,190,112,0.30));
+  --tza32:  var(--mkza32, rgba(227,190,112,0.32));
+  --tza35:  var(--mkza35, rgba(227,190,112,.35));
+  --tza42:  var(--mkza42, rgba(227,190,112,0.42));
+  --tza5:   var(--mkza5, rgba(227,190,112,.5));
+  --tza6:   var(--mkza6, rgba(227,190,112,.6));
 }
 /* ═══════════════════════════════════════════════════════════════
    ALOCO — TEMA INTERNO DO APP  (vale para todos os apps entregues)
@@ -82,7 +93,7 @@
   --s4:  var(--tn4) !important;
 
   /* cor da loja, lida da logo */
-  --b0:  var(--tze) !important;
+  --b0:  var(--tzf) !important;
   --b1:  var(--tze) !important;
   --b2:  var(--tz) !important;
   --b3:  var(--tzc) !important;
@@ -120,7 +131,7 @@
     linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
     radial-gradient(130% 56% at 92% 10%, var(--tea18) 0%, transparent 56%),
     radial-gradient(106% 50% at -14% 106%, var(--tea13) 0%, transparent 60%),
-    linear-gradient(176deg, var(--tn1) 0%, var(--tn0) 30%, #000000 78%)
+    linear-gradient(176deg, var(--tn1b) 0%, var(--tn0b) 30%, #000000 78%)
     !important;
 }
 /* o corpo tambem recebe o fundo: assim nao aparece preto por tras
@@ -129,7 +140,7 @@ body{
   background:
     linear-gradient(180deg, #000000 0px, #000000 54px, rgba(0,0,0,0) 210px),
     radial-gradient(132% 44% at 92% 4%, var(--tea14) 0%, transparent 58%),
-    linear-gradient(176deg, var(--tn1) 0%, #000000 70%)
+    linear-gradient(176deg, var(--tn1b) 0%, #000000 70%)
     !important;
 }
 
@@ -153,12 +164,12 @@ body{
 /* arco que varre o alto da direita e some antes de chegar no cartao */
 .screen::before{
   width: 179vw; height: 179vw; top: -51vw; right: -164vw;
-  border: 1.5px solid var(--tca92);
+  border: 1.5px solid var(--tc2a92);
   box-shadow:
-    0 0 10px 0 var(--tca55),
-    0 0 34px 2px var(--tza34),
-    0 0 92px 10px var(--tea20),
-    0 0 190px 30px var(--tea11);
+    0 0 10px 0 var(--tc3a55),
+    0 0 34px 2px var(--tz2a34),
+    0 0 92px 10px var(--te4a20),
+    0 0 190px 30px var(--te5a11);
   filter: blur(0.3px);
   -webkit-mask-image: radial-gradient(48% 44% at 2% 56%,
       #000 10%, rgba(0,0,0,.55) 50%, rgba(0,0,0,0) 86%);
@@ -169,12 +180,12 @@ body{
 /* arco raso atravessando o rodape, entrando pela esquerda */
 .screen::after{
   width: 256vw; height: 256vw; bottom: -194vw; left: -103vw;
-  border: 1.4px solid var(--tca82);
+  border: 1.4px solid var(--tc2a82);
   box-shadow:
-    0 0 9px 0 var(--tca46),
-    0 0 30px 2px var(--tza28),
-    0 0 84px 9px var(--tea16),
-    0 0 170px 26px var(--tea09);
+    0 0 9px 0 var(--tc3a46),
+    0 0 30px 2px var(--tz2a28),
+    0 0 84px 9px var(--te4a16),
+    0 0 170px 26px var(--te5a09);
   filter: blur(0.3px);
   -webkit-mask-image: radial-gradient(42% 36% at 56% 5%,
       #000 12%, rgba(0,0,0,.5) 52%, rgba(0,0,0,0) 88%);
@@ -205,7 +216,7 @@ body{
 }
 .nc-body { padding: 22px 20px 18px !important; }
 .nc-ava{
-  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg3) 100%) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg5) 100%) !important;
   color: var(--td) !important; font-weight: 700 !important;
   box-shadow: 0 0 0 1px var(--tza35), 0 8px 22px -6px var(--tea45) !important;
 }
@@ -314,14 +325,14 @@ body::before{
     /* reflexo no arco de baixo */
     radial-gradient(12px 12px at 16% 88%, rgba(255,247,230,0.62) 0%, rgba(255,246,228,0) 74%),
     /* lencol de luz descendo da direita */
-    radial-gradient(64% 44% at 106% 12%,  var(--tea20) 0%, var(--tea0) 68%),
+    radial-gradient(64% 44% at 106% 12%,  var(--te2a20) 0%, var(--te3a0) 68%),
     /* lencol subindo da esquerda */
-    radial-gradient(70% 34% at 18% 104%, var(--tea16) 0%, var(--tea0) 70%),
+    radial-gradient(70% 34% at 18% 104%, var(--te2a16) 0%, var(--te3a0) 70%),
     /* faixa diagonal larga, quase imperceptivel, dando profundidade */
     linear-gradient(162deg,
       rgba(255,255,255,0) 38%,
-      var(--tza045) 52%,
-      var(--tza018) 61%,
+      var(--tz3a045) 52%,
+      var(--tz3a018) 61%,
       rgba(255,255,255,0) 72%);
   filter: blur(0.4px);
 }
@@ -400,7 +411,7 @@ body::after{
 
 .agc-title{ color: #FFFFFF !important; font-weight: 700 !important; }
 .agc-nav button{
-  color: var(--tz) !important;
+  color: var(--tzd) !important;
   background: rgba(255,255,255,0.035) !important;
   border: 1px solid var(--tza22) !important;
 }
@@ -410,7 +421,7 @@ body::after{
 .agc-day.on{ background: rgba(255,255,255,0.045) !important; }
 .agc-day.on:hover{ background: rgba(255,255,255,0.10) !important; }
 .agc-day.sel{
-  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg3) 100%) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg2) 52%, var(--tg5) 100%) !important;
   color: var(--td) !important; font-weight: 700 !important;
   box-shadow: 0 6px 18px -6px var(--tea6) !important;
 }
@@ -420,7 +431,7 @@ body::after{
 .p-ava{ border-color: var(--tza42) !important; }
 .bd-foto, .trk-foto, .bq-foto{
   border-color: var(--tza32) !important;
-  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg3) 100%) !important;
+  background: linear-gradient(135deg, var(--tg1) 0%, var(--tg5) 100%) !important;
 }
 .bd-rating .stars{ color: var(--tz) !important; }
 .bd-cta, .fila-hero-cta, .trk-fill{
