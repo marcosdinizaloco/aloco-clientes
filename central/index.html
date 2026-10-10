@@ -19,6 +19,19 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
 </head>
 <body>
 <div id="carregando"><div class="aro"></div></div>
-<iframe src="https://script.google.com/macros/s/AKfycbyf15fH0bXnoi_yuj9voEtsm1yQAPNDUdTAHXlI98FnrNp_n4kYXyvRScB_hGJKRHYL/exec?tela=adm" title="Central de Logos" allow="clipboard-write" onload="var c=document.getElementById('carregando');c.style.opacity=0;setTimeout(function(){c.remove();},450);"></iframe>
+<iframe id="tela" title="Central de Logos" allow="clipboard-write" onload="var c=document.getElementById('carregando');c.style.opacity=0;setTimeout(function(){c.remove();},450);"></iframe>
+<script>
+/* O Google guarda em cache o HTML que o /exec devolve. Sem nada que mude
+   na URL, uma publicacao nova so aparece aqui horas depois — foi assim que
+   uma correcao da abertura ficou invisivel mesmo com a versao ja no ar.
+   O balde de 5 minutos quebra o cache sem pedir a tela de novo a cada
+   clique; e o mesmo intervalo que os apps usam para o patch. */
+(function(){
+  var v = Math.floor(Date.now()/300000);
+  document.getElementById('tela').src =
+    'https://script.google.com/macros/s/AKfycbyf15fH0bXnoi_yuj9voEtsm1yQAPNDUdTAHXlI98FnrNp_n4kYXyvRScB_hGJKRHYL/exec'
+    + '?tela=adm&v=' + v;
+})();
+</script>
 </body>
 </html>
