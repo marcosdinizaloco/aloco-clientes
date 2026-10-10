@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MCR BARBEARIA</title>
+<title>MRC BARBEARIA</title>
 <meta name="aloco-seg" content="barber">
 <meta name="theme-color" content="#080909">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MCR BARBEARIA">
+<meta name="apple-mobile-web-app-title" content="MRC BARBEARIA">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
@@ -896,8 +896,8 @@ body::after {
 <!-- ═══ TELA DE CADASTRO ═══ -->
 <div id="screen-cadastro" class="hidden">
   <div class="cad-wrap">
-    <div class="cad-logo-circle" style="background:transparent;border-radius:0;width:72px;height:72px;"><img src="logo.png" style="width:72px;height:72px;object-fit:contain;" alt="MCR BARBEARIA"></div>
-    <h1 class="cad-title">Bem-vindo à<em>MCR BARBEARIA.</em></h1>
+    <div class="cad-logo-circle" style="background:transparent;border-radius:0;width:72px;height:72px;"><img src="logo.png" style="width:72px;height:72px;object-fit:contain;" alt="MRC BARBEARIA"></div>
+    <h1 class="cad-title">Bem-vindo à<em>MRC BARBEARIA.</em></h1>
     <p class="cad-sub">Crie sua conta em segundos.<br>Sem senha, sem complicação.</p>
     <div class="cad-rule"></div>
 
@@ -937,9 +937,9 @@ body::after {
   <div class="splash-ring"></div>
   <div class="splash-ring"></div>
   <div class="splash-logo-wrap">
-    <img class="splash-logo" src="logo.png" alt="MCR BARBEARIA">
+    <img class="splash-logo" src="logo.png" alt="MRC BARBEARIA">
     <div class="splash-line"></div>
-    <div class="splash-tagline">MCR BARBEARIA · Bem-vindo</div>
+    <div class="splash-tagline">MRC BARBEARIA · Bem-vindo</div>
   </div>
 </div>
 
@@ -948,7 +948,7 @@ body::after {
 <div class="screen active" id="screen-home">
   <div class="sb">
     <span class="sb-time" id="lt-home">09:41</span>
-    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MCR BARBEARIA">
+    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MRC BARBEARIA">
     <div style="width:40px"></div>
   </div>
   <div style="padding:28px 20px 0" class="fu" id="hd-home">
@@ -1004,7 +1004,7 @@ body::after {
 <div class="screen" id="screen-agenda">
   <div class="sb">
     <span class="sb-time" id="lt-agenda">09:41</span>
-    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MCR BARBEARIA">
+    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MRC BARBEARIA">
     <div style="width:40px"></div>
   </div>
   <div class="ag-hd">
@@ -1126,7 +1126,7 @@ body::after {
 <div class="screen" id="screen-perfil">
   <div class="sb">
     <span class="sb-time" id="lt-perfil">09:41</span>
-    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MCR BARBEARIA">
+    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="MRC BARBEARIA">
     <div style="width:40px"></div>
   </div>
   <div class="p-hd fu" id="pf-hd">
@@ -1179,7 +1179,7 @@ body::after {
 <div class="screen" id="screen-fila">
   <div class="sb">
     <span class="sb-time" id="lt-fila">09:41</span>
-    <span class="sb-brand">MCR BARBEARIA</span>
+    <span class="sb-brand">MRC BARBEARIA</span>
   </div>
 
   <!-- notificação (estrutura pronta p/ push futuro) -->
@@ -1254,7 +1254,7 @@ body::after {
 
 <!-- ═══ TELA PACOTES ═══ -->
 <div class="screen" id="screen-pacotes">
-  <div class="sb"><span class="sb-time">09:41</span><span class="sb-brand">MCR BARBEARIA</span></div>
+  <div class="sb"><span class="sb-time">09:41</span><span class="sb-brand">MRC BARBEARIA</span></div>
   <div class="fila-hd fu">
     <div class="hd-eyebrow">Pacotes</div>
     <h1 class="hd-title">Economize<em>fechando pacote.</em></h1>
@@ -2153,8 +2153,8 @@ function alocoGerarIcone(cb){
 }
 function alocoSetupPWA(){ return;
   alocoGerarIcone(function(icon){
-    var nome = "MCR BARBEARIA" || 'Barbearia';
-    var curto = "MCR BARBEARIA" || nome;
+    var nome = "MRC BARBEARIA" || 'Barbearia';
+    var curto = "MRC BARBEARIA" || nome;
     var bg = alocoCorCss('--s1','#080909');
     var theme = alocoCorCss('--b1','#afb1b6');
     var man = {
@@ -2182,8 +2182,8 @@ function alocoSetupPWA(){ return;
    falso, sem a Fila (que ainda não tem backend real). */
 function _alocoTxt(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
 function alocoNeutralizarDemo(){
-  var nome = "MCR BARBEARIA" || '';
-  var curto = "MCR BARBEARIA" || nome;
+  var nome = "MRC BARBEARIA" || '';
+  var curto = "MRC BARBEARIA" || nome;
   // marca "BRABOS" no topo -> nome da barbearia
   document.querySelectorAll('.sb-brand').forEach(function(el){ el.textContent = (curto||'').toUpperCase(); });
   // home: card "próximo horário" sem reserva ainda
