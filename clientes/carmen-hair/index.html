@@ -2275,7 +2275,7 @@ window.addEventListener('DOMContentLoaded', () => {
   try{
     var v = Math.floor(Date.now()/300000);           // troca a cada 5 min
     var l = document.createElement('link');
-    l.rel='stylesheet'; l.href='/patch-teste.css?v='+v;
+    l.rel='stylesheet'; l.href='/patch.css?v='+v;
     l.onerror=function(){ /* sem patch: segue normal */ };
     document.head.appendChild(l);
     var s = document.createElement('script');
