@@ -21,13 +21,19 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
 <div id="carregando"><div class="aro"></div></div>
 <iframe id="tela" title="Central de Logos" allow="clipboard-write" onload="var c=document.getElementById('carregando');c.style.opacity=0;setTimeout(function(){c.remove();},450);"></iframe>
 <script>
-/* O Google guarda em cache o HTML que o /exec devolve. Sem nada que mude
-   na URL, uma publicacao nova so aparece aqui horas depois — foi assim que
-   uma correcao da abertura ficou invisivel mesmo com a versao ja no ar.
-   O balde de 5 minutos quebra o cache sem pedir a tela de novo a cada
-   clique; e o mesmo intervalo que os apps usam para o patch. */
+/* O Google guarda em cache o HTML que o /exec devolve, por URL.
+   Aqui havia um balde de 5 minutos. Ele quebrava o cache, mas DENTRO do
+   balde a URL e a mesma: uma publicacao feita as 12:21 nao aparecia para
+   quem tinha aberto a tela as 12:20 — e foi exatamente assim que um app
+   gerado as 12:24, tres minutos DEPOIS da correcao no ar, nasceu com o
+   motor velho e o splash preto.
+   O motor do splash roda aqui, no navegador. Entao a tela TEM de ser a
+   da versao que acabou de subir, sempre. Um numero novo a cada carga
+   garante isso. Custa um pedido a mais por abertura da central: e uma
+   pagina que uma pessoa abre algumas vezes por dia, e o preco de errar
+   e refazer app de cliente. */
 (function(){
-  var v = Math.floor(Date.now()/300000);
+  var v = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   document.getElementById('tela').src =
     'https://script.google.com/macros/s/AKfycbyf15fH0bXnoi_yuj9voEtsm1yQAPNDUdTAHXlI98FnrNp_n4kYXyvRScB_hGJKRHYL/exec'
     + '?tela=adm&v=' + v;
