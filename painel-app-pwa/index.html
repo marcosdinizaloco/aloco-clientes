@@ -2281,7 +2281,21 @@ function _alocoSlug(){
 var ALOCO = {
   API_URL: 'https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec',                       // URL /exec do Web App
   BARBEARIA: _alocoSlug(),                                         // slug da barbearia
-  SENHA: (function(){ try{ return sessionStorage.getItem('aloco_senha')||''; }catch(e){ return ''; } })(),
+  /* A senha vivia no sessionStorage: morre quando o app fecha. Era por
+     isso que o barbeiro tinha de digitar senha toda vez que voltava.
+     Agora fica no localStorage, que so sai quando ele manda sair.
+     A linha do sessionStorage continua sendo lida uma ultima vez para
+     quem estava logado quando esta versao subiu nao cair na tela de
+     senha sem motivo. */
+  SENHA: (function(){
+    try{
+      var s = localStorage.getItem('aloco_senha');
+      if (s) return s;
+      var velha = sessionStorage.getItem('aloco_senha');
+      if (velha){ try{ localStorage.setItem('aloco_senha', velha); }catch(e){} return velha; }
+    }catch(e){}
+    return '';
+  })(),
   NOME: (function(){                                               // nome exibido no painel
     var n=(new URLSearchParams(location.search)).get('nome');
     if(n) return decodeURIComponent(n);
@@ -2498,7 +2512,7 @@ else document.addEventListener('DOMContentLoaded', _alocoAplicarNome);
 //  ALOCO — LOGIN (senha por barbearia, validada no backend)
 // ═══════════════════════════════════════════════════════
 function _alocoApiOk(){ return ALOCO.API_URL && ALOCO.API_URL.indexOf('http')===0; }
-function _alocoLogout(){ try{ sessionStorage.removeItem('aloco_senha'); }catch(e){} ALOCO.SENHA=''; _alocoMostrarLogin('Sessão encerrada. Entre novamente.'); }
+function _alocoLogout(){ try{ localStorage.removeItem('aloco_senha'); sessionStorage.removeItem('aloco_senha'); }catch(e){} ALOCO.SENHA=''; _alocoMostrarLogin('Sessão encerrada. Entre novamente.'); }
 function _alocoMostrarLogin(erro){
   var ex=document.getElementById('aloco-login');
   if(ex){ if(erro){ var em0=document.getElementById('aloco-login-erro'); if(em0) em0.textContent=erro; } return; }
@@ -2518,7 +2532,7 @@ function _alocoMostrarLogin(erro){
     btn.disabled=true; btn.textContent='Verificando...';
     fetch(ALOCO.API_URL+'?action=auth&b='+encodeURIComponent(ALOCO.BARBEARIA)+'&senha='+encodeURIComponent(v))
       .then(function(r){return r.json();}).then(function(j){
-        if(j&&j.ok){ try{ sessionStorage.setItem('aloco_senha', v); }catch(e){} location.reload(); }
+        if(j&&j.ok){ try{ localStorage.setItem('aloco_senha', v); }catch(e){} location.reload(); }
         else { btn.disabled=false; btn.textContent='Entrar'; document.getElementById('aloco-login-erro').textContent='Senha incorreta. Tente novamente.'; inp.select(); }
       }).catch(function(){ btn.disabled=false; btn.textContent='Entrar'; document.getElementById('aloco-login-erro').textContent='Erro de conexão. Tente de novo.'; });
   }
@@ -5285,26 +5299,157 @@ window.onload = function(){
       // etiqueta este celular com a barbearia -> recebe SÓ os agendamentos dela
       var _slug = (typeof ALOCO!=='undefined' && ALOCO.BARBEARIA) ? String(ALOCO.BARBEARIA).toLowerCase() : '';
       if(_slug){ try{ await OneSignal.User.addTag("barbearia", _slug); }catch(e){} }
-      // botão flutuante "Ativar avisos" (pede permissão no toque do dono)
-      if(!document.getElementById('aloco-notif-btn')){
-        var b=document.createElement('button');
-        b.id='aloco-notif-btn';
-        b.textContent='🔔  Ativar avisos de agendamento';
-        b.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99999;padding:12px 18px;border:0;border-radius:12px;background:var(--alc-ac);color:#fff;font-weight:600;font-family:inherit;box-shadow:var(--sh-lg);cursor:pointer';
-        b.onclick=async function(){
-          try{
-            await OneSignal.Notifications.requestPermission();
-            if(_slug){ try{ await OneSignal.User.addTag("barbearia", _slug); }catch(e){} }
-            if(OneSignal.Notifications.permission){ b.textContent='✅ Avisos ativados'; setTimeout(function(){ b.style.display='none'; }, 2500); }
-          }catch(e){}
-        };
-        // esconde o botão se já estiver permitido
-        try{ if(OneSignal.Notifications.permission){ b.style.display='none'; } }catch(e){}
-        document.body.appendChild(b);
-      }
+      /* O botao flutuante de "Ativar avisos" sumia depois do primeiro
+         toque e nao tinha como desligar. Virou um item do menu de conta,
+         logo abaixo, que liga e desliga quando o dono quiser. */
+      try { window.__alcOneSignal = OneSignal; } catch(e){}
+      try { if (window.__alcAvisosPronto) window.__alcAvisosPronto(); } catch(e){}
     }catch(e){ console.warn('[ALOCO] OneSignal init falhou:', e); }
   });
 </script>
+
+<!-- ═══ ALOCO — menu de conta: avisos e sair ═══════════════════════
+     Duas coisas que faltavam e que o barbeiro usa no dia a dia:
+     1. SAIR. Antes nao existia saida nenhuma na tela; a unica forma de
+        trocar de conta era limpar os dados do navegador.
+     2. LIGAR E DESLIGAR OS AVISOS. O botao antigo so ligava, e sumia
+        depois do primeiro toque. Quem quisesse parar de receber nao
+        tinha como, a nao ser bloquear o site no celular.
+     Fica num canto, pequeno, e nao encosta no resto do painel: tudo
+     aqui e prefixado com alcConta e vive fora do #ct, que o painel
+     redesenha inteiro a cada tela. -->
+<style>
+#alcConta{position:fixed;left:14px;bottom:14px;z-index:99998;font-family:inherit}
+#alcContaBtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.14);
+  background:rgba(20,20,24,.94);color:#fff;font-size:17px;cursor:pointer;display:grid;place-items:center;
+  box-shadow:0 6px 20px rgba(0,0,0,.45);padding:0;line-height:1}
+#alcContaBtn:hover{background:rgba(32,32,38,.96)}
+#alcContaMenu{display:none;position:absolute;left:0;bottom:52px;min-width:244px;
+  background:rgba(18,18,22,.985);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:6px;
+  box-shadow:0 14px 40px rgba(0,0,0,.55)}
+#alcConta.alcAberto #alcContaMenu{display:block}
+.alcContaItem{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:0;
+  background:transparent;color:#f2f2f4;font:inherit;font-size:14px;text-align:left;border-radius:10px;cursor:pointer}
+.alcContaItem:hover{background:rgba(255,255,255,.07)}
+.alcContaItem[disabled]{opacity:.45;cursor:default}
+.alcSw{margin-left:auto;width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.18);
+  position:relative;flex:none;transition:background .18s}
+.alcSw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:transform .18s}
+.alcSw.alcOn{background:#2fbf5f}
+.alcSw.alcOn::after{transform:translateX(16px)}
+.alcContaSep{height:1px;background:rgba(255,255,255,.1);margin:5px 8px}
+.alcContaSair{color:#ff7a7a}
+.alcContaNota{padding:2px 12px 8px;font-size:11.5px;color:#8b8b95;line-height:1.35}
+@media print{#alcConta{display:none}}
+</style>
+<script>
+(function(){
+  if (window.__alcContaPronto) return;
+  window.__alcContaPronto = 1;
+
+  function montar(){
+    if (document.getElementById('alcConta')) return;
+    var box = document.createElement('div');
+    box.id = 'alcConta';
+    box.innerHTML =
+      '<div id="alcContaMenu" role="menu">' +
+        '<button class="alcContaItem" id="alcAvisos" role="menuitem">' +
+          '<span>Avisos de agendamento</span><span class="alcSw" id="alcAvisosSw"></span>' +
+        '</button>' +
+        '<div class="alcContaNota" id="alcAvisosNota"></div>' +
+        '<div class="alcContaSep"></div>' +
+        '<button class="alcContaItem alcContaSair" id="alcSair" role="menuitem">Desconectar</button>' +
+      '</div>' +
+      '<button id="alcContaBtn" type="button" aria-label="Conta e avisos">&#9881;</button>';
+    document.body.appendChild(box);
+
+    var btn = document.getElementById('alcContaBtn');
+    btn.onclick = function(e){ e.stopPropagation(); box.classList.toggle('alcAberto'); };
+    document.addEventListener('click', function(ev){
+      if (!box.contains(ev.target)) box.classList.remove('alcAberto');
+    });
+
+    /* ── sair ── */
+    document.getElementById('alcSair').onclick = function(){
+      try { localStorage.removeItem('aloco_senha'); } catch(e){}
+      try { sessionStorage.removeItem('aloco_senha'); } catch(e){}
+      try { if (typeof _alocoLogout === 'function'){ _alocoLogout(); return; } } catch(e){}
+      location.reload();
+    };
+
+    /* ── avisos ──
+       Desligar nao e tirar a permissao do navegador: isso o site nao
+       pode fazer. E sair da inscricao no OneSignal (optOut), que e o
+       que de fato para de entregar aviso. Voltar a ligar e optIn, sem
+       pedir permissao de novo. */
+    var sw   = document.getElementById('alcAvisosSw');
+    var item = document.getElementById('alcAvisos');
+    var nota = document.getElementById('alcAvisosNota');
+
+    function pinta(ligado, texto){
+      if (ligado) sw.classList.add('alcOn'); else sw.classList.remove('alcOn');
+      nota.textContent = texto || '';
+    }
+    function os(){ return window.__alcOneSignal || null; }
+
+    function lerEstado(){
+      var O = os();
+      if (!O){ item.setAttribute('disabled','disabled'); pinta(false, 'Avisos indisponíveis neste aparelho.'); return; }
+      item.removeAttribute('disabled');
+      var perm = false, inscrito = false;
+      try { perm = !!O.Notifications.permission; } catch(e){}
+      try { inscrito = !!O.User.PushSubscription.optedIn; } catch(e){}
+      if (!perm){ pinta(false, 'Toque para receber aviso de cada novo agendamento.'); return; }
+      pinta(inscrito, inscrito ? 'Você recebe aviso de cada novo agendamento.'
+                               : 'Desligado. Toque para voltar a receber.');
+    }
+    window.__alcAvisosPronto = lerEstado;
+
+    item.onclick = function(ev){
+      ev.stopPropagation();
+      var O = os(); if (!O) return;
+      var ligado = sw.classList.contains('alcOn');
+      nota.textContent = 'Um instante...';
+      (async function(){
+        try{
+          if (ligado){
+            try { await O.User.PushSubscription.optOut(); } catch(e){}
+          } else {
+            var perm = false; try { perm = !!O.Notifications.permission; } catch(e){}
+            if (!perm){ try { await O.Notifications.requestPermission(); } catch(e){} }
+            try { await O.User.PushSubscription.optIn(); } catch(e){}
+            try {
+              var slug = (typeof ALOCO !== 'undefined' && ALOCO.BARBEARIA)
+                       ? String(ALOCO.BARBEARIA).toLowerCase() : '';
+              if (slug) await O.User.addTag('barbearia', slug);
+            } catch(e){}
+          }
+        } catch(e){}
+        setTimeout(lerEstado, 400);
+      })();
+    };
+
+    lerEstado();
+    setTimeout(lerEstado, 2500);
+
+    /* Enquanto a tela de senha estiver aberta nao ha conta nenhuma para
+       desconectar, e o botao fica por baixo do overlay. Some com ele. */
+    function conferirLogin(){
+      var logado = !document.getElementById('aloco-login');
+      box.style.display = logado ? '' : 'none';
+      if (!logado) box.classList.remove('alcAberto');
+    }
+    conferirLogin();
+    setInterval(conferirLogin, 800);
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', montar);
+  else montar();
+})();
+</script>
+
 <!-- ALOCO — senha pessoal do barbeiro -->
 <style>
 #alcSenhaBg{position:fixed;inset:0;background:rgba(6,6,7,.94);z-index:999999;display:none;align-items:center;justify-content:center;padding:20px}
