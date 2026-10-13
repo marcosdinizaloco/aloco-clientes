@@ -438,7 +438,7 @@
     _fetch.call(window, p.url, { method:'POST', body:p.body })
       .then(function(r){ return r.json(); })
       .then(function(j){
-        if(j && j.ok){ limparPendente(); esconderFaixa(); }
+        if(j && j.ok){ limparPendente(); esconderFaixa(); if(j.tk) guardarTk(j.tk); }
         else faixa('A barbearia ainda nao recebeu o seu horario.', reenviar);
       })
       .catch(function(){ faixa('Sem conexao. O seu horario ainda nao foi enviado.', reenviar); });
@@ -472,12 +472,32 @@
       }
     } catch(e){}
 
+    /* O cadastro (action=cliente) mora dentro do index.html de cada app,
+       que a gente nao reescreve. Pego o cracha na passagem. */
+    var ehCliente = false;
+    try {
+      ehCliente = !!(opt && typeof opt.body === 'string'
+                     && opt.body.indexOf('"cliente"') >= 0);
+    } catch(e){}
+
     var r = _fetch.call(this, url, opt);
+
+    if (ehCliente){
+      try {
+        r.then(function(resp){
+          try { resp.clone().json().then(function(j){
+                  if (j && j.tk) guardarTk(j.tk);
+                }).catch(function(){}); } catch(e){}
+          return resp;
+        }, function(){});
+      } catch(e){}
+    }
+
     if (!ehAgendar) return r;
     return r.then(function(resp){
       try {
         resp.clone().json().then(function(j){
-          if (j && j.ok){ limparPendente(); esconderFaixa(); }
+          if (j && j.ok){ limparPendente(); esconderFaixa(); if(j.tk) guardarTk(j.tk); }
           else faixa('A barbearia nao recebeu o seu horario.', reenviar);
         }).catch(function(){ limparPendente(); esconderFaixa(); });
       } catch(e){}
@@ -496,6 +516,49 @@
   var API  = (typeof window.ALOCO_API  !== 'undefined') ? window.ALOCO_API  : '';
   var SLUG = (typeof window.ALOCO_SLUG !== 'undefined') ? window.ALOCO_SLUG : '';
   var temApi = API && String(API).indexOf('http') === 0;
+
+  /* ── CRACHA DO CLIENTE ──────────────────────────────────────────────
+     A agenda de alguem so sai do servidor com o cracha junto. O cracha
+     vem sozinho: no cadastro, no agendamento, ou nesta checagem muda aqui
+     embaixo, que reenvia o que o app ja guardou no aparelho (nome,
+     telefone e nascimento). O cliente nao digita nada e nao ve nada. */
+  var TKK = 'aloco_tk_' + String(SLUG || '_').toLowerCase();
+  function lerTk(){ try { return localStorage.getItem(TKK) || ''; } catch(e){ return ''; } }
+  function guardarTk(v){
+    v = String(v || '').trim();
+    if(!v) return;
+    try { if (localStorage.getItem(TKK) !== v) localStorage.setItem(TKK, v); } catch(e){}
+  }
+  var pedindoTk = false;
+  function semCracha(){
+    var alvo = document.getElementById('meus-corpo');
+    if (alvo) alvo.innerHTML = vazio('Ainda nao da pra mostrar',
+      'Confirme o seu cadastro no Perfil para ver os seus horarios aqui.');
+  }
+  function tirarTk(){
+    if (pedindoTk) return true;
+    if (lerTk() || !temApi) return false;
+    var c = {}; try { c = semRepetir(JSON.parse(lerLocal() || lerCookie() || '{}')) || {}; } catch(e){}
+    var tel = String(c.telefone || '').replace(/\D/g, '');
+    if (tel.length < 10) return false;
+    pedindoTk = true;
+    _fetch.call(window, API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action:'cliente', b:SLUG,
+        nome: ((c.nome || '') + ' ' + (c.sobrenome || '')).trim(),
+        telefone: tel,
+        nascimento: c.dataNascimento || c.nascimento || '' })
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        pedindoTk = false;
+        if (j && j.tk){ guardarTk(j.tk); carregarMeus(); }
+        else semCracha();
+      })
+      .catch(function(){ pedindoTk = false; semCracha(); });
+    return true;
+  }
 
   function meuTelefone(){
     try {
@@ -655,10 +718,13 @@
     if(alvo && !alvo.innerHTML) alvo.innerHTML = '<div style="color:var(--c3);font-size:13px">Carregando...</div>';
 
     _fetch.call(window, API + '?action=meus_agendamentos&b=' + encodeURIComponent(SLUG)
-                + '&tel=' + encodeURIComponent(tel))
+                + '&tel=' + encodeURIComponent(tel)
+                + '&tk='  + encodeURIComponent(lerTk()))
       .then(function(r){ return r.json(); })
       .then(function(j){
         carregando = false;
+        /* Aparelho que ainda nao tem cracha: pega um e volta. Calado. */
+        if(j && !j.ok && j.erro === 'sem_cracha'){ if(!tirarTk()) semCracha(); return; }
         if(!j || !j.ok) throw new Error('sem dados');
         pintarMeus(j);
         pintarHistorico(j);
