@@ -5973,12 +5973,20 @@ window.onload = function(){
       var d = (j && j.ok && j.dados) ? j.dados : { abre:9, fecha:19, intervalo:30, dias:[1,2,3,4,5,6] };
       var dias = d.dias || [1,2,3,4,5,6];
       var seg = String(d.segmento || window.__alocoSeg || 'barber').toLowerCase();
+      var modo = String(d.modo || 'agenda').toLowerCase();
+      if (['agenda','fila','ambos'].indexOf(modo) < 0) modo = 'agenda';
       var h = '<div style="max-width:560px">';
       h += '<div class="fg"><label class="fl">P\u00fablico do neg\u00f3cio</label><div id="hora-seg" style="display:flex;gap:8px;flex-wrap:wrap">';
       [['barber','Masculino'],['beauty','Feminino']].forEach(function(o){
         h += '<button type="button" data-seg="'+o[0]+'" data-on="'+(seg===o[0]?'1':'0')+'" class="btn bsm" style="'+_axEstiloOp(seg===o[0])+'" onclick="_axTogSeg(this)">'+o[1]+'</button>';
       });
       h += '</div><div style="font-size:11px;color:var(--tx-4);margin-top:6px">Ajusta todos os textos do painel e do aplicativo para o p\u00fablico escolhido.</div></div>';
+
+      h += '<div class="fg"><label class="fl">Como voc\u00ea atende</label><div id="hora-modo" style="display:flex;gap:8px;flex-wrap:wrap">';
+      [['agenda','Hor\u00e1rio marcado'],['fila','Ordem de chegada'],['ambos','Os dois']].forEach(function(o){
+        h += '<button type="button" data-modo="'+o[0]+'" data-on="'+(modo===o[0]?'1':'0')+'" class="btn bsm" style="'+_axEstiloOp(modo===o[0])+'" onclick="_axTogModo(this)">'+o[1]+'</button>';
+      });
+      h += '</div><div style="font-size:11px;color:var(--tx-4);margin-top:6px" id="hora-modo-txt">'+_axTxtModo(modo)+'</div></div>';
       h += '<div class="fg"><label class="fl">Dias que abre</label><div id="hora-dias" style="display:flex;gap:6px;flex-wrap:wrap">';
       for (var i=0;i<7;i++){
         var on = dias.indexOf(i) >= 0;
@@ -6016,6 +6024,20 @@ window.onload = function(){
     var pai = document.getElementById('hora-seg'); if (!pai) return;
     pai.querySelectorAll('button').forEach(function(b){ _axPintar(b, b === btn); });
   };
+  /* Dito pelo que o CLIENTE vai ver no aplicativo, nao pelo nome do
+     ajuste. "Ordem de chegada" nao diz nada sozinho; "sem escolher
+     hora" diz. */
+  window._axTxtModo = function(m){
+    if (m === 'fila')  return 'No aplicativo, o cliente entra na fila e espera a vez. N\u00e3o aparece hor\u00e1rio pra marcar.';
+    if (m === 'ambos') return 'O cliente escolhe: marcar hor\u00e1rio ou entrar na fila e esperar a vez.';
+    return 'No aplicativo, o cliente escolhe dia e hora. N\u00e3o aparece fila.';
+  };
+  window._axTogModo = function(btn){
+    var pai = document.getElementById('hora-modo'); if (!pai) return;
+    pai.querySelectorAll('button').forEach(function(b){ _axPintar(b, b === btn); });
+    var t = document.getElementById('hora-modo-txt');
+    if (t) t.textContent = _axTxtModo(btn.getAttribute('data-modo'));
+  };
   window._axSalvarHorario = function(){
     var dias = [];
     document.querySelectorAll('#hora-dias button').forEach(function(b){
@@ -6024,6 +6046,9 @@ window.onload = function(){
     var seg = '';
     var bs = document.querySelector('#hora-seg button[data-on="1"]');
     if (bs) seg = bs.getAttribute('data-seg');
+    var modo = '';
+    var bm = document.querySelector('#hora-modo button[data-on="1"]');
+    if (bm) modo = bm.getAttribute('data-modo');
     var abre = Number(document.getElementById('hora-abre').value);
     var fecha = Number(document.getElementById('hora-fecha').value);
     if (!dias.length){ _er('Escolha pelo menos um dia.'); return; }
@@ -6031,7 +6056,8 @@ window.onload = function(){
     var btn = document.getElementById('hora-sv');
     btn.disabled = true; btn.textContent = 'Salvando...';
     _post({ action:'horario_save', abre:abre, fecha:fecha,
-            intervalo:Number(document.getElementById('hora-int').value), dias:dias, segmento:seg })
+            intervalo:Number(document.getElementById('hora-int').value), dias:dias,
+            segmento:seg, modo:modo })
       .then(function(j){
         btn.disabled = false; btn.textContent = 'Salvar';
         if (j && j.ok){
