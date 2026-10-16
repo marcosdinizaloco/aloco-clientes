@@ -37,13 +37,39 @@
   /* Os apps entregues antes do {{SEGMENTO}} nao sabem o que sao. Em vez de
      chutar, perguntam ao servidor uma vez e guardam a resposta. */
   var API_SEG = 'https://script.google.com/macros/s/AKfycbwjH7c69qlBz58Cuy0c23Yq7kSC-4PpohEqQCpKUy4gAb6Q1Syzqp-hxVra00wRr7RhiQ/exec';
+
+  /* AGENDA, FILA OU OS DOIS — a loja escolhe no painel dela.
+     Vem na mesma resposta do segmento: uma chamada so, nenhuma nova.
+     O valor fica guardado aqui no aparelho pra tela ja nascer certa na
+     proxima vez, em vez de abrir com a agenda e piscar pra fila. */
+  var CHAVE_MODO = 'aloco_modo_' + QUEM;
+  function modoGuardado(){
+    try {
+      var m = String(localStorage.getItem(CHAVE_MODO) || '').toLowerCase();
+      if(m === 'fila' || m === 'ambos' || m === 'agenda') return m;
+    } catch(e){}
+    return '';
+  }
+  window.__alocoModo = modoGuardado() || 'agenda';
+
   function perguntarSegmento(){
     if(QUEM === '_' || !window.fetch) return;
     try {
       fetch(API_SEG + '?action=disponibilidade&b=' + encodeURIComponent(QUEM))
         .then(function(r){ return r.json(); })
         .then(function(j){
-          var s = j && j.dados && String(j.dados.segmento || '').toLowerCase();
+          var d = (j && j.dados) || {};
+
+          var m = String(d.modo || '').toLowerCase();
+          if(m === 'fila' || m === 'ambos' || m === 'agenda'){
+            try { localStorage.setItem(CHAVE_MODO, m); } catch(e){}
+            if(window.__alocoModo !== m){
+              window.__alocoModo = m;
+              try { if(typeof window.__alocoAplicarModo === 'function') window.__alocoAplicarModo(); } catch(e){}
+            }
+          }
+
+          var s = String(d.segmento || '').toLowerCase();
           if(s !== 'beauty' && s !== 'barber') return;
           try { localStorage.setItem(CHAVE, s); } catch(e){}
           if(s === 'beauty' && window.__alocoSeg !== 'beauty'){
@@ -601,23 +627,96 @@
     } catch(e){}
   }
 
-  function tirarFila(){
-    ['nav-fila','screen-fila','lt-fila'].forEach(function(id){
+  /* AGENDA, FILA OU OS DOIS
+
+     Esta funcao era `tirarFila()` e escondia a fila em TODO aplicativo,
+     sem excecao. A fila sempre existiu inteira (tela no app, API, aviso
+     no WhatsApp do dono, lista no caixa) — faltava a loja poder
+     escolher. Agora o dono escolhe no painel dele e isso chega aqui em
+     `window.__alocoModo`.
+
+     O padrao continua 'agenda': aplicativo que nao conseguir falar com o
+     servidor se comporta exatamente como antes. */
+  var GUARDADO = { SCREENS:{}, NAV:{} };
+  try {
+    if(typeof SCREENS  !== 'undefined'){ GUARDADO.SCREENS.fila = SCREENS.fila;  GUARDADO.SCREENS.agenda = SCREENS.agenda; }
+    if(typeof NAV_BTNS !== 'undefined'){ GUARDADO.NAV.fila     = NAV_BTNS.fila; GUARDADO.NAV.agenda     = NAV_BTNS.agenda; }
+  } catch(e){}
+
+  function mostrarPedaco(nome, ligado){
+    ['nav-' + nome, 'screen-' + nome, 'lt-' + nome].forEach(function(id){
       var el = document.getElementById(id);
-      if(el) el.style.display = 'none';
+      if(el) el.style.display = ligado ? '' : 'none';
     });
+    /* Os atalhos espalhados pela home (o cartao "com pressa?", a dica
+       dentro da agenda). O botao Meus tem "fila" no onclick e nao e
+       atalho de fila — por isso ele sai da conta. O #cbtn tem
+       tratamento proprio logo abaixo: ele nao some, ele muda de destino. */
     try {
-      var atalhos = document.querySelectorAll('[onclick*="fila"]');
+      var atalhos = document.querySelectorAll('[onclick*="' + nome + '"]');
       for(var i = 0; i < atalhos.length; i++){
-        if(atalhos[i].id === 'nav-meus') continue;
-        atalhos[i].style.display = 'none';
+        if(atalhos[i].id === 'nav-meus' || atalhos[i].id === 'cbtn') continue;
+        if(atalhos[i].id === 'nav-' + nome) continue;   // ja tratado acima
+        atalhos[i].style.display = ligado ? '' : 'none';
       }
     } catch(e){}
     try {
-      if(typeof SCREENS !== 'undefined' && SCREENS.fila) delete SCREENS.fila;
-      if(typeof NAV_BTNS !== 'undefined' && NAV_BTNS.fila) delete NAV_BTNS.fila;
+      if(typeof SCREENS !== 'undefined'){
+        if(ligado){ if(GUARDADO.SCREENS[nome]) SCREENS[nome] = GUARDADO.SCREENS[nome]; }
+        else delete SCREENS[nome];
+      }
+      if(typeof NAV_BTNS !== 'undefined'){
+        if(ligado){ if(GUARDADO.NAV[nome]) NAV_BTNS[nome] = GUARDADO.NAV[nome]; }
+        else delete NAV_BTNS[nome];
+      }
     } catch(e){}
   }
+
+  /* O botao grande da home. Numa loja so de fila ele nao pode continuar
+     dizendo "Reservar meu horario" e levar pra uma tela que nao existe
+     mais: vira a porta da fila. */
+  function arrumarBotaoHome(modo){
+    try {
+      var bt = document.getElementById('cbtn');
+      if(!bt) return;
+      if(modo === 'fila'){
+        bt.setAttribute('onclick', "navTo('fila')");
+        bt.onclick = function(){ try { navTo('fila'); } catch(e){} };
+        if(!bt.getAttribute('data-aloco-fila')){
+          bt.setAttribute('data-aloco-fila','1');
+          bt.textContent = '\u2702\ufe0f Entrar na fila';
+        }
+      } else if(bt.getAttribute('data-aloco-fila')){
+        bt.removeAttribute('data-aloco-fila');
+        bt.setAttribute('onclick', "navTo('agenda')");
+        bt.onclick = function(){ try { navTo('agenda'); } catch(e){} };
+        bt.textContent = '\u2702\ufe0f Reservar meu hor\u00e1rio';
+      }
+    } catch(e){}
+  }
+
+  function aplicarModo(){
+    var m = 'agenda';
+    try {
+      var v = String(window.__alocoModo || '').toLowerCase();
+      if(v === 'fila' || v === 'ambos' || v === 'agenda') m = v;
+    } catch(e){}
+
+    mostrarPedaco('fila',   m === 'fila'   || m === 'ambos');
+    mostrarPedaco('agenda', m === 'agenda' || m === 'ambos');
+    arrumarBotaoHome(m);
+
+    /* Se o cliente estava na tela que acabou de sumir (o dono trocou o
+       modo com o app aberto), ele fica olhando pro nada. Volta pra home. */
+    try {
+      ['fila','agenda'].forEach(function(nome){
+        var tela = document.getElementById('screen-' + nome);
+        if(tela && tela.style.display === 'none' && tela.classList.contains('active')) navTo('home');
+      });
+    } catch(e){}
+  }
+
+  window.__alocoAplicarModo = aplicarModo;
 
   var ICONE =
       '<svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"'
@@ -997,7 +1096,7 @@
     if(!document.querySelector('.nav-items')) return false;
     // clarearTexto() nao e mais necessario: o patch.css trava a paleta
     corDoTopo();
-    tirarFila();
+    aplicarModo();
     protegerNavTo();
     trocarEmoji();
     arrumarConfirmacao();
