@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ALoCO">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>ALoCO - Central de Logos</title>
 <style>
 html,body{margin:0;height:100%;background:#080B10;overflow:hidden}
@@ -15,11 +17,20 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
 #carregando{position:fixed;inset:0;display:grid;place-items:center;background:#080B10;z-index:2;transition:opacity .4s}
 .aro{width:34px;height:34px;border:3px solid rgba(10,132,255,.25);border-top-color:#0A84FF;border-radius:50%;animation:roda .8s linear infinite}
 @keyframes roda{to{transform:rotate(360deg)}}
+/* O botao de avisos. O iPhone so pergunta se a permissao for pedida a
+   partir de um toque seu — nenhum codigo consegue pedir sozinho. Entao
+   ele aparece quando falta permissao e some assim que voce concede. */
+#avisos{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  z-index:3;display:none;align-items:center;gap:8px;border:0;cursor:pointer;
+  padding:12px 20px;border-radius:999px;font:600 15px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:#fff;background:#0A84FF;box-shadow:0 8px 28px rgba(10,132,255,.45)}
+#avisos.ver{display:flex}
 </style>
 </head>
 <body>
 <div id="carregando"><div class="aro"></div></div>
 <iframe id="tela" title="Central de Logos" allow="clipboard-write" onload="var c=document.getElementById('carregando');c.style.opacity=0;setTimeout(function(){c.remove();},450);"></iframe>
+<button id="avisos" type="button">🔔 Ativar os avisos</button>
 <script>
 /* O Google guarda em cache o HTML que o /exec devolve, por URL.
    Aqui havia um balde de 5 minutos. Ele quebrava o cache, mas DENTRO do
@@ -38,6 +49,58 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
     'https://script.google.com/macros/s/AKfycbyf15fH0bXnoi_yuj9voEtsm1yQAPNDUdTAHXlI98FnrNp_n4kYXyvRScB_hGJKRHYL/exec'
     + '?tela=adm&v=' + v;
 })();
+</script>
+
+<!-- ═══ AVISOS NO CELULAR (OneSignal) ═══════════════════════════════
+     A mesma conta que avisa as barbearias, e o mesmo
+     /OneSignalSDKWorker.js que ja esta na raiz deste dominio. Nada novo
+     foi criado la: o que muda e a etiqueta.
+
+     Este celular entra como  perfil = adm.  O chefe (zz_Chefe.js, no
+     Apps Script da Recepcao) mira exatamente essa etiqueta, entao as
+     cobrancas chegam so aqui e nunca no celular de um dono de barbearia.
+
+     O trecho roda NESTA pagina, nao dentro do iframe: o Apps Script
+     serve o conteudo dele numa caixa isolada, onde nao da para registrar
+     service worker. Por isso a casca existe. -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal){
+    var botao = document.getElementById('avisos');
+    try{
+      await OneSignal.init({
+        appId: "f29588c7-1fd8-4889-aabb-0737817de8f3",
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+        allowLocalhostAsSecureOrigin: true
+      });
+
+      async function marcar(){
+        try{ await OneSignal.User.addTag("perfil", "adm"); }catch(e){}
+      }
+
+      function conferir(){
+        var tem = false;
+        try{ tem = OneSignal.Notifications.permission === true; }catch(e){}
+        if (tem){ botao.classList.remove('ver'); marcar(); }
+        else    { botao.classList.add('ver'); }
+      }
+
+      botao.addEventListener('click', async function(){
+        botao.textContent = '…';
+        try{ await OneSignal.Notifications.requestPermission(); }catch(e){}
+        await marcar();
+        botao.textContent = '🔔 Ativar os avisos';
+        conferir();
+      });
+
+      try{ OneSignal.Notifications.addEventListener('permissionChange', conferir); }catch(e){}
+      conferir();
+    }catch(e){
+      console.warn('[ALOCO] OneSignal init falhou:', e);
+    }
+  });
 </script>
 </body>
 </html>
