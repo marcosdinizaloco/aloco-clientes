@@ -41,20 +41,43 @@ var ART={
 };
 
 
-  /* UMA grade de 10, 3+3+3+1. Os quatro primeiros sao os principais e
-     ficam 20% maiores. Nada de titulo de secao. */
-  var APPS = [
+  /* ══ A TELA INICIAL ═══════════════════════════════════════════════
+     Antes eram dez icones iguais numa grade de 3. O barbeiro abria o
+     painel e escolhia entre dez coisas sem saber qual.
+
+     Agora sao dois grupos:
+       PRINCIPAIS — o que se usa todo dia, varias vezes por dia.
+       CONFIG     — o que se mexe uma vez e quase nunca mais.
+
+     Nada foi removido. O menu lateral continua com tudo, inclusive a
+     Fila de Espera e o Clientes 360, que ja viviam so la.
+
+     Estes botoes NUNCA foram a navegacao: cada um CLICA no botao
+     correspondente do menu lateral. Mexer aqui e mexer no atalho, nao
+     no caminho — e por isso as permissoes nao sao tocadas. Elas
+     escondem o botao do menu, do lado do servidor, e o atalho orfao
+     simplesmente nao acha para onde ir. */
+
+  var APPS_PRINCIPAIS = [
     ['agenda',     'Agenda',        'agd',  'Agenda',       1],
+    ['comandas',   'Comandas',      'cx',   'Caixa',        1],
     ['caixa',      'Caixa',         'cx',   'Caixa',        1],
     ['clientes',   'Clientes',      'cli',  'Clientes',     1],
-    ['comandas',   'Comandas',      'cx',   'Caixa',        1],
-    ['barbeiros',  'Profissionais', 'barb', 'Profissional', 0],
+    ['relatorios', 'Financeiro',    'fin',  'Financeiro',   1]
+  ];
+
+  var APPS_CONFIG = [
     ['servicos',   'Serviços',      'svc',  'Serviço',      0],
+    ['barbeiros',  'Profissionais', 'barb', 'Profissional', 0],
     ['horarios',   'Horários',      null,   'Horário',      0],
     ['pacotes',    'Pacotes',       null,   'Pacote',       0],
-    ['relatorios', 'Financeiro',    'fin',  'Financeiro',   0],
     ['ajustes',    'Ajustes',       'eq',   'Equipe',       0]
   ];
+
+  /* A lista inteira continua existindo: o NOME_TELA la embaixo monta o
+     cabecalho de cada tela interna a partir dela. Quebrar isso
+     apagaria o titulo das telas. */
+  var APPS = APPS_PRINCIPAIS.concat(APPS_CONFIG);
 
   /* ── achar o botao do menu que corresponde a cada aplicativo ──────── */
   function botoes(){
@@ -87,12 +110,109 @@ var ART={
     } catch(e){}
   }
 
+  /* ══ PERMISSAO DOS ATALHOS ════════════════════════════════════════
+     Quem decide o que cada funcionario ve e o servidor: o Acessos.js
+     monta o menu lateral so com os botoes a que ele tem direito. O
+     atalho da Home sempre foi um clique nesse botao.
+
+     O furo estava no plano B: quando o botao NAO existia, o codigo
+     caia no window.ir(id) e abria a tela do mesmo jeito. Era por ai
+     que um funcionario sem acesso ao Financeiro chegava no Financeiro
+     pela tela inicial.
+
+     Apagar o plano B nao resolve: ele existe porque o menu lateral e
+     montado por um script que roda DEPOIS deste. Nos primeiros
+     instantes nao ha botao nenhum, e o toque morreria.
+
+     Entao a regra passa a ser o ESTADO DO MENU:
+       menu ainda nao montado   -> nao sei nada, deixo passar (como era)
+       menu montado, botao la   -> clico no botao              (como era)
+       menu montado, sem botao  -> NAO abro, e aviso            (novo)
+
+     Nunca bloqueio por falta de informacao. So bloqueio quando o menu
+     existe e aquele botao comprovadamente nao esta nele. */
+  function menuPronto(){ return botoes().length > 0; }
+
+  function permitido(id, rotulo){
+    if (!menuPronto()) return true;
+    return !!acharBotao(id, rotulo);
+  }
+
+  function avisoSemAcesso(){
+    try {
+      var t = document.getElementById('alcSemAc');
+      if (!t){
+        t = document.createElement('div');
+        t.id = 'alcSemAc';
+        t.className = 'alcToast';
+        document.body.appendChild(t);
+      }
+      t.textContent = 'Você não tem acesso a esta tela. Fale com o dono da barbearia.';
+      t.classList.add('on');
+      clearTimeout(t.__t);
+      t.__t = setTimeout(function(){ try { t.classList.remove('on'); } catch(e){} }, 3400);
+    } catch(e){}
+  }
+
   function abrir(id, rotulo){
     soltarCt();
     var b = acharBotao(id, rotulo);
     if (b){ try { b.click(); return true; } catch(e){} }
-    if (id && typeof window.ir === 'function'){ try { window.ir(id, b || null); return true; } catch(e){} }
+    if (menuPronto()){ avisoSemAcesso(); return false; }
+    if (id && typeof window.ir === 'function'){ try { window.ir(id, null); return true; } catch(e){} }
     return false;
+  }
+
+  /* Bloquear no toque e o minimo. O certo e o atalho nem aparecer:
+     ninguem deve ver uma porta que nao pode abrir. Como as duas grades
+     sao flex com justify-content:center, sumir com um icone reorganiza
+     a linha sozinho — nao ha regra de posicao para quebrar. */
+  function podar(ct){
+    if (!ct || !menuPronto()) return false;
+    var mudou = false, i;
+    var aps = ct.querySelectorAll('.alcAp');
+    for (i = 0; i < aps.length; i++){
+      var a = aps[i];
+      var ok = permitido(a.getAttribute('data-tela') || null, a.getAttribute('data-rot'));
+      var bloq = a.getAttribute('data-bloq') === '1';
+      if (!ok && !bloq){ a.setAttribute('data-bloq', '1'); mudou = true; }
+      else if (ok && bloq){ a.removeAttribute('data-bloq'); mudou = true; }
+    }
+    /* se a configuracao inteira ficou fora do alcance dele, o titulo
+       "Configurar minha barbearia" sai junto — titulo de secao vazia
+       e so ruido. */
+    try {
+      var g = ct.querySelector('.alcMini'), sec = ct.querySelector('.alcSec');
+      if (g && sec){
+        var vivos = g.querySelectorAll('.alcAp:not([data-bloq])').length;
+        var nd = vivos ? '' : 'none';
+        if (sec.style.display !== nd){ sec.style.display = nd; g.style.display = nd; mudou = true; }
+      }
+    } catch(e){}
+    return mudou;
+  }
+
+  /* O menu chega tarde e pode chegar em duas etapas (primeiro o HTML,
+     depois o servidor esconder o que o funcionario nao pode ver).
+     Por isso: algumas conferidas no tempo e um observador no proprio
+     menu. O observador olha o MENU, nunca a Home — assim o que o
+     podar() muda nao dispara ele de volta. */
+  function vigiarMenu(ct){
+    function passo(){
+      if (podar(ct)){ try { encaixar(); } catch(e){} }
+    }
+    passo();
+    var t = [120, 400, 900, 1800, 3200, 6000], i;
+    for (i = 0; i < t.length; i++) setTimeout(passo, t[i]);
+    try {
+      var cx = document.querySelector('.nav-links') || document.querySelector('.nav');
+      if (cx && window.MutationObserver){
+        var mo = new MutationObserver(passo);
+        mo.observe(cx, { childList:true, subtree:true,
+                         attributes:true, attributeFilter:['style','class','hidden','disabled'] });
+        setTimeout(function(){ try { mo.disconnect(); } catch(e){} }, 25000);
+      }
+    } catch(e){}
   }
   /* NAO existe mais gate na pintura. O menu lateral e montado por outro
      script que roda depois do meu: se eu esperasse por ele, a grade
@@ -533,7 +653,7 @@ var ART={
            '<b id="alcN3" class="vd">' + tapar(NUM.caixa) + '</b>' +
            '<u>NO CAIXA</u><s class="b3"></s></div>' +
          '</div>';
-    h += '<div class="alcGrade">' + APPS.map(app).join('') + '</div>';
+    h += '<div class="alcGrade">' + APPS_PRINCIPAIS.map(app).join('') + '</div>';
 
     h += '<button class="alcIA" id="alcIaBt" type="button" ' +
            'aria-label="Barber IA: perguntar por audio">' +
@@ -545,6 +665,15 @@ var ART={
              '<span class="alcIaSub">Pergunte por áudio<br>sobre sua barbearia</span></span>' +
            '<span class="alcIaSeta">&#8250;</span>' +
          '</button>';
+
+    /* A configuracao vem DEPOIS do Barber IA, de proposito: o do dia a
+       dia em cima, o diferencial no meio, o que se mexe uma vez por
+       mes embaixo. */
+    h += '<div class="alcSec">' +
+           '<span class="alcSecTx">Configurar minha barbearia</span>' +
+           '<span class="alcSecLn"></span>' +
+         '</div>';
+    h += '<div class="alcGrade alcMini">' + APPS_CONFIG.map(app).join('') + '</div>';
 
     h += '</div>';
     ct.innerHTML = h;
@@ -566,6 +695,7 @@ var ART={
     } catch(e){}
     medirCabecalho();
     encaixar();
+    vigiarMenu(ct);
     caber();
     setTimeout(function(){ encaixar(); caber(); }, 60);
     setTimeout(function(){ encaixar(); caber(); }, 400);
@@ -819,16 +949,60 @@ var ART={
         'background:var(--ia-a10,rgba(42,155,255,.1));border:1px solid var(--ia-a20,rgba(42,155,255,.2))}' +
       '.alcDiaIc svg{width:62%;height:62%}' +
       '.alcDia .az{color:var(--ia-ac2,#5FACFF)}.alcDia .vd{color:#25D366}' +
-      /* ── UMA grade: 3 colunas, 10 aplicativos, o decimo centrado ── */
-      '.alcGrade{display:grid;grid-template-columns:repeat(3,1fr);' +
-        'gap:calc(16px * var(--alcK)) 8px;margin-bottom:calc(16px * var(--alcK))}' +
-      '.alcGrade .alcAp:nth-child(10){grid-column:2}' +
-      /* so a linha 2 mistura tamanhos: os dois vizinhos do Comandas descem
-         os 12px da diferenca, para o nome ficar na mesma altura. Margem,
-         nao elemento: assim nao entra no gap e nao muda a altura da grade. */
-      /* os dez azulejos tem o mesmo tamanho, medido na referencia que o
-         Marcos congelou: 0.137 da largura, igual nas tres linhas. Por
-         isso nao existe mais o desnivel que a linha 2 precisava. */
+      /* ══ DUAS grades ═══════════════════════════════════════════════
+         Em cima: 5 atalhos grandes, 3 por linha, azulejo de 66px.
+         Embaixo: 5 de configuracao, 3 por linha, azulejo de 46px.
+
+         FLEX, nao grid, e de proposito. Com grid eu precisaria de uma
+         regra nth-child para centrar o item orfao de cada grade — e
+         essa regra quebra no dia em que um icone sumir (funcionario
+         sem permissao, por exemplo). Com flex-wrap + justify-content
+         a ultima linha se centra sozinha, com 5, 4 ou 2 icones.
+
+         A regra antiga que centrava o decimo azulejo saiu junto
+         com a grade unica de dez. */
+      '.alcGrade{display:flex;flex-wrap:wrap;justify-content:center;' +
+        'gap:calc(18px * var(--alcK)) 8px;margin-bottom:calc(18px * var(--alcK))}' +
+      '.alcGrade:not(.alcMini) .alcAp{flex:0 0 calc(33.333% - 6px);width:auto}' +
+      '.alcGrade:not(.alcMini) .alcSq{width:calc(66px * var(--alcK));' +
+        'height:calc(66px * var(--alcK))}' +
+      '.alcGrade:not(.alcMini) .alcNm{font-size:max(12px, calc(15px * var(--alcK)))}' +
+      /* ── a faixa "Configurar minha barbearia" ── */
+      /* Nao e um botao: e so um rotulo com um fio que se apaga. Serve
+         para o olho saber que dali para baixo e outra coisa. */
+      '.alcSec{display:flex;align-items:center;gap:calc(10px * var(--alcK));' +
+        'padding:0 2px;margin:calc(20px * var(--alcK)) 0 calc(12px * var(--alcK))}' +
+      '.alcSecTx{font-size:max(10px, calc(11px * var(--alcK)));font-weight:800;' +
+        'letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;' +
+        'color:var(--ia-ac2,#5FACFF);opacity:.72}' +
+      '.alcSecLn{flex:1 1 auto;height:1px;border-radius:1px;' +
+        'background:linear-gradient(90deg,var(--ia-a30,rgba(42,155,255,.3)),transparent)}' +
+      /* ── a grade de configuracao ── */
+      /* 3 por linha e azulejo menor: continua a um toque, mas nao
+         disputa a atencao com a Agenda nem com o Barber IA. */
+      '.alcMini{gap:calc(15px * var(--alcK)) 8px;' +
+        'margin-bottom:calc(6px * var(--alcK))}' +
+      '.alcMini .alcAp{flex:0 0 calc(33.333% - 6px);width:auto;' +
+        'gap:calc(7px * var(--alcK))}' +
+      '.alcMini .alcSq{width:calc(46px * var(--alcK));height:calc(46px * var(--alcK));' +
+        'box-shadow:0 6px 13px -10px rgba(0,0,0,.85),' +
+        ' 0 0 14px -6px var(--ia-p34,rgba(10,132,255,.34))}' +
+      '.alcMini .alcNm{font-size:max(10px, calc(12px * var(--alcK)));' +
+        'font-weight:600;opacity:.8}' +
+      /* ── atalho sem permissao: sai da tela ── */
+      '.alcAp[data-bloq]{display:none}' +
+      /* ── aviso de "sem acesso" ── */
+      '.alcToast{position:fixed;left:16px;right:16px;' +
+        'bottom:calc(22px + env(safe-area-inset-bottom, 0px));z-index:99999;' +
+        'padding:13px 16px;border-radius:14px;font-size:14px;font-weight:600;' +
+        'line-height:1.3;text-align:center;color:#fff;' +
+        'background:rgba(16,20,28,.96);' +
+        'border:1px solid var(--ia-a38,rgba(42,155,255,.38));' +
+        'box-shadow:0 18px 40px -22px #000;' +
+        'opacity:0;transform:translateY(10px);pointer-events:none;' +
+        'transition:opacity .18s, transform .18s}' +
+      '.alcToast.on{opacity:1;transform:none}' +
+
       '.alcAp{display:flex;flex-direction:column;align-items:center;' +
         'gap:calc(9px * var(--alcK));width:100%;background:none;border:0;padding:0;' +
         'cursor:pointer;color:inherit;font:inherit;' +
@@ -837,8 +1011,8 @@ var ART={
       '.alcSq{display:block;width:calc(58px * var(--alcK));height:calc(58px * var(--alcK));' +
         'border-radius:28%;flex:0 0 auto;' +
         'box-shadow:0 8px 16px -10px rgba(0,0,0,.85), 0 0 18px -5px var(--ia-p34,rgba(10,132,255,.34))}' +
-      /* o brilho dos quatro principais continua um pouco mais forte —
-         e o que a referencia mostra. O TAMANHO e igual. */
+      /* o brilho dos quatro principais continua um pouco mais forte.
+         Agora o tamanho tambem e maior — ver a grade acima. */
       '.alcAp.g .alcSq{box-shadow:0 9px 18px -11px rgba(0,0,0,.85), 0 0 22px -5px var(--ia-p42,rgba(10,132,255,.42))}' +
       '.alcSq img{display:block;width:100%;height:100%}' +
       '.alcNm{font-size:max(11px, calc(14px * var(--alcK)));font-weight:700;letter-spacing:-.2px;' +
