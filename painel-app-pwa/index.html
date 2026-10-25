@@ -5166,12 +5166,58 @@ function abrirCodigos(){
   catch(e){ toast('Não consegui abrir.','er'); }
 }
 
+/* ══ WHATSAPP QUE RECEBE OS AVISOS ═══════════════════════════════
+   Tres funcoes curtas. Quem valida de verdade e o servidor, com a
+   mesma funcao que o cadastro usa — aqui so mascara e avisa. */
+function waDonoMascara(el){
+  var d = el.value.replace(/\D/g,'').slice(0,11), t = '';
+  if (d.length)      t = '(' + d.slice(0,2);
+  if (d.length >= 3) t += ') ' + d.slice(2, d.length > 10 ? 7 : 6);
+  if (d.length >= 7) t += '-' + d.slice(d.length > 10 ? 7 : 6);
+  el.value = t;
+}
+function waDonoCarregar(){
+  var m = document.getElementById('wa-msg');
+  if (!m) return;
+  _eqApi('wa_dono').then(function(j){
+    var el = document.getElementById('wa-dono');
+    if (!el || !m) return;
+    if (j && j.ok){
+      el.value = j.bonito || '';
+      m.style.color = 'var(--tx-4)';
+      m.textContent = j.whatsapp
+        ? (j.origem === 'cadastro' ? 'Veio do seu cadastro. Confira se está certo.' : 'Avisos chegam neste número.')
+        : 'Nenhum número configurado — esta barbearia não recebe aviso de agendamento.';
+    } else { m.textContent = 'Não consegui ler o número.'; }
+  }).catch(function(){ if (m) m.textContent = 'Sem conexão.'; });
+}
+function waDonoGravar(){
+  var el = document.getElementById('wa-dono'), m = document.getElementById('wa-msg');
+  if (!el || !m) return;
+  m.style.color = 'var(--tx-4)'; m.textContent = 'Salvando…';
+  _eqApi('wa_dono_salvar', { whatsapp: el.value }).then(function(j){
+    if (j && j.ok){
+      el.value = j.bonito || '';
+      m.style.color = 'var(--c-green, var(--tx-4))';
+      m.textContent = j.whatsapp ? 'Pronto. Os avisos vão para este número.'
+                                 : 'Número apagado. Esta barbearia não vai receber aviso.';
+      toast('Salvo!','ok');
+      return;
+    }
+    m.style.color = 'var(--c-red)';
+    m.textContent = (j && j.erro === 'telefone_invalido')
+      ? 'Esse número não parece válido. Confira o DDD e os 9 dígitos.'
+      : (j && j.erro === 'sem_permissao') ? 'Só o dono pode mudar este número.'
+      : 'Não deu certo.';
+  }).catch(function(){ m.style.color = 'var(--c-red)'; m.textContent = 'Sem conexão.'; });
+}
+
 function ldEquipe(){
   document.getElementById('ct').innerHTML='<div class="lw"><div class="sp"></div>Carregando equipe...</div>';
   _eqApi('equipe_listar').then(function(j){
     _EQ_LISTA = (j&&j.ok&&j.dados) ? j.dados : [];
-    _drawEquipeAcessos();
-  }).catch(function(){ _EQ_LISTA=[]; _drawEquipeAcessos(); });
+    _drawEquipeAcessos(); waDonoCarregar();
+  }).catch(function(){ _EQ_LISTA=[]; _drawEquipeAcessos(); waDonoCarregar(); });
 }
 
 function _drawEquipeAcessos(){
@@ -5181,6 +5227,19 @@ function _drawEquipeAcessos(){
    + '<div style="display:flex;gap:8px">'
    + '<button class="btn btn-ghost btn-sm" onclick="abrirCodigos()">Códigos de acesso</button>'
    + '<button class="btn btn-primary btn-sm" onclick="eqNovo()">+ Nova pessoa</button></div></div>';
+
+  /* WhatsApp que recebe os avisos. Fica nesta tela porque e a tela
+     que o icone "Ajustes" abre, e porque ela ja e so do dono. */
+  h+='<div class="card" style="margin-bottom:14px">'
+   + '<div style="font-size:14px;font-weight:700;margin-bottom:2px">WhatsApp que recebe os avisos</div>'
+   + '<div style="font-size:12px;color:var(--tx-4);margin-bottom:10px">'
+   + 'Cada agendamento novo chega neste número. Deixe em branco para não receber.</div>'
+   + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+   + '<input id="wa-dono" class="fi" inputmode="numeric" maxlength="16" placeholder="(79) 99999-9999" '
+   + 'style="flex:1;min-width:180px" oninput="waDonoMascara(this)">'
+   + '<button class="btn btn-primary btn-sm" onclick="waDonoGravar()">Salvar</button></div>'
+   + '<div id="wa-msg" style="font-size:12px;margin-top:8px;color:var(--tx-4)">Carregando…</div>'
+   + '</div>';
 
   if(!_EQ_LISTA.length){
     h+='<div class="ES" style="padding:40px 24px"><div class="ES-ICO">◍</div><div class="ES-T">Ninguém cadastrado ainda</div>'
@@ -7017,7 +7076,7 @@ window.onload = function(){
 
 </style>
 <link rel="stylesheet" href="/painel-app-pwa/ui.css?v=20261007e">
-   <script src="/painel-app-pwa/home-apps.js?v=20261025a" defer></script>
+   <script src="/painel-app-pwa/home-apps.js?v=20261007e" defer></script>
 <script src="/painel-app-pwa/ia-voz.js?v=20261008-iaAB" defer></script>
 </body>
 </html>
