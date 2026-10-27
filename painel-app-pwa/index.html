@@ -2115,6 +2115,22 @@ window.addEventListener('resize', function(){
 <div class="ct" id="ct"></div>
 
 <!-- ═══ MODAIS ═══════════════════════════════════════════════════════ -->
+<div class="ov" id="ov-opchamar" onclick="fModal('opchamar',event)">
+<div class="md" style="max-width:460px">
+  <div class="mdh"><div class="mdt" id="op-ttl">Chamar cliente</div><button class="mdc" onclick="fModal('opchamar')">x</button></div>
+  <div class="fg">
+    <label class="fl">Mensagem</label>
+    <textarea id="op-msg" class="fi" rows="5" style="resize:vertical;min-height:110px"></textarea>
+    <div style="font-size:12px;color:var(--tx-4);margin-top:6px">
+      Edite à vontade. Quem envia é você, do seu WhatsApp.
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+    <button class="btn btn-ghost btn-sm" onclick="fModal('opchamar')">Cancelar</button>
+    <button class="btn btn-primary btn-sm" onclick="opAbrirWa()">Abrir WhatsApp</button>
+  </div>
+</div>
+</div>
 <div class="ov" id="ov-barb" onclick="fModal('barb',event)">
 <div class="md">
   <div class="mdh"><div class="mdt" id="tt-barb">Novo Barbeiro</div><button class="mdc" onclick="fModal('barb')">x</button></div>
@@ -3227,6 +3243,10 @@ function _homeRender(d){
       oppsEl.innerHTML=oh;
     }
   },stepDelay[5]+400);
+
+  /* Assistente de oportunidades: carrega depois e pinta por cima do
+     bloco acima. Nao depende do ALOCO_SUGESTOES. */
+  try { opCarregar(); } catch(e){}
 
   // Próximos
   var proxEl=document.getElementById('H-prox');
@@ -5166,6 +5186,135 @@ function abrirCodigos(){
   catch(e){ toast('Não consegui abrir.','er'); }
 }
 
+/* ══ ASSISTENTE DE OPORTUNIDADES ═══════════════════════════════════
+   Responde "quem eu chamo hoje" e "como eu chamo agora".
+
+   Este bloco NAO religa o ALOCO_SUGESTOES e nao usa o _homeAcoes.
+   Aquele foi desligado porque afirmava percentuais que ninguem mediu
+   ("60% retorna apos contato"); este so mostra o que sai dos dados da
+   propria barbearia: ritmo de retorno, dias sem vir, horarios livres.
+
+   O envio para o cliente final NAO passa pelo servidor. O botao abre o
+   WhatsApp do proprio barbeiro, com o texto pronto e editavel. Disparo
+   em massa de reativacao e marketing, custa mais e derruba numero. */
+var _OP = null, _OP_ATUAL = null;
+
+function opCarregar(){
+  var el = document.getElementById('H-ia-opps');
+  if (!el) return;
+  _eqApi('oportunidades').then(function(j){
+    if (!j || !j.ok) return;
+    _OP = j;
+    _opPintar(j);
+  }).catch(function(){});
+}
+
+function _opEsc(t){
+  return String(t==null?'':t).replace(/[&<>"]/g, function(ch){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[ch];
+  });
+}
+
+function _opLinha(c, faixa){
+  var cor = (faixa === 'alta') ? 'var(--c-amber,#F2A541)' : 'var(--tx-4)';
+  var ritmo = (c.base === 'proprio')
+    ? ('corta a cada ' + c.ritmo + ' dias')
+    : ('referência da loja: ' + c.ritmo + ' dias');
+  return '<div class="CMD-IA-OPP" style="cursor:default">'
+    + '<div style="flex:1;min-width:0">'
+    +   '<div class="CMD-IA-OPP-T">' + _opEsc(c.nome) + '</div>'
+    +   '<div class="CMD-IA-OPP-D" style="color:' + cor + '">'
+    +     ritmo + ' · sumido há ' + c.diasSem + ' dias</div>'
+    + '</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="opChamar(\'' + c.wa + '\')">Chamar</button>'
+    + '</div>';
+}
+
+function _opPintar(j){
+  var msg = document.getElementById('H-msg');
+  var el  = document.getElementById('H-ia-opps');
+  if (!el) return;
+
+  var v = j.vagos || { hoje:0, amanha:0 };
+  var linhaVagos = 'Horários livres: ' + v.hoje + ' hoje · ' + v.amanha + ' amanhã';
+
+  /* Sem historico nao ha ritmo. Diz o que falta em vez de chutar. */
+  if (!j.pronto){
+    if (msg){
+      msg.innerHTML = 'Ainda não dá para dizer quem chamar: nenhum cliente tem '
+        + 'três visitas registradas. Conforme a agenda roda, isto se preenche sozinho.';
+      msg.className = 'CMD-IA-MSG show';
+    }
+    el.innerHTML = '<div class="CMD-IA-OPP" style="cursor:default">'
+      + '<div style="flex:1"><div class="CMD-IA-OPP-D">' + linhaVagos + '</div></div></div>';
+    return;
+  }
+
+  var alta = j.alta || [], ret = j.retorno || [];
+  if (msg){
+    msg.innerHTML = alta.length
+      ? ('<b>' + (j.totalAlta || alta.length) + '</b> cliente'
+         + ((j.totalAlta || alta.length) > 1 ? 's' : '') + ' passaram do dobro do próprio ritmo.')
+      : (ret.length
+          ? ('Ninguém em situação crítica. ' + (j.totalRetorno || ret.length)
+             + ' no ponto de voltar.')
+          : 'Ninguém atrasado hoje. Agenda em dia.');
+    msg.className = 'CMD-IA-MSG show';
+  }
+
+  var h = '';
+  if (alta.length){
+    h += '<div style="font-size:11px;letter-spacing:.08em;color:var(--tx-4);margin:6px 0 4px">'
+      +  'ALTA PRIORIDADE · ' + (j.totalAlta || alta.length) + '</div>';
+    alta.slice(0,4).forEach(function(c){ h += _opLinha(c,'alta'); });
+  }
+  if (ret.length){
+    h += '<div style="font-size:11px;letter-spacing:.08em;color:var(--tx-4);margin:10px 0 4px">'
+      +  'OPORTUNIDADE DE RETORNO · ' + (j.totalRetorno || ret.length) + '</div>';
+    ret.slice(0,4).forEach(function(c){ h += _opLinha(c,'ret'); });
+  }
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;'
+    +  'flex-wrap:wrap;margin-top:12px;padding-top:10px;'
+    +  'border-top:1px solid var(--bd,rgba(255,255,255,.08))">'
+    +  '<span style="font-size:12px;color:var(--tx-4)">' + linhaVagos + '</span>'
+    +  '<button class="btn btn-ghost btn-sm" onclick="opResumoEnviar(this)">Resumo no meu WhatsApp</button>'
+    +  '</div>';
+  el.innerHTML = h;
+}
+
+function opChamar(wa){
+  if (!_OP) return;
+  var todos = (_OP.alta || []).concat(_OP.retorno || []), c = null;
+  for (var i = 0; i < todos.length; i++) if (todos[i].wa === wa){ c = todos[i]; break; }
+  if (!c) return;
+  _OP_ATUAL = c;
+  var t = document.getElementById('op-ttl'), m = document.getElementById('op-msg');
+  if (t) t.textContent = 'Chamar ' + c.nome;
+  if (m) m.value = c.mensagem || '';
+  oModal('opchamar');
+}
+
+function opAbrirWa(){
+  if (!_OP_ATUAL) return;
+  var m = document.getElementById('op-msg');
+  try {
+    window.open('https://wa.me/' + _OP_ATUAL.wa + '?text='
+                + encodeURIComponent(m ? m.value : ''), '_blank');
+    fModal('opchamar');
+  } catch(e){ toast('Não consegui abrir o WhatsApp.','er'); }
+}
+
+function opResumoEnviar(btn){
+  if (btn){ btn.disabled = true; btn.textContent = 'Enviando…'; }
+  function volta(){ if (btn){ btn.disabled = false; btn.textContent = 'Resumo no meu WhatsApp'; } }
+  _eqApi('op_resumo').then(function(j){
+    if (j && j.ok) toast(j.seco ? 'Modo de teste: nada foi enviado.' : 'Resumo enviado!','ok');
+    else if (j && j.erro === 'sem_whatsapp') toast('Configure o número em Equipe e acessos.','er');
+    else toast('Não consegui enviar.','er');
+    volta();
+  }).catch(function(){ toast('Sem conexão.','er'); volta(); });
+}
+
 /* ══ WHATSAPP QUE RECEBE OS AVISOS ═══════════════════════════════
    Tres funcoes curtas. Quem valida de verdade e o servidor, com a
    mesma funcao que o cadastro usa — aqui so mascara e avisa. */
@@ -5338,9 +5487,29 @@ function eqExcluir(id, nome){
 // ═══════════════════════════════════════════════════════
 //  INIT — abre na Central de Controle
 // ═══════════════════════════════════════════════════════
+/* Abre direto numa tela pelo # do endereco: /p/<slug>#agd cai na
+   Agenda. Serve para os botoes do resumo diario no WhatsApp levarem o
+   dono ao lugar certo em vez de sempre a Central de Controle.
+
+   So aceita a lista abaixo, e cai na home se vier qualquer outra
+   coisa. O # nao decide permissao: quem decide continua sendo o
+   servidor, em _podeNaTela. */
+var TELAS_POR_HASH = { home:1, agd:1, cli:1, cx:1, fin:1, eq:1, barb:1, svc:1 };
+
+function _telaDoHash(){
+  var h = String(location.hash || '').replace('#','').trim().toLowerCase();
+  return TELAS_POR_HASH[h] ? h : 'home';
+}
+
 window.onload = function(){
-  ir('home', document.getElementById('nb-home'));
+  var tela = _telaDoHash();
+  ir(tela, document.getElementById('nb-' + tela) || document.getElementById('nb-home'));
 };
+
+window.addEventListener('hashchange', function(){
+  var tela = _telaDoHash();
+  ir(tela, document.getElementById('nb-' + tela) || document.getElementById('nb-home'));
+});
 </script>
 
 <!-- ═══ NOTIFICAÇÃO NO CELULAR (OneSignal) — grátis, central p/ todas as barbearias ═══ -->
