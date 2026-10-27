@@ -2125,9 +2125,24 @@ window.addEventListener('resize', function(){
       Edite à vontade. Quem envia é você, do seu WhatsApp.
     </div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
-    <button class="btn btn-ghost btn-sm" onclick="fModal('opchamar')">Cancelar</button>
-    <button class="btn btn-primary btn-sm" onclick="opAbrirWa()">Abrir WhatsApp</button>
+  <div id="op-passo1" style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:4px">
+    <!-- Para quem já falou com o cliente pelo botão do resumo diário:
+         aquele botão abre o WhatsApp direto e o servidor nunca fica sabendo.
+         Aqui ele confirma sem precisar reabrir a conversa. -->
+    <button class="btn btn-ghost btn-sm" onclick="opConfirmeiEnvio(this)" title="Use se você já falou com ele, inclusive pelo resumo do WhatsApp">Já falei com ele</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="fModal('opchamar')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="opAbrirWa()">Abrir WhatsApp</button>
+    </div>
+  </div>
+  <div id="op-passo2" style="display:none;margin-top:4px">
+    <div style="font-size:13px;color:var(--tx-4);margin-bottom:10px" id="op-passo2-txt">
+      Abri a conversa. Você chegou a enviar?
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="fModal('opchamar')">Agora não</button>
+      <button class="btn btn-primary btn-sm" onclick="opConfirmeiEnvio(this)">Enviei a mensagem</button>
+    </div>
   </div>
 </div>
 </div>
@@ -5291,7 +5306,17 @@ function opChamar(wa){
   var t = document.getElementById('op-ttl'), m = document.getElementById('op-msg');
   if (t) t.textContent = 'Chamar ' + c.nome;
   if (m) m.value = c.mensagem || '';
+  _opPasso(1);
   oModal('opchamar');
+}
+
+/* Abrir o WhatsApp NAO marca contato: daqui para frente o sistema nao
+   enxerga mais nada, e o barbeiro ainda pode reler e desistir. Por isso
+   o quadro nao fecha — ele pergunta. */
+function _opPasso(n){
+  var a = document.getElementById('op-passo1'), b = document.getElementById('op-passo2');
+  if (a) a.style.display = (n === 1) ? 'flex' : 'none';
+  if (b) b.style.display = (n === 2) ? 'block' : 'none';
 }
 
 function opAbrirWa(){
@@ -5300,9 +5325,26 @@ function opAbrirWa(){
   try {
     window.open('https://wa.me/' + _OP_ATUAL.wa + '?text='
                 + encodeURIComponent(m ? m.value : ''), '_blank');
-    fModal('opchamar');
-  } catch(e){ toast('Não consegui abrir o WhatsApp.','er'); }
+  } catch(e){ toast('Não consegui abrir o WhatsApp.','er'); return; }
+  var t = document.getElementById('op-passo2-txt');
+  if (t) t.textContent = 'Abri a conversa do ' + _OP_ATUAL.nome + '. Você chegou a enviar?';
+  _opPasso(2);
 }
+
+/* So isto grava. Quem decide se pode gravar e o servidor — aqui so
+   pedimos, e a resposta manda. */
+function opConfirmeiEnvio(btn){
+  if (!_OP_ATUAL) return;
+  if (btn){ btn.disabled = true; btn.textContent = 'Salvando…'; }
+  function volta(){ if (btn){ btn.disabled = false; btn.textContent = 'Enviei a mensagem'; } }
+  _eqApi('op_chamei', { id: _OP_ATUAL.id }).then(function(j){
+    if (j && j.ok){
+      toast('Anotado. ' + _OP_ATUAL.nome + ' sai da lista por uns dias.','ok');
+      fModal('opchamar'); opCarregar();
+    } else { toast('Não consegui anotar.','er'); volta(); }
+  }).catch(function(){ toast('Sem conexão.','er'); volta(); });
+}
+
 
 function opResumoEnviar(btn){
   if (btn){ btn.disabled = true; btn.textContent = 'Enviando…'; }
